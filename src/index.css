@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Inter Tight", "Inter", sans-serif;
+}
+/* custom scrollbar for passage panel */
+.passage-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.passage-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.font-display {
+  font-family: "Inter Tight", "Inter", sans-serif;
+}
