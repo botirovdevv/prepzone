@@ -1,0 +1,78 @@
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { LuKeyRound, LuArrowRight } from "react-icons/lu";
+import { findSessionByCode } from "../utils/sessionCode";
+
+export default function JoinSession() {
+  const location = useLocation();
+  const [code, setCode] = useState(location.state?.prefillCode || "");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (code.trim().length !== 6) {
+      setError("Kod 6 ta raqamdan iborat bo'lishi kerak.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const session = await findSessionByCode(code.trim());
+      if (!session) {
+        setError("Bunday kod bilan test topilmadi.");
+        return;
+      }
+      if (session.status === "closed") {
+        setError("Bu test allaqachon yakunlangan.");
+        return;
+      }
+      navigate(`/session/${session.id}/test`);
+    } catch (err) {
+      console.error(err);
+      setError("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-6 lg:p-10 max-w-md mx-auto">
+      <div className="text-center mb-6">
+        <div className="w-14 h-14 rounded-full bg-[#0076FC]/10 text-[#0076FC] flex items-center justify-center mx-auto mb-4">
+          <LuKeyRound size={24} />
+        </div>
+        <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">
+          Kirish kodi bilan test
+        </h1>
+        <p className="text-sm text-[#0F1C30]/50">
+          O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiriting.
+        </p>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-2xl border border-[#0F1C30]/8 p-6 space-y-4"
+      >
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          inputMode="numeric"
+          autoFocus
+          placeholder="000000"
+          className="w-full text-center tracking-[0.5em] text-3xl font-black font-mono rounded-xl border border-[#0F1C30]/15 py-4 outline-none focus:border-[#0076FC]"
+        />
+        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 bg-[#0076FC] text-white font-semibold py-3 rounded-full hover:bg-[#0062d1] disabled:opacity-60"
+        >
+          {loading ? "Tekshirilmoqda..." : "Davom etish"}
+          {!loading && <LuArrowRight size={17} />}
+        </button>
+      </form>
+    </div>
+  );
+}

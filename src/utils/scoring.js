@@ -43,3 +43,11 @@ export function countCorrect(questions, answers) {
     0
   );
 }
+
+// Faqat bitta modulli (Module 2 yo'q) bo'limlar uchun — masalan, admin
+// tashkil qilgan sessiyada shu bo'limga faqat Module 1 savollari
+// qo'shilgan bo'lsa — oddiy chiziqli 200-800 shkala bo'yicha baholanadi.
+export function calcSingleModuleScaledScore({ rawCorrect, maxRaw }) {
+  const scaled = interpolate(rawCorrect, 0, maxRaw, 200, 800);
+  return Math.round(scaled / 10) * 10;
+}

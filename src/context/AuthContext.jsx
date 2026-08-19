@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -12,6 +14,7 @@ import {
 import { auth } from "../firebase/config";
 
 const AuthContext = createContext(null);
+const googleProvider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -39,6 +42,11 @@ export function AuthProvider({ children }) {
   const login = (email, password) =>
     signInWithEmailAndPassword(auth, email, password);
 
+  // Google popup orqali kirish/ro'yxatdan o'tish (bir xil funksiya ikkalasi
+  // uchun ham ishlaydi — Google hisob birinchi marta ishlatilsa avtomatik
+  // yangi foydalanuvchi yaratiladi).
+  const googleLogin = () => signInWithPopup(auth, googleProvider);
+
   const logout = () => signOut(auth);
 
   const updateDisplayName = async (displayName) => {
@@ -59,6 +67,7 @@ export function AuthProvider({ children }) {
     loading,
     register,
     login,
+    googleLogin,
     logout,
     updateDisplayName,
     changePassword,

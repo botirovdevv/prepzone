@@ -5,14 +5,16 @@ import {
   LuHeadphones,
   LuMapPin,
 } from "react-icons/lu";
-import { useAuth } from "../context/AuthContext";
 import logo from '../../public/Logo.png'
 
+// Eslatma: bu sahifa faqat login QILMAGAN foydalanuvchilarga ko'rsatiladi.
+// Login qilgan foydalanuvchi "/" ga kirsa, App.jsx'dagi RootRoute uni
+// avtomatik "/dashboard"ga yo'naltiradi — shuning uchun bu yerda
+// user-holatiga oid shart-sharoitlar shart emas.
 export default function Home() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
-  const handleSAT = () => navigate(user ? "/sat/select" : "/login");
+  const handleSAT = () => navigate("/login");
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -46,29 +48,12 @@ export default function Home() {
             </button>
           </nav>
 
-          {user ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate("/sat/history")}
-                className="hidden rounded-full px-4 py-2 text-sm font-semibold text-[#566176] transition hover:bg-[#111827]/[0.04] hover:text-[#111827] sm:block"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={logout}
-                className="rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-[#f3f4f6]"
-              >
-                Chiqish
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigate("/login")}
-              className="rounded-full bg-[#087fd1] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#066fb8]"
-            >
-              Kirish
-            </button>
-          )}
+          <button
+            onClick={() => navigate("/login")}
+            className="rounded-full bg-[#087fd1] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#066fb8]"
+          >
+            Kirish
+          </button>
         </div>
       </header>
 

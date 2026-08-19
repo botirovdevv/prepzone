@@ -78,7 +78,7 @@ export function useProctoring({
       setWarningCount((c) => {
         const next = c + 1;
         setWarning({ type, message, count: next });
-        onViolationWarning && onViolationWarning(type, next);
+        onViolationWarning && onViolationWarning(type, next, message);
         if (warnTimeoutRef.current) clearTimeout(warnTimeoutRef.current);
         warnTimeoutRef.current = setTimeout(() => setWarning(null), 5000);
         if (next >= maxWarnings) {

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
+  LuLayoutDashboard,
   LuFileText,
   LuHistory,
   LuLibrary,
@@ -12,15 +13,20 @@ import {
   LuMenu,
   LuX,
   LuMapPin,
+  LuKeyRound,
+  LuShieldCheck,
 } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
+import { useIsAdmin } from "../hooks/useIsAdmin";
 import logo from '../../public/Logo.png'
 
 const NAV_GROUPS = [
   {
     label: "ASOSIY",
     items: [
+      { to: "/dashboard", label: "Bosh sahifa", icon: LuLayoutDashboard },
       { to: "/sat/select", label: "Testlar", icon: LuFileText },
+      { to: "/join", label: "Kod bilan kirish", icon: LuKeyRound },
       { to: "/sat/history", label: "Mening natijalarim", icon: LuHistory },
     ],
   },
@@ -43,6 +49,7 @@ function initials(nameOrEmail) {
 
 export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpenMobile, onCloseMobile }) {
   const { user, logout } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
@@ -55,12 +62,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
   const content = (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className={`flex items-center gap-2 h-16 px-4 shrink-0 ${collapsed ? "justify-center px-0" : ""}`}>
-        <NavLink to="/" className="flex items-center gap-2 h-45 w-35">
+      <div className={`flex items-center h-16 px-4 shrink-0 ${collapsed ? "justify-center px-0" : ""}`}>
+        <NavLink to="/dashboard" className={`flex items-center ${collapsed ? "h-9 w-9" : "h-8"}`}>
           <img
             src={logo}
             alt="Prepzone"
-            className={collapsed ? "h-full w-full object-contain object-left" : "h-6 w-auto"}
+            className={collapsed ? "h-full w-full object-contain" : "h-full w-auto object-contain"}
           />
         </NavLink>
       </div>
@@ -131,6 +138,33 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
             </div>
           </div>
         ))}
+
+        {isAdmin && (
+          <div>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-wider text-[#0F1C30]/35">
+              {collapsed ? "" : "ADMIN"}
+            </p>
+            <div className="space-y-0.5">
+              <NavLink
+                to="/admin"
+                onClick={onCloseMobile}
+                title={collapsed ? "Admin panel" : undefined}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive
+                      ? "bg-[#0076FC]/10 text-[#0076FC]"
+                      : "text-[#0F1C30]/65 hover:bg-[#0F1C30]/5 hover:text-[#0F1C30]"
+                  }`
+                }
+              >
+                <LuShieldCheck size={17} className="shrink-0" />
+                {!collapsed && <span className="truncate">Admin panel</span>}
+              </NavLink>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Bottom: settings, profile, logout */}

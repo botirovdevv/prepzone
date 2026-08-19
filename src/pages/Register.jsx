@@ -25,7 +25,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(email, password, fullName.trim());
-      navigate("/sat/select");
+      navigate("/dashboard");
     } catch (err) {
       setError(mapError(err.code));
     } finally {
@@ -38,7 +38,7 @@ export default function Register() {
     setGoogleLoading(true);
     try {
       await googleLogin();
-      navigate("/sat/select");
+      navigate("/dashboard");
     } catch (err) {
       setError(mapError(err.code));
     } finally {

@@ -1,0 +1,292 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../../firebase/config";
+import { useAuth } from "../../context/AuthContext";
+import { generateUniqueCode } from "../../utils/sessionCode";
+import QuestionEditor from "../../components/admin/QuestionEditor";
+import { LuArrowLeft, LuInfo } from "react-icons/lu";
+
+function toDateInputValue(d) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function toTimeInputValue(d) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export default function SessionForm() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+
+  const [title, setTitle] = useState("");
+  const [dateStr, setDateStr] = useState(() => toDateInputValue(new Date()));
+  const [timeStr, setTimeStr] = useState(() => toTimeInputValue(new Date(Date.now() + 30 * 60000)));
+
+  const [rwDuration, setRwDuration] = useState(32);
+  const [mathDuration, setMathDuration] = useState(35);
+  const [rwM1, setRwM1] = useState([]);
+  const [rwM2E, setRwM2E] = useState([]);
+  const [rwM2H, setRwM2H] = useState([]);
+  const [mathM1, setMathM1] = useState([]);
+  const [mathM2E, setMathM2E] = useState([]);
+  const [mathM2H, setMathM2H] = useState([]);
+
+  const [loadingExisting, setLoadingExisting] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isEdit) return;
+    getDoc(doc(db, "testSessions", id)).then((snap) => {
+      if (!snap.exists()) {
+        setError("Test topilmadi.");
+        setLoadingExisting(false);
+        return;
+      }
+      const s = snap.data();
+      setTitle(s.title || "");
+      const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt);
+      setDateStr(toDateInputValue(scheduled));
+      setTimeStr(toTimeInputValue(scheduled));
+      const rw = (s.sections || []).find((sec) => sec.id === "rw");
+      const math = (s.sections || []).find((sec) => sec.id === "math");
+      if (rw) {
+        setRwDuration(rw.durationMin || 32);
+        setRwM1(rw.module1 || []);
+        setRwM2E(rw.module2Easy || []);
+        setRwM2H(rw.module2Hard || []);
+      }
+      if (math) {
+        setMathDuration(math.durationMin || 35);
+        setMathM1(math.module1 || []);
+        setMathM2E(math.module2Easy || []);
+        setMathM2H(math.module2Hard || []);
+      }
+      setLoadingExisting(false);
+    });
+  }, [id, isEdit]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!title.trim()) {
+      setError("Test nomini kiriting.");
+      return;
+    }
+    if (!dateStr || !timeStr) {
+      setError("Sana va vaqtni tanlang.");
+      return;
+    }
+    if (rwM1.length === 0 && mathM1.length === 0) {
+      setError("Kamida bitta bo'limga (Reading&Writing yoki Math) Module 1 savollari qo'shing.");
+      return;
+    }
+
+    const scheduledAt = new Date(`${dateStr}T${timeStr}`);
+    const sections = [];
+    if (rwM1.length > 0) {
+      sections.push({
+        id: "rw",
+        title: "Reading and Writing",
+        type: "rw",
+        durationMin: Number(rwDuration) || 32,
+        calculator: false,
+        module1: rwM1,
+        module2Easy: rwM2E,
+        module2Hard: rwM2H,
+      });
+    }
+    if (mathM1.length > 0) {
+      sections.push({
+        id: "math",
+        title: "Math",
+        type: "math",
+        durationMin: Number(mathDuration) || 35,
+        calculator: true,
+        module1: mathM1,
+        module2Easy: mathM2E,
+        module2Hard: mathM2H,
+      });
+    }
+
+    setSaving(true);
+    try {
+      if (isEdit) {
+        await updateDoc(doc(db, "testSessions", id), {
+          title: title.trim(),
+          scheduledAt,
+          sections,
+        });
+        navigate(`/admin/sessions/${id}/monitor`);
+      } else {
+        const code = await generateUniqueCode();
+        const ref = await addDoc(collection(db, "testSessions"), {
+          title: title.trim(),
+          code,
+          scheduledAt,
+          sections,
+          status: "scheduled",
+          createdBy: user.uid,
+          createdByName: user.displayName || user.email,
+          createdAt: serverTimestamp(),
+        });
+        navigate(`/admin/sessions/${ref.id}/monitor`);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loadingExisting) {
+    return <div className="p-10 text-[#0F1C30]/40">Yuklanmoqda...</div>;
+  }
+
+  return (
+    <div className="p-6 lg:p-10 max-w-3xl mx-auto">
+      <button
+        onClick={() => navigate("/admin")}
+        className="flex items-center gap-1.5 text-sm text-[#0F1C30]/50 hover:text-[#0F1C30] mb-6"
+      >
+        <LuArrowLeft size={16} /> Barcha testlar
+      </button>
+
+      <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">
+        {isEdit ? "Testni tahrirlash" : "Yangi test tashkil qilish"}
+      </h1>
+      <p className="text-sm text-[#0F1C30]/50 mb-8">
+        Sana, vaqt va savollarni belgilang. Kirish kodi saqlagandan keyin avtomatik yaratiladi.
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl border border-[#0F1C30]/8 p-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+              Test nomi
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Masalan: Avgust oyi sinov testi"
+              className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                Sana
+              </label>
+              <input
+                type="date"
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                Vaqt
+              </label>
+              <input
+                type="time"
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 bg-[#0076FC]/5 border border-[#0076FC]/15 rounded-xl p-4 text-sm text-[#0F1C30]/70">
+          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#0076FC]" />
+          <p>
+            Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing. Agar shu bo'lim
+            uchun <strong>Module 2 (Oson)</strong> va <strong>Module 2 (Qiyin)</strong> savollarini
+            ham qo'shsangiz, test moslashuvchan (adaptiv) bo'ladi: Module 1 natijasiga qarab
+            talaba avtomatik oson yoki qiyin Module 2'ga yo'naltiriladi. Module 2 qo'shilmasa, shu
+            bo'lim faqat Module 1 asosida baholanadi.
+          </p>
+        </div>
+
+        {/* Reading and Writing */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-[#0F1C30]">Reading and Writing</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <label className="text-[#0F1C30]/50">Davomiyligi (daqiqa):</label>
+              <input
+                type="number"
+                min={1}
+                value={rwDuration}
+                onChange={(e) => setRwDuration(e.target.value)}
+                className="w-20 rounded-lg border border-[#0F1C30]/15 px-2 py-1.5 text-sm outline-none focus:border-[#0076FC]"
+              />
+            </div>
+          </div>
+          <QuestionEditor title="Module 1" questions={rwM1} onChange={setRwM1} showPassage />
+          <QuestionEditor
+            title="Module 2 — Oson (ixtiyoriy)"
+            questions={rwM2E}
+            onChange={setRwM2E}
+            showPassage
+          />
+          <QuestionEditor
+            title="Module 2 — Qiyin (ixtiyoriy)"
+            questions={rwM2H}
+            onChange={setRwM2H}
+            showPassage
+          />
+        </div>
+
+        {/* Math */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-[#0F1C30]">Math</h2>
+            <div className="flex items-center gap-2 text-sm">
+              <label className="text-[#0F1C30]/50">Davomiyligi (daqiqa):</label>
+              <input
+                type="number"
+                min={1}
+                value={mathDuration}
+                onChange={(e) => setMathDuration(e.target.value)}
+                className="w-20 rounded-lg border border-[#0F1C30]/15 px-2 py-1.5 text-sm outline-none focus:border-[#0076FC]"
+              />
+            </div>
+          </div>
+          <QuestionEditor title="Module 1" questions={mathM1} onChange={setMathM1} />
+          <QuestionEditor
+            title="Module 2 — Oson (ixtiyoriy)"
+            questions={mathM2E}
+            onChange={setMathM2E}
+          />
+          <QuestionEditor
+            title="Module 2 — Qiyin (ixtiyoriy)"
+            questions={mathM2H}
+            onChange={setMathM2H}
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-[#0076FC] text-white font-semibold py-3.5 rounded-full hover:bg-[#0062d1] disabled:opacity-60"
+        >
+          {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Testni yaratish"}
+        </button>
+      </form>
+    </div>
+  );
+}
