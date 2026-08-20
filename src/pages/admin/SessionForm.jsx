@@ -23,6 +23,7 @@ export default function SessionForm() {
   const isEdit = !!id;
 
   const [title, setTitle] = useState("");
+  const [accessType, setAccessType] = useState("code"); // "code" | "open"
   const [dateStr, setDateStr] = useState(() => toDateInputValue(new Date()));
   const [timeStr, setTimeStr] = useState(() => toTimeInputValue(new Date(Date.now() + 30 * 60000)));
 
@@ -49,7 +50,8 @@ export default function SessionForm() {
       }
       const s = snap.data();
       setTitle(s.title || "");
-      const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt);
+      setAccessType(s.accessType === "open" ? "open" : "code");
+      const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt || Date.now());
       setDateStr(toDateInputValue(scheduled));
       setTimeStr(toTimeInputValue(scheduled));
       const rw = (s.sections || []).find((sec) => sec.id === "rw");
@@ -78,7 +80,7 @@ export default function SessionForm() {
       setError("Test nomini kiriting.");
       return;
     }
-    if (!dateStr || !timeStr) {
+    if (accessType === "code" && (!dateStr || !timeStr)) {
       setError("Sana va vaqtni tanlang.");
       return;
     }
@@ -87,7 +89,7 @@ export default function SessionForm() {
       return;
     }
 
-    const scheduledAt = new Date(`${dateStr}T${timeStr}`);
+    const scheduledAt = accessType === "open" ? null : new Date(`${dateStr}T${timeStr}`);
     const sections = [];
     if (rwM1.length > 0) {
       sections.push({
@@ -119,6 +121,7 @@ export default function SessionForm() {
       if (isEdit) {
         await updateDoc(doc(db, "testSessions", id), {
           title: title.trim(),
+          accessType,
           scheduledAt,
           sections,
         });
@@ -127,6 +130,7 @@ export default function SessionForm() {
         const code = await generateUniqueCode();
         const ref = await addDoc(collection(db, "testSessions"), {
           title: title.trim(),
+          accessType,
           code,
           scheduledAt,
           sections,
@@ -178,30 +182,69 @@ export default function SessionForm() {
               className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
-                Sana
-              </label>
-              <input
-                type="date"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
-                Vaqt
-              </label>
-              <input
-                type="time"
-                value={timeStr}
-                onChange={(e) => setTimeStr(e.target.value)}
-                className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
-              />
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+              Kirish turi
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAccessType("code")}
+                className={`rounded-xl border px-4 py-3 text-left transition ${
+                  accessType === "code"
+                    ? "border-[#0076FC] bg-[#0076FC]/5"
+                    : "border-[#0F1C30]/15 hover:border-[#0F1C30]/30"
+                }`}
+              >
+                <p className="font-semibold text-sm text-[#0F1C30]">Kod bilan, vaqti belgilangan</p>
+                <p className="text-xs text-[#0F1C30]/50 mt-0.5">
+                  6 xonali kod va belgilangan sana/vaqtda ochiladi
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccessType("open")}
+                className={`rounded-xl border px-4 py-3 text-left transition ${
+                  accessType === "open"
+                    ? "border-[#0076FC] bg-[#0076FC]/5"
+                    : "border-[#0F1C30]/15 hover:border-[#0F1C30]/30"
+                }`}
+              >
+                <p className="font-semibold text-sm text-[#0F1C30]">Doimiy ochiq</p>
+                <p className="text-xs text-[#0F1C30]/50 mt-0.5">
+                  Har doim ochiq, "Testlar" bo'limida hammaga ko'rinadi
+                </p>
+              </button>
             </div>
           </div>
+
+          {accessType === "code" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                  Sana
+                </label>
+                <input
+                  type="date"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                  Vaqt
+                </label>
+                <input
+                  type="time"
+                  value={timeStr}
+                  onChange={(e) => setTimeStr(e.target.value)}
+                  className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-start gap-2.5 bg-[#0076FC]/5 border border-[#0076FC]/15 rounded-xl p-4 text-sm text-[#0F1C30]/70">

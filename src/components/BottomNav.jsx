@@ -11,6 +11,7 @@ export default function BottomNav({
   onNext,
   isLastQuestion,
   onFinishModule,
+  finishLabel = "Modulni yakunlash",
 }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 z-30">
@@ -60,7 +61,7 @@ export default function BottomNav({
               onClick={onFinishModule}
               className="flex items-center gap-1 bg-[#375DFB] text-white rounded-full px-5 py-2 text-sm font-semibold hover:bg-[#2b4bd9]"
             >
-              Modulni yakunlash
+              {finishLabel}
             </button>
           )}
         </div>

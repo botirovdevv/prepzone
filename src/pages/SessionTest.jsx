@@ -214,7 +214,7 @@ export default function SessionTest() {
       setPhase("closed");
       return;
     }
-    if (scheduledMs && scheduledMs > Date.now()) {
+    if (session.accessType !== "open" && scheduledMs && scheduledMs > Date.now()) {
       setPhase("waiting");
       return;
     }

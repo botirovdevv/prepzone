@@ -15,9 +15,13 @@ import AccountSettings from "./pages/AccountSettings";
 import JoinSession from "./pages/JoinSession";
 import SessionTest from "./pages/SessionTest";
 import SessionResults from "./pages/SessionResults";
+import PracticeIndex from "./pages/PracticeIndex";
+import PracticeSet from "./pages/PracticeSet";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SessionForm from "./pages/admin/SessionForm";
 import SessionMonitor from "./pages/admin/SessionMonitor";
+import SetsDashboard from "./pages/admin/SetsDashboard";
+import SetForm from "./pages/admin/SetForm";
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -147,6 +151,24 @@ export default function App() {
             }
           />
 
+          {/* Vaqt cheklanmagan, darhol javob ko'rsatiladigan amaliyot to'plamlari */}
+          <Route
+            path="/practice"
+            element={
+              <DashboardRoute>
+                <PracticeIndex />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/practice/:id"
+            element={
+              <ProtectedRoute>
+                <PracticeSet />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Admin panel */}
           <Route
             path="/admin"
@@ -177,6 +199,30 @@ export default function App() {
             element={
               <AdminDashboardRoute>
                 <SessionMonitor />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/sets"
+            element={
+              <AdminDashboardRoute>
+                <SetsDashboard />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/sets/new"
+            element={
+              <AdminDashboardRoute>
+                <SetForm />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/sets/:id/edit"
+            element={
+              <AdminDashboardRoute>
+                <SetForm />
               </AdminDashboardRoute>
             }
           />

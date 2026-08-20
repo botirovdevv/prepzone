@@ -18,6 +18,7 @@ function formatDateTime(ts) {
 
 function sessionStatusLabel(session) {
   if (session.status === "closed") return { text: "Yakunlangan", color: "bg-gray-100 text-gray-500" };
+  if (session.accessType === "open") return { text: "Doimiy ochiq", color: "bg-emerald-50 text-emerald-600" };
   const scheduled = session.scheduledAt?.toDate
     ? session.scheduledAt.toDate()
     : new Date(session.scheduledAt);
@@ -87,7 +88,7 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   <p className="text-sm text-[#0F1C30]/50">
-                    {formatDateTime(s.scheduledAt)} · Kod:{" "}
+                    {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)} · Kod:{" "}
                     <span className="font-mono font-bold text-[#0F1C30]/70">{s.code}</span>
                   </p>
                 </div>

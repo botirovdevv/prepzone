@@ -21,6 +21,7 @@ export default function TestHeader({
   onToggleCalculator,
   onExit,
   practiceMode = true,
+  hideTimer = false,
 }) {
   const [hidden, setHidden] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -38,15 +39,21 @@ export default function TestHeader({
         </div>
 
         <div className="flex flex-col items-center">
-          <div className="text-lg font-bold text-gray-900 tabular-nums">
-            {hidden ? "" : formatTime(secondsLeft)}
-          </div>
-          <button
-            onClick={() => setHidden((h) => !h)}
-            className="text-xs border border-gray-400 rounded-full px-3 py-0.5 mt-0.5 hover:bg-gray-200"
-          >
-            {hidden ? "Show" : "Hide"}
-          </button>
+          {hideTimer ? (
+            <div className="text-sm font-semibold text-gray-500">Vaqt cheklanmagan</div>
+          ) : (
+            <>
+              <div className="text-lg font-bold text-gray-900 tabular-nums">
+                {hidden ? "" : formatTime(secondsLeft)}
+              </div>
+              <button
+                onClick={() => setHidden((h) => !h)}
+                className="text-xs border border-gray-400 rounded-full px-3 py-0.5 mt-0.5 hover:bg-gray-200"
+              >
+                {hidden ? "Show" : "Hide"}
+              </button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-5 text-xs text-gray-700">

@@ -27,13 +27,13 @@ const NAV_GROUPS = [
       { to: "/dashboard", label: "Bosh sahifa", icon: LuLayoutDashboard },
       { to: "/sat/select", label: "Testlar", icon: LuFileText },
       { to: "/join", label: "Kod bilan kirish", icon: LuKeyRound },
+      { to: "/practice", label: "Amaliyot to'plamlari", icon: LuLibrary },
       { to: "/sat/history", label: "Mening natijalarim", icon: LuHistory },
     ],
   },
   {
     label: "TEZ ORADA",
     items: [
-      { label: "Savollar banki", icon: LuLibrary, soon: true },
       { label: "Lug'at (Vocabulary)", icon: LuBookA, soon: true },
       { label: "Reyting", icon: LuTrophy, soon: true },
     ],
@@ -147,8 +147,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
             <div className="space-y-0.5">
               <NavLink
                 to="/admin"
+                end
                 onClick={onCloseMobile}
-                title={collapsed ? "Admin panel" : undefined}
+                title={collapsed ? "Testlar" : undefined}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition ${
                     collapsed ? "justify-center" : ""
@@ -160,7 +161,24 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
                 }
               >
                 <LuShieldCheck size={17} className="shrink-0" />
-                {!collapsed && <span className="truncate">Admin panel</span>}
+                {!collapsed && <span className="truncate">Testlar (admin)</span>}
+              </NavLink>
+              <NavLink
+                to="/admin/sets"
+                onClick={onCloseMobile}
+                title={collapsed ? "Amaliyot to'plamlari" : undefined}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive
+                      ? "bg-[#0076FC]/10 text-[#0076FC]"
+                      : "text-[#0F1C30]/65 hover:bg-[#0F1C30]/5 hover:text-[#0F1C30]"
+                  }`
+                }
+              >
+                <LuLibrary size={17} className="shrink-0" />
+                {!collapsed && <span className="truncate">To'plamlar (admin)</span>}
               </NavLink>
             </div>
           </div>

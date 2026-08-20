@@ -121,7 +121,9 @@ export default function SessionMonitor() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">{session.title}</h1>
-          <p className="text-sm text-[#0F1C30]/50">{formatDateTime(session.scheduledAt)}</p>
+          <p className="text-sm text-[#0F1C30]/50">
+            {session.accessType === "open" ? "Doimiy ochiq test" : formatDateTime(session.scheduledAt)}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -143,7 +145,9 @@ export default function SessionMonitor() {
       {/* Kirish kodi */}
       <div className="bg-[#0F1C30] text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-white/50 mb-1">Kirish kodi</p>
+          <p className="text-xs uppercase tracking-widest text-white/50 mb-1">
+            {session.accessType === "open" ? "Kirish kodi (ixtiyoriy — test doimiy ochiq)" : "Kirish kodi"}
+          </p>
           <p className="text-4xl font-black font-mono tracking-widest">{session.code}</p>
         </div>
         <div className="flex gap-2">
