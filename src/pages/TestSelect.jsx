@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/config";
-import { LuFileText, LuLock, LuArrowRight, LuTimer, LuGlobe } from "react-icons/lu";
+import { LuNotebookPen, LuArrowRight, LuTimer, LuGlobe, LuListChecks } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { testsCatalog } from "../data/testsCatalog";
 import { loadLocalProgress, getCooldownRemainingMs } from "../utils/testProgress";
+import PageHero from "../components/PageHero";
 
 function formatRemaining(ms) {
   const totalSec = Math.ceil(ms / 1000);
@@ -17,7 +18,6 @@ function formatRemaining(ms) {
 export default function TestSelect() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  // testId -> qolgan pauza vaqti (ms). 0/yo'q bo'lsa — bloklanmagan.
   const [lockRemaining, setLockRemaining] = useState({});
   const [openSessions, setOpenSessions] = useState([]);
 
@@ -25,9 +25,6 @@ export default function TestSelect() {
     if (!loading && !user) navigate("/login");
   }, [loading, user, navigate]);
 
-  // Admin tashkil qilgan, doimiy ochiq (kodsiz) testlar. Faqat bitta "where"
-  // ishlatamiz (accessType) — status bo'yicha mijoz tomonida filtrlaymiz,
-  // shunda Firestore'da qo'shimcha composite index kerak bo'lmaydi.
   useEffect(() => {
     const q = query(collection(db, "testSessions"), where("accessType", "==", "open"));
     const unsub = onSnapshot(
@@ -41,8 +38,6 @@ export default function TestSelect() {
     return unsub;
   }, []);
 
-  // Har bir test uchun "chiqish" pauzasi hali tugamaganmi, tekshiramiz
-  // va sekundiga yangilab boramiz.
   useEffect(() => {
     if (!user) return;
     const compute = () => {
@@ -70,116 +65,103 @@ export default function TestSelect() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
+      <div className="min-h-screen flex items-center justify-center text-[#12213D]/40">
         Yuklanmoqda...
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#F7F9FC] py-14 px-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-display text-2xl font-extrabold text-[#0F1C30]">
-              Qaysi testni topshirmoqchisiz?
-            </h1>
-            <p className="text-sm text-[#0F1C30]/55 mt-1">
-              Testni tanlang — u boshlangandan so'ng vaqt hisoblanadi.
-            </p>
-          </div>
-          <Link to="/" className="text-sm text-[#0076FC] font-medium shrink-0">
-            ← Bosh sahifa
-          </Link>
-        </div>
+  // Statik va admin tomonidan qo'shilgan "doimiy ochiq" testlarni bitta
+  // ro'yxatga birlashtiramiz — foydalanuvchi uchun ular bir xil toifa:
+  // "to'liq mock testlar".
+  const papers = [
+    ...testsCatalog.map((t) => ({
+      key: t.id,
+      lockKey: t.id,
+      title: t.title,
+      description: t.description,
+      go: () => navigate("/sat/test", { state: { testId: t.id } }),
+      kind: "builtin",
+    })),
+    ...openSessions.map((s) => ({
+      key: `session:${s.id}`,
+      lockKey: `session:${s.id}`,
+      title: s.title,
+      description: "Doimiy ochiq mashg'ulot",
+      go: () => navigate(`/session/${s.id}/test`),
+      kind: "open",
+    })),
+  ];
 
-        <div className="space-y-3">
-          {testsCatalog.map((t) => {
-            const locked = !!lockRemaining[t.id];
-            const available = t.status === "available" && !locked;
-            return (
-              <button
-                key={t.id}
-                disabled={!available}
-                onClick={() => available && navigate("/sat/test", { state: { testId: t.id } })}
-                className={`w-full flex items-center gap-4 text-left bg-white rounded-2xl p-5 border transition
-                  ${
-                    available
-                      ? "border-[#0F1C30]/8 hover:border-[#0076FC]/40 hover:shadow-md cursor-pointer"
-                      : "border-[#0F1C30]/6 opacity-60 cursor-not-allowed"
-                  }`}
-              >
-                <div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                    available ? "bg-[#0076FC]/10 text-[#0076FC]" : "bg-[#0F1C30]/6 text-[#0F1C30]/35"
-                  }`}
-                >
-                  {locked ? (
-                    <LuTimer size={18} />
-                  ) : available ? (
-                    <LuFileText size={20} />
-                  ) : (
-                    <LuLock size={18} />
+  return (
+    <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
+      <PageHero
+        eyebrow="MOCK TESTLAR"
+        icon={LuListChecks}
+        title="Qaysi testni topshirasiz?"
+        subtitle="Har biri to'liq, moslashuvchan (adaptiv) Reading&Writing va Math bo'limlaridan iborat. Boshlagach vaqt hisobi yuritiladi."
+        stats={[
+          { icon: LuNotebookPen, value: papers.length, label: "test mavjud", iconClass: "bg-[#087fd1]/10 text-[#087fd1]" },
+          { icon: LuGlobe, value: openSessions.length, label: "doimiy ochiq", iconClass: "bg-emerald-500/10 text-emerald-600" },
+        ]}
+      />
+
+      <div className="grid gap-3">
+        {papers.map((p) => {
+          const locked = !!lockRemaining[p.lockKey];
+          const available = !locked;
+          const iconWrap =
+            locked
+              ? "bg-[#087fd1]/10 text-[#087fd1]"
+              : p.kind === "open"
+              ? "bg-[#087fd1]/10 text-[#087fd1]"
+              : "bg-[#087fd1]/10 text-[#087fd1]";
+          return (
+            <button
+              key={p.key}
+              disabled={!available}
+              onClick={() => available && p.go()}
+              className={`group flex items-center gap-5 p-5 sm:p-6 rounded-[22px] border text-left transition-all duration-200
+                ${
+                  available
+                    ? "bg-white border-[#12213D]/7 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(47,111,237,0.18)]"
+                    : "bg-[#12213D]/[0.025] border-transparent opacity-70 cursor-not-allowed"
+                }`}
+            >
+              <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconWrap}`}>
+                {locked ? (
+                  <LuTimer size={24} />
+                ) : p.kind === "open" ? (
+                  <LuGlobe size={24} />
+                ) : (
+                  <LuNotebookPen size={24} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display font-extrabold text-[#12213D] text-[17px] leading-tight truncate">
+                    {p.title}
+                  </h3>
+                  {p.kind === "open" && (
+                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[#087fd1] bg-[#087fd1]/10 px-2 py-0.5 rounded-full">
+                      Ochiq
+                    </span>
                   )}
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-[#0F1C30]">{t.title}</p>
-                  <p className="text-sm text-[#0F1C30]/50 mt-0.5">
-                    {locked
-                      ? `Testdan chiqdingiz — ${formatRemaining(lockRemaining[t.id])} dan keyin davom ettirish mumkin`
-                      : t.description}
-                  </p>
+                <p className="text-[#12213D]/50 text-sm mt-1">
+                  {locked
+                    ? `Testdan chiqdingiz — ${formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin`
+                    : p.description}
+                </p>
+              </div>
+              {available && (
+                <div className="w-10 h-10 rounded-full bg-[#12213D]/[0.03] flex items-center justify-center text-[#12213D]/30 group-hover:bg-[#087fd1] group-hover:text-white transition-colors shrink-0">
+                  <LuArrowRight size={18} />
                 </div>
-                {available && <LuArrowRight size={20} className="text-[#0F1C30]/30 shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-
-        {openSessions.length > 0 && (
-          <div className="mt-10">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#0F1C30]/40 mb-3">
-              Doimiy ochiq testlar
-            </p>
-            <div className="space-y-3">
-              {openSessions.map((s) => {
-                const lockKey = `session:${s.id}`;
-                const locked = !!lockRemaining[lockKey];
-                const available = !locked;
-                return (
-                  <button
-                    key={s.id}
-                    disabled={!available}
-                    onClick={() => available && navigate(`/session/${s.id}/test`)}
-                    className={`w-full flex items-center gap-4 text-left bg-white rounded-2xl p-5 border transition
-                      ${
-                        available
-                          ? "border-[#0F1C30]/8 hover:border-[#0076FC]/40 hover:shadow-md cursor-pointer"
-                          : "border-[#0F1C30]/6 opacity-60 cursor-not-allowed"
-                      }`}
-                  >
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                        available ? "bg-emerald-50 text-emerald-600" : "bg-[#0F1C30]/6 text-[#0F1C30]/35"
-                      }`}
-                    >
-                      {locked ? <LuTimer size={18} /> : <LuGlobe size={19} />}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-[#0F1C30]">{s.title}</p>
-                      <p className="text-sm text-[#0F1C30]/50 mt-0.5">
-                        {locked
-                          ? `Testdan chiqdingiz — ${formatRemaining(lockRemaining[lockKey])} dan keyin davom ettirish mumkin`
-                          : "Har doim ochiq"}
-                      </p>
-                    </div>
-                    {available && <LuArrowRight size={20} className="text-[#0F1C30]/30 shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

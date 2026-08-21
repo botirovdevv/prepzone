@@ -11,6 +11,7 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
+import { maybeUpdateLeaderboard } from "../utils/leaderboard";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -336,6 +337,7 @@ export default function SATTest() {
           ? { terminated: true, terminationReason: extraState.reason }
           : {}),
       });
+      maybeUpdateLeaderboard(user, total);
       navigate("/sat/results", {
         state: { results: finalResults, resultId: docRef.id, ...extraState },
       });

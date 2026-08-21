@@ -150,41 +150,41 @@ export default function SessionForm() {
   };
 
   if (loadingExisting) {
-    return <div className="p-10 text-[#0F1C30]/40">Yuklanmoqda...</div>;
+    return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
   }
 
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <button
         onClick={() => navigate("/admin")}
-        className="flex items-center gap-1.5 text-sm text-[#0F1C30]/50 hover:text-[#0F1C30] mb-6"
+        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
 
-      <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">
+      <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
         {isEdit ? "Testni tahrirlash" : "Yangi test tashkil qilish"}
       </h1>
-      <p className="text-sm text-[#0F1C30]/50 mb-8">
+      <p className="text-sm text-[#12213D]/50 mb-8">
         Sana, vaqt va savollarni belgilang. Kirish kodi saqlagandan keyin avtomatik yaratiladi.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl border border-[#0F1C30]/8 p-5 space-y-4">
+        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
               Test nomi
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Masalan: Avgust oyi sinov testi"
-              className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
               Kirish turi
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -193,12 +193,12 @@ export default function SessionForm() {
                 onClick={() => setAccessType("code")}
                 className={`rounded-xl border px-4 py-3 text-left transition ${
                   accessType === "code"
-                    ? "border-[#0076FC] bg-[#0076FC]/5"
-                    : "border-[#0F1C30]/15 hover:border-[#0F1C30]/30"
+                    ? "border-[#087fd1] bg-[#087fd1]/5"
+                    : "border-[#12213D]/15 hover:border-[#12213D]/30"
                 }`}
               >
-                <p className="font-semibold text-sm text-[#0F1C30]">Kod bilan, vaqti belgilangan</p>
-                <p className="text-xs text-[#0F1C30]/50 mt-0.5">
+                <p className="font-semibold text-sm text-[#12213D]">Kod bilan, vaqti belgilangan</p>
+                <p className="text-xs text-[#12213D]/50 mt-0.5">
                   6 xonali kod va belgilangan sana/vaqtda ochiladi
                 </p>
               </button>
@@ -207,12 +207,12 @@ export default function SessionForm() {
                 onClick={() => setAccessType("open")}
                 className={`rounded-xl border px-4 py-3 text-left transition ${
                   accessType === "open"
-                    ? "border-[#0076FC] bg-[#0076FC]/5"
-                    : "border-[#0F1C30]/15 hover:border-[#0F1C30]/30"
+                    ? "border-[#087fd1] bg-[#087fd1]/5"
+                    : "border-[#12213D]/15 hover:border-[#12213D]/30"
                 }`}
               >
-                <p className="font-semibold text-sm text-[#0F1C30]">Doimiy ochiq</p>
-                <p className="text-xs text-[#0F1C30]/50 mt-0.5">
+                <p className="font-semibold text-sm text-[#12213D]">Doimiy ochiq</p>
+                <p className="text-xs text-[#12213D]/50 mt-0.5">
                   Har doim ochiq, "Testlar" bo'limida hammaga ko'rinadi
                 </p>
               </button>
@@ -222,33 +222,33 @@ export default function SessionForm() {
           {accessType === "code" && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
                   Sana
                 </label>
                 <input
                   type="date"
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
-                  className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+                  className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
                   Vaqt
                 </label>
                 <input
                   type="time"
                   value={timeStr}
                   onChange={(e) => setTimeStr(e.target.value)}
-                  className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+                  className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
                 />
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-start gap-2.5 bg-[#0076FC]/5 border border-[#0076FC]/15 rounded-xl p-4 text-sm text-[#0F1C30]/70">
-          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#0076FC]" />
+        <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
+          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
           <p>
             Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing. Agar shu bo'lim
             uchun <strong>Module 2 (Oson)</strong> va <strong>Module 2 (Qiyin)</strong> savollarini
@@ -261,15 +261,15 @@ export default function SessionForm() {
         {/* Reading and Writing */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-[#0F1C30]">Reading and Writing</h2>
+            <h2 className="font-bold text-[#12213D]">Reading and Writing</h2>
             <div className="flex items-center gap-2 text-sm">
-              <label className="text-[#0F1C30]/50">Davomiyligi (daqiqa):</label>
+              <label className="text-[#12213D]/50">Davomiyligi (daqiqa):</label>
               <input
                 type="number"
                 min={1}
                 value={rwDuration}
                 onChange={(e) => setRwDuration(e.target.value)}
-                className="w-20 rounded-lg border border-[#0F1C30]/15 px-2 py-1.5 text-sm outline-none focus:border-[#0076FC]"
+                className="w-20 rounded-lg border border-[#12213D]/15 px-2 py-1.5 text-sm outline-none focus:border-[#087fd1]"
               />
             </div>
           </div>
@@ -291,15 +291,15 @@ export default function SessionForm() {
         {/* Math */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-[#0F1C30]">Math</h2>
+            <h2 className="font-bold text-[#12213D]">Math</h2>
             <div className="flex items-center gap-2 text-sm">
-              <label className="text-[#0F1C30]/50">Davomiyligi (daqiqa):</label>
+              <label className="text-[#12213D]/50">Davomiyligi (daqiqa):</label>
               <input
                 type="number"
                 min={1}
                 value={mathDuration}
                 onChange={(e) => setMathDuration(e.target.value)}
-                className="w-20 rounded-lg border border-[#0F1C30]/15 px-2 py-1.5 text-sm outline-none focus:border-[#0076FC]"
+                className="w-20 rounded-lg border border-[#12213D]/15 px-2 py-1.5 text-sm outline-none focus:border-[#087fd1]"
               />
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function SessionForm() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-[#0076FC] text-white font-semibold py-3.5 rounded-full hover:bg-[#0062d1] disabled:opacity-60"
+          className="w-full bg-[#087fd1] text-white font-semibold py-3.5 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
         >
           {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Testni yaratish"}
         </button>

@@ -85,42 +85,42 @@ export default function AccountSettings() {
   return (
     <div className="py-14 px-6">
       <div className="max-w-xl mx-auto">
-        <h1 className="font-display text-2xl font-extrabold text-[#0F1C30] mb-1">
+        <h1 className="font-display text-2xl font-extrabold text-[#12213D] mb-1">
           Sozlamalar
         </h1>
-        <p className="text-sm text-[#0F1C30]/55 mb-8">
+        <p className="text-sm text-[#12213D]/55 mb-8">
           Profil ma'lumotlaringizni shu yerdan boshqarasiz.
         </p>
 
         {/* Profil */}
         <form
           onSubmit={handleNameSubmit}
-          className="bg-white rounded-2xl border border-[#0F1C30]/8 p-6 mb-6"
+          className="bg-white rounded-2xl border border-[#12213D]/8 p-6 mb-6"
         >
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-[#0076FC]/10 text-[#0076FC] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
               <LuUser size={17} />
             </div>
-            <h2 className="font-bold text-[#0F1C30]">Profil</h2>
+            <h2 className="font-bold text-[#12213D]">Profil</h2>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-[#0F1C30]/70">To'liq ism</label>
+              <label className="text-sm font-medium text-[#12213D]/70">To'liq ism</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full border border-[#0F1C30]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0076FC]/40"
+                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-[#0F1C30]/70">Email</label>
+              <label className="text-sm font-medium text-[#12213D]/70">Email</label>
               <input
                 type="email"
                 value={user.email || ""}
                 disabled
-                className="mt-1 w-full border border-[#0F1C30]/10 rounded-lg px-3 py-2 bg-[#0F1C30]/[0.03] text-[#0F1C30]/50 cursor-not-allowed"
+                className="mt-1 w-full border border-[#12213D]/10 rounded-lg px-3 py-2 bg-[#12213D]/[0.03] text-[#12213D]/50 cursor-not-allowed"
               />
             </div>
 
@@ -129,7 +129,7 @@ export default function AccountSettings() {
             <button
               type="submit"
               disabled={nameSaving}
-              className="flex items-center gap-2 bg-[#0076FC] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#0062d1] transition disabled:opacity-60"
+              className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#066fb8] transition disabled:opacity-60"
             >
               {nameSaved ? (
                 <>
@@ -147,41 +147,41 @@ export default function AccountSettings() {
         {/* Parol */}
         <form
           onSubmit={handlePasswordSubmit}
-          className="bg-white rounded-2xl border border-[#0F1C30]/8 p-6"
+          className="bg-white rounded-2xl border border-[#12213D]/8 p-6"
         >
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-[#0076FC]/10 text-[#0076FC] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
               <LuLockKeyhole size={17} />
             </div>
-            <h2 className="font-bold text-[#0F1C30]">Parolni almashtirish</h2>
+            <h2 className="font-bold text-[#12213D]">Parolni almashtirish</h2>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-[#0F1C30]/70">Joriy parol</label>
+              <label className="text-sm font-medium text-[#12213D]/70">Joriy parol</label>
               <input
                 type="password"
                 required
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 w-full border border-[#0F1C30]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0076FC]/40"
+                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
                 placeholder="••••••••"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-[#0F1C30]/70">Yangi parol</label>
+              <label className="text-sm font-medium text-[#12213D]/70">Yangi parol</label>
               <input
                 type="password"
                 required
                 minLength={6}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 w-full border border-[#0F1C30]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0076FC]/40"
+                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
                 placeholder="Kamida 6 ta belgi"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-[#0F1C30]/70">
+              <label className="text-sm font-medium text-[#12213D]/70">
                 Yangi parolni tasdiqlang
               </label>
               <input
@@ -189,7 +189,7 @@ export default function AccountSettings() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full border border-[#0F1C30]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0076FC]/40"
+                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
                 placeholder="••••••••"
               />
             </div>
@@ -199,7 +199,7 @@ export default function AccountSettings() {
             <button
               type="submit"
               disabled={pwSaving}
-              className="flex items-center gap-2 bg-[#0F1C30] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#0F1C30]/85 transition disabled:opacity-60"
+              className="flex items-center gap-2 bg-[#12213D] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#12213D]/85 transition disabled:opacity-60"
             >
               {pwSaved ? (
                 <>

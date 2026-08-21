@@ -16,6 +16,7 @@ import JoinSession from "./pages/JoinSession";
 import SessionTest from "./pages/SessionTest";
 import SessionResults from "./pages/SessionResults";
 import PracticeIndex from "./pages/PracticeIndex";
+import Leaderboard from "./pages/Leaderboard";
 import PracticeSet from "./pages/PracticeSet";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SessionForm from "./pages/admin/SessionForm";
@@ -121,6 +122,14 @@ export default function App() {
             element={
               <DashboardRoute>
                 <History />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <DashboardRoute>
+                <Leaderboard />
               </DashboardRoute>
             }
           />

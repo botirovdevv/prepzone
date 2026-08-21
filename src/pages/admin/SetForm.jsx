@@ -90,53 +90,53 @@ export default function SetForm() {
   };
 
   if (loadingExisting) {
-    return <div className="p-10 text-[#0F1C30]/40">Yuklanmoqda...</div>;
+    return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
   }
 
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <button
         onClick={() => navigate("/admin/sets")}
-        className="flex items-center gap-1.5 text-sm text-[#0F1C30]/50 hover:text-[#0F1C30] mb-6"
+        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
       >
         <LuArrowLeft size={16} /> Amaliyot to'plamlari
       </button>
 
-      <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">
+      <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
         {isEdit ? "To'plamni tahrirlash" : "Yangi amaliyot to'plami"}
       </h1>
-      <p className="text-sm text-[#0F1C30]/50 mb-8">
+      <p className="text-sm text-[#12213D]/50 mb-8">
         Masalan, biror imtihonda (Iyun, Mart, Oktabr) chiqqan savollarni shu yerga joylashtiring.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl border border-[#0F1C30]/8 p-5 space-y-4">
+        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
               To'plam nomi
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Masalan: Iyun 2024 savollari"
-              className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#0F1C30]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
               Tavsif (ixtiyoriy)
             </label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Masalan: 2024-yil iyun oyi imtihonida chiqqan savollar"
-              className="w-full rounded-xl border border-[#0F1C30]/15 px-4 py-2.5 text-sm outline-none focus:border-[#0076FC]"
+              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
             />
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 bg-[#0076FC]/5 border border-[#0076FC]/15 rounded-xl p-4 text-sm text-[#0F1C30]/70">
-          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#0076FC]" />
+        <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
+          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
           <p>
             Bu to'plam <strong>vaqt cheklanmagan</strong> holatda ko'rsatiladi va talaba javob
             belgilashi bilanoq to'g'ri/noto'g'riligini darhol ko'radi — moslashuvchan (Module 1/2)
@@ -145,7 +145,7 @@ export default function SetForm() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="font-bold text-[#0F1C30]">Reading and Writing</h2>
+          <h2 className="font-bold text-[#12213D]">Reading and Writing</h2>
           <QuestionEditor
             title="Savollar"
             questions={rwQuestions}
@@ -155,7 +155,7 @@ export default function SetForm() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="font-bold text-[#0F1C30]">Math</h2>
+          <h2 className="font-bold text-[#12213D]">Math</h2>
           <QuestionEditor title="Savollar" questions={mathQuestions} onChange={setMathQuestions} />
         </div>
 
@@ -168,7 +168,7 @@ export default function SetForm() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-[#0076FC] text-white font-semibold py-3.5 rounded-full hover:bg-[#0062d1] disabled:opacity-60"
+          className="w-full bg-[#087fd1] text-white font-semibold py-3.5 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
         >
           {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "To'plamni yaratish"}
         </button>

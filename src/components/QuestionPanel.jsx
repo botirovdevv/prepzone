@@ -59,8 +59,18 @@ export default function QuestionPanel({
         <HighlightableText
           key={`prompt-${question.id}`}
           text={question.prompt}
-          className="text-[17px] leading-7 text-gray-900 font-medium mt-5 mb-6 select-text"
+          className="text-[17px] leading-7 text-gray-900 font-medium mt-5 mb-4 select-text"
         />
+
+        {question.image && (
+          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <img
+              src={question.image}
+              alt="Savolga oid rasm"
+              className="max-w-full max-h-80 mx-auto object-contain rounded"
+            />
+          </div>
+        )}
 
         <div className="space-y-3">
           {question.choices.map((choice) => {

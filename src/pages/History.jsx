@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
+import { LuCalendar, LuChevronRight, LuTrophy, LuClock, LuChartLine } from "react-icons/lu";
+import PageHero from "../components/PageHero";
 
 export default function History() {
   const { user, loading } = useAuth();
@@ -17,8 +19,6 @@ export default function History() {
 
   useEffect(() => {
     if (!user) return;
-    // Faqat "uid" bo'yicha filtrlaymiz — bu Firestore'da composite index
-    // talab qilmaydi. Sanaga ko'ra saralashni JS tomonda qilamiz.
     const qy = query(collection(db, "results"), where("uid", "==", user.uid));
     const unsub = onSnapshot(
       qy,
@@ -32,9 +32,8 @@ export default function History() {
         setAttempts(list);
         setFetching(false);
       },
-      (err) => {
+      () => {
         setError("Natijalarni yuklashda xatolik yuz berdi.");
-        console.error(err);
         setFetching(false);
       }
     );
@@ -43,73 +42,103 @@ export default function History() {
 
   if (loading || fetching) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-9 w-9 border-2 border-[#12213D]/10 border-t-[#087fd1]" />
       </div>
     );
   }
 
+  const bestScore = attempts.reduce((max, a) => Math.max(max, a.total || 0), 0);
+  const avgScore = attempts.length
+    ? Math.round(attempts.reduce((s, a) => s + (a.total || 0), 0) / attempts.length)
+    : 0;
+
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Mening natijalarim</h1>
-          <Link to="/" className="text-sm text-[#375DFB]">
-            ← Bosh sahifa
-          </Link>
-        </div>
+    <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
+      <PageHero
+        eyebrow="SHAXSIY STATISTIKA"
+        icon={LuChartLine}
+        title="Mening natijalarim"
+        subtitle="Barcha topshirgan testlaringiz shu yerda — vaqt bo'yicha tartiblangan."
+        stats={
+          attempts.length > 0
+            ? [
+                { icon: LuTrophy, value: bestScore, label: "eng yaxshi", iconClass: "bg-amber-500/10 text-amber-600" },
+                { icon: LuChartLine, value: avgScore, label: "o'rtacha", iconClass: "bg-[#087fd1]/10 text-[#087fd1]" },
+              ]
+            : undefined
+        }
+      />
 
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && (
+        <p className="text-red-600 bg-red-50 border border-red-100 p-4 rounded-2xl mb-4 text-sm">{error}</p>
+      )}
 
-        {attempts.length === 0 && !error && (
-          <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">
-            <p>Hali birorta test topshirmagansiz.</p>
-            <button
-              onClick={() => navigate("/sat/select")}
-              className="mt-4 bg-[#375DFB] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#2b4bd9]"
-            >
-              Testni boshlash
-            </button>
+      {attempts.length === 0 && !error ? (
+        <div className="bg-white rounded-[24px] border border-[#12213D]/7 p-14 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center mx-auto mb-5">
+            <LuTrophy size={28} />
           </div>
-        )}
-
-        <div className="space-y-3">
+          <p className="text-[#12213D]/55 font-medium mb-6">Hali birorta test topshirmagansiz.</p>
+          <button
+            onClick={() => navigate("/sat/select")}
+            className="bg-[#087fd1] text-white px-7 py-3 rounded-full font-semibold hover:bg-[#066fb8] transition shadow-[0_10px_24px_-10px_rgba(47,111,237,0.6)]"
+          >
+            Testni boshlash
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-3">
           {attempts.map((a) => {
-            const date = a.createdAt?.toDate
-              ? a.createdAt.toDate()
-              : null;
+            const date = a.createdAt?.toDate ? a.createdAt.toDate() : null;
+            const isBest = attempts.length > 1 && a.total === bestScore;
             return (
               <Link
                 key={a.id}
                 to={`/sat/results/${a.id}`}
-                className="block bg-white rounded-xl shadow p-5 hover:shadow-md transition"
+                className="group flex items-center gap-4 bg-white rounded-[20px] border border-[#12213D]/7 p-4 sm:p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.18)] transition-all duration-200"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      {date
-                        ? date.toLocaleString("uz-UZ", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "Sana noma'lum"}
+                <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 flex items-center justify-center text-[#087fd1] shrink-0">
+                  <LuCalendar size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[15px] font-bold text-[#12213D] truncate">
+                      {a.terminated ? "SAT Practice Test (to'xtatildi)" : "SAT Practice Test"}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      SAT Practice Test
-                    </p>
+                    {isBest && (
+                      <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        <LuTrophy size={10} /> Rekord
+                      </span>
+                    )}
                   </div>
-                  <div className="text-3xl font-black text-[#375DFB]">
-                    {a.total}
+                  <div className="flex items-center gap-1.5 text-xs text-[#12213D]/40 mt-1">
+                    <LuClock size={12} />
+                    {date
+                      ? date.toLocaleString("uz-UZ", {
+                          day: "2-digit",
+                          month: "long",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Noma'lum"}
                   </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-bold tracking-wide text-[#12213D]/35">Ball</p>
+                    <p className="font-display text-2xl font-black text-[#12213D]">{a.total}</p>
+                  </div>
+                  <LuChevronRight
+                    size={18}
+                    className="text-[#12213D]/25 group-hover:text-[#087fd1] group-hover:translate-x-0.5 transition-all"
+                  />
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 }

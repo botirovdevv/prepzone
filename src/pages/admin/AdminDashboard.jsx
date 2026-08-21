@@ -48,23 +48,23 @@ export default function AdminDashboard() {
     <div className="p-6 lg:p-10 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#0076FC] mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#087fd1] mb-1">
             Admin panel
           </p>
-          <h1 className="text-2xl font-extrabold text-[#0F1C30]">Vaqti belgilangan testlar</h1>
+          <h1 className="text-2xl font-extrabold text-[#12213D]">Vaqti belgilangan testlar</h1>
         </div>
         <button
           onClick={() => navigate("/admin/sessions/new")}
-          className="flex items-center gap-2 bg-[#0076FC] text-white font-semibold px-4 py-2.5 rounded-full hover:bg-[#0062d1]"
+          className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-4 py-2.5 rounded-full hover:bg-[#066fb8]"
         >
           <LuPlus size={17} /> Yangi test
         </button>
       </div>
 
       {loading ? (
-        <p className="text-[#0F1C30]/40 text-sm">Yuklanmoqda...</p>
+        <p className="text-[#12213D]/40 text-sm">Yuklanmoqda...</p>
       ) : sessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#0F1C30]/8 p-10 text-center text-[#0F1C30]/50">
+        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-10 text-center text-[#12213D]/50">
           Hali birorta test tashkil qilinmagan.
         </div>
       ) : (
@@ -75,24 +75,24 @@ export default function AdminDashboard() {
               <Link
                 key={s.id}
                 to={`/admin/sessions/${s.id}/monitor`}
-                className="flex items-center gap-4 bg-white rounded-2xl border border-[#0F1C30]/8 p-5 hover:border-[#0076FC]/40 hover:shadow-md transition"
+                className="flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/8 p-5 hover:border-[#087fd1]/40 hover:shadow-md transition"
               >
-                <div className="w-11 h-11 rounded-xl bg-[#0076FC]/10 text-[#0076FC] flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0">
                   <LuCalendarClock size={19} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-bold text-[#0F1C30] truncate">{s.title}</p>
+                    <p className="font-bold text-[#12213D] truncate">{s.title}</p>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${badge.color}`}>
                       {badge.text}
                     </span>
                   </div>
-                  <p className="text-sm text-[#0F1C30]/50">
+                  <p className="text-sm text-[#12213D]/50">
                     {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)} · Kod:{" "}
-                    <span className="font-mono font-bold text-[#0F1C30]/70">{s.code}</span>
+                    <span className="font-mono font-bold text-[#12213D]/70">{s.code}</span>
                   </p>
                 </div>
-                <LuChevronRight size={18} className="text-[#0F1C30]/30 shrink-0" />
+                <LuChevronRight size={18} className="text-[#12213D]/30 shrink-0" />
               </Link>
             );
           })}

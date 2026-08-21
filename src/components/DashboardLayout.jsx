@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }) {
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC]">
+    <div className="min-h-screen bg-[#F6F7FB]">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}

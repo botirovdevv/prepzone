@@ -40,20 +40,20 @@ export default function JoinSession() {
   return (
     <div className="p-6 lg:p-10 max-w-md mx-auto">
       <div className="text-center mb-6">
-        <div className="w-14 h-14 rounded-full bg-[#0076FC]/10 text-[#0076FC] flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 rounded-full bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center mx-auto mb-4">
           <LuKeyRound size={24} />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">
+        <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
           Kirish kodi bilan test
         </h1>
-        <p className="text-sm text-[#0F1C30]/50">
+        <p className="text-sm text-[#12213D]/50">
           O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiriting.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-[#0F1C30]/8 p-6 space-y-4"
+        className="bg-white rounded-2xl border border-[#12213D]/8 p-6 space-y-4"
       >
         <input
           value={code}
@@ -61,13 +61,13 @@ export default function JoinSession() {
           inputMode="numeric"
           autoFocus
           placeholder="000000"
-          className="w-full text-center tracking-[0.5em] text-3xl font-black font-mono rounded-xl border border-[#0F1C30]/15 py-4 outline-none focus:border-[#0076FC]"
+          className="w-full text-center tracking-[0.5em] text-3xl font-black font-mono rounded-xl border border-[#12213D]/15 py-4 outline-none focus:border-[#087fd1]"
         />
         {error && <p className="text-sm text-red-600 text-center">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-[#0076FC] text-white font-semibold py-3 rounded-full hover:bg-[#0062d1] disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2 bg-[#087fd1] text-white font-semibold py-3 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
         >
           {loading ? "Tekshirilmoqda..." : "Davom etish"}
           {!loading && <LuArrowRight size={17} />}

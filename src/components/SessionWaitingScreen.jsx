@@ -27,7 +27,7 @@ export default function SessionWaitingScreen({ title, scheduledAt, onReady }) {
   }, [scheduledAt]);
 
   return (
-    <div className="min-h-screen bg-[#0F1C30] text-white flex flex-col items-center justify-center px-6 text-center">
+    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 text-center">
       <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
         <LuClock size={32} />
       </div>

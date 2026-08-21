@@ -22,6 +22,7 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
+import { maybeUpdateLeaderboard } from "../utils/leaderboard";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -489,6 +490,7 @@ export default function SessionTest() {
         totalScore: total,
         ...(extraState.terminated ? {} : { status: "finished", finishedAt: serverTimestamp() }),
       });
+      maybeUpdateLeaderboard(user, total);
       navigate(`/session/${sessionId}/results`, {
         state: { results: finalResults, sections: sectionsMeta, total, sessionTitle: session.title, ...extraState },
       });

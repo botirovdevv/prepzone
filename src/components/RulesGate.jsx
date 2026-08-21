@@ -52,7 +52,7 @@ export default function RulesGate({ onStart, isResume }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1C30] text-white flex flex-col items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-xl">
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4">
@@ -90,7 +90,7 @@ export default function RulesGate({ onStart, isResume }) {
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-[#0076FC]"
+            className="mt-1 w-4 h-4 accent-[#087fd1]"
           />
           <span className="text-sm text-white/80">
             Yuqoridagi xavfsizlik qoidalarini o'qib chiqdim va roziman.
@@ -109,7 +109,7 @@ export default function RulesGate({ onStart, isResume }) {
           disabled={!agreed || starting}
           className={`w-full group flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition ${
             agreed
-              ? "bg-[#0076FC] text-white hover:bg-[#0062d1]"
+              ? "bg-[#087fd1] text-white hover:bg-[#066fb8]"
               : "bg-white/10 text-white/40 cursor-not-allowed"
           }`}
         >

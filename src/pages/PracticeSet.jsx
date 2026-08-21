@@ -123,8 +123,8 @@ export default function PracticeSet() {
         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
           <LuCircleCheck size={30} />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-2">{set.title}</h1>
-        <p className="text-[#0F1C30]/60 mb-8">
+        <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">{set.title}</h1>
+        <p className="text-[#12213D]/60 mb-8">
           {answeredCount}/{total} savolga javob berdingiz — {correctCount} tasi to'g'ri
         </p>
         <div className="flex gap-3">
@@ -133,13 +133,13 @@ export default function PracticeSet() {
               setShowSummary(false);
               goTo(0);
             }}
-            className="border border-[#0F1C30]/15 text-[#0F1C30] font-semibold px-5 py-2.5 rounded-full hover:bg-[#0F1C30]/5"
+            className="border border-[#12213D]/15 text-[#12213D] font-semibold px-5 py-2.5 rounded-full hover:bg-[#12213D]/5"
           >
             Qayta ko'rib chiqish
           </button>
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-[#0076FC] text-white font-semibold px-5 py-2.5 rounded-full hover:bg-[#0062d1]"
+            className="bg-[#087fd1] text-white font-semibold px-5 py-2.5 rounded-full hover:bg-[#066fb8]"
           >
             Bosh sahifa
           </button>

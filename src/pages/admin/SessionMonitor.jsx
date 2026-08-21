@@ -106,29 +106,29 @@ export default function SessionMonitor() {
     }
   };
 
-  if (loading) return <div className="p-10 text-[#0F1C30]/40">Yuklanmoqda...</div>;
-  if (!session) return <div className="p-10 text-[#0F1C30]/40">Test topilmadi.</div>;
+  if (loading) return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
+  if (!session) return <div className="p-10 text-[#12213D]/40">Test topilmadi.</div>;
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
       <button
         onClick={() => navigate("/admin")}
-        className="flex items-center gap-1.5 text-sm text-[#0F1C30]/50 hover:text-[#0F1C30] mb-6"
+        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0F1C30] mb-1">{session.title}</h1>
-          <p className="text-sm text-[#0F1C30]/50">
+          <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">{session.title}</h1>
+          <p className="text-sm text-[#12213D]/50">
             {session.accessType === "open" ? "Doimiy ochiq test" : formatDateTime(session.scheduledAt)}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to={`/admin/sessions/${id}/edit`}
-            className="flex items-center gap-1.5 border border-[#0F1C30]/15 text-[#0F1C30] text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-[#0F1C30]/5"
+            className="flex items-center gap-1.5 border border-[#12213D]/15 text-[#12213D] text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-[#12213D]/5"
           >
             <LuPencil size={15} /> Tahrirlash
           </Link>
@@ -143,7 +143,7 @@ export default function SessionMonitor() {
       </div>
 
       {/* Kirish kodi */}
-      <div className="bg-[#0F1C30] text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+      <div className="bg-[#12213D] text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
         <div>
           <p className="text-xs uppercase tracking-widest text-white/50 mb-1">
             {session.accessType === "open" ? "Kirish kodi (ixtiyoriy — test doimiy ochiq)" : "Kirish kodi"}
@@ -170,9 +170,9 @@ export default function SessionMonitor() {
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Ishtirokchilar */}
         <div className="lg:col-span-3">
-          <h2 className="font-bold text-[#0F1C30] mb-3">Ishtirokchilar ({participants.length})</h2>
+          <h2 className="font-bold text-[#12213D] mb-3">Ishtirokchilar ({participants.length})</h2>
           {participants.length === 0 ? (
-            <p className="text-sm text-[#0F1C30]/40 bg-white rounded-xl border border-[#0F1C30]/8 p-5">
+            <p className="text-sm text-[#12213D]/40 bg-white rounded-xl border border-[#12213D]/8 p-5">
               Hali hech kim kirmadi.
             </p>
           ) : (
@@ -183,16 +183,16 @@ export default function SessionMonitor() {
                 return (
                   <div
                     key={p.uid}
-                    className="flex items-center gap-3 bg-white rounded-xl border border-[#0F1C30]/8 p-3.5"
+                    className="flex items-center gap-3 bg-white rounded-xl border border-[#12213D]/8 p-3.5"
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
                       <Icon size={15} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#0F1C30] truncate">
+                      <p className="text-sm font-semibold text-[#12213D] truncate">
                         {p.name || p.email}
                       </p>
-                      <p className="text-xs text-[#0F1C30]/40">
+                      <p className="text-xs text-[#12213D]/40">
                         {meta.text}
                         {typeof p.totalScore === "number" ? ` · ${p.totalScore} ball` : ""}
                       </p>
@@ -211,9 +211,9 @@ export default function SessionMonitor() {
 
         {/* Jonli xavfsizlik hodisalari */}
         <div className="lg:col-span-2">
-          <h2 className="font-bold text-[#0F1C30] mb-3">Xavfsizlik hodisalari</h2>
+          <h2 className="font-bold text-[#12213D] mb-3">Xavfsizlik hodisalari</h2>
           {events.length === 0 ? (
-            <p className="text-sm text-[#0F1C30]/40 bg-white rounded-xl border border-[#0F1C30]/8 p-5">
+            <p className="text-sm text-[#12213D]/40 bg-white rounded-xl border border-[#12213D]/8 p-5">
               Hozircha hech qanday hodisa yo'q.
             </p>
           ) : (
@@ -221,7 +221,7 @@ export default function SessionMonitor() {
               {events.map((e) => (
                 <div key={e.id} className="bg-white rounded-xl border border-red-100 p-3 text-sm">
                   <p className="font-semibold text-red-600">{EVENT_LABEL[e.type] || e.type}</p>
-                  <p className="text-[#0F1C30]/60 text-xs mt-0.5">
+                  <p className="text-[#12213D]/60 text-xs mt-0.5">
                     {e.name} · {formatDateTime(e.at)}
                   </p>
                 </div>

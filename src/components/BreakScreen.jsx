@@ -31,7 +31,7 @@ export default function BreakScreen({ onContinue }) {
   }, [secondsLeft]);
 
   return (
-    <div className="min-h-screen bg-[#0F1C30] text-white flex flex-col items-center justify-center px-6 text-center">
+    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 text-center">
       <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
         <LuCoffee size={36} />
       </div>
@@ -52,7 +52,7 @@ export default function BreakScreen({ onContinue }) {
 
       <button
         onClick={onContinue}
-        className="group flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#0076FC] text-white font-semibold hover:bg-[#0062d1] transition"
+        className="group flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#087fd1] text-white font-semibold hover:bg-[#066fb8] transition"
       >
         Davom etish
         <LuArrowRight size={18} className="group-hover:translate-x-0.5 transition" />
