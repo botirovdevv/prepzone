@@ -1,84 +1,78 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-// Berilgan matnni belgilangan (highlight) oraliqlarga ko'ra bo'lakларга
-// ajratadi. ranges: [{start, end}] — bir-biriga kesishmaydigan, tartiblangan.
-function buildSegments(text, ranges) {
-  if (ranges.length === 0) return [{ text, highlighted: false, start: 0, end: text.length }];
-  const sorted = [...ranges].sort((a, b) => a.start - b.start);
-  const segments = [];
-  let cursor = 0;
-  for (const r of sorted) {
-    if (r.start > cursor) {
-      segments.push({ text: text.slice(cursor, r.start), highlighted: false, start: cursor, end: r.start });
-    }
-    segments.push({ text: text.slice(r.start, r.end), highlighted: true, start: r.start, end: r.end });
-    cursor = r.end;
-  }
-  if (cursor < text.length) {
-    segments.push({ text: text.slice(cursor), highlighted: false, start: cursor, end: text.length });
-  }
-  return segments;
+// Oddiy (rich bo'lmagan) matnni HTML sifatida xavfsiz ko'rsatish uchun
+// maxsus belgilarni escape qilamiz. Qatorlar orasidagi bo'shliq CSS
+// (`whitespace-pre-line`) orqali saqlanadi, shuning uchun "\n" ni
+// o'zgartirishning hojati yo'q.
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Kesishgan/tegib turgan oraliqlarni birlashtiradi.
-function mergeRanges(ranges) {
-  const sorted = [...ranges].sort((a, b) => a.start - b.start);
-  const merged = [];
-  for (const r of sorted) {
-    const last = merged[merged.length - 1];
-    if (last && r.start <= last.end) {
-      last.end = Math.max(last.end, r.end);
-    } else {
-      merged.push({ ...r });
-    }
-  }
-  return merged;
-}
+/**
+ * Talaba matnni sichqoncha bilan belgilab, "highlight" qila oladigan
+ * komponent. `rich` true bo'lsa, `text` allaqachon (admin panelida
+ * tayyorlangan, bold/italic/underline kabi teglarni o'z ichiga olishi
+ * mumkin bo'lgan) xavfsiz HTML deb qabul qilinadi va o'zgarishsiz
+ * ko'rsatiladi. Aks holda oddiy matn deb hisoblab escape qilinadi.
+ *
+ * Belgilash to'g'ridan-to'g'ri DOM ustida ishlaydi (character-offset
+ * hisoblash o'rniga), shuning uchun ichida HTML formatlash (qalin,
+ * tagiga chizish) bo'lgan taqdirda ham to'g'ri ishlaydi.
+ */
+export default function HighlightableText({ text, className, rich = false, as: Tag = "div" }) {
+  const containerRef = useRef(null);
+  const baseHtml = rich ? text || "" : escapeHtml(text || "");
+  const [html, setHtml] = useState(baseHtml);
 
-export default function HighlightableText({ text, className, as: Tag = "p" }) {
-  const [ranges, setRanges] = useState([]);
+  // Savol/passage almashganda (masalan, keyingi savolga o'tilganda)
+  // belgilashlarni tozalab, asl matnni qayta o'rnatamiz.
+  useEffect(() => {
+    setHtml(baseHtml);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, rich]);
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = () => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.toString().trim() === "") return;
-    const container = e.currentTarget;
+    const container = containerRef.current;
     const range = selection.getRangeAt(0);
-    if (!container.contains(range.commonAncestorContainer)) return;
+    if (!container || !container.contains(range.commonAncestorContainer)) return;
 
-    // Tanlangan matnning butun matn ichidagi belgi (character) pozitsiyasini topamiz.
-    const preRange = document.createRange();
-    preRange.selectNodeContents(container);
-    preRange.setEnd(range.startContainer, range.startOffset);
-    const start = preRange.toString().length;
-    const end = start + range.toString().length;
-
+    const mark = document.createElement("mark");
+    mark.className = "bg-yellow-200 rounded-sm cursor-pointer";
+    mark.title = "Belgini olib tashlash uchun bosing";
+    try {
+      range.surroundContents(mark);
+    } catch {
+      // Tanlangan qism bir nechta elementning chegarasidan o'tib ketsa
+      // (masalan, qalin matnning yarmi tanlansa), surroundContents
+      // ishlamaydi — bunday holda tanlangan qismni ajratib olib,
+      // <mark> ichiga joylashtiramiz.
+      const fragment = range.extractContents();
+      mark.appendChild(fragment);
+      range.insertNode(mark);
+    }
     selection.removeAllRanges();
-    if (end <= start) return;
-    setRanges((prev) => mergeRanges([...prev, { start, end }]));
+    setHtml(container.innerHTML);
   };
 
-  const removeRange = (start, end) => {
-    setRanges((prev) => prev.filter((r) => !(r.start === start && r.end === end)));
+  const handleClick = (e) => {
+    const mark = e.target.closest("mark");
+    if (!mark || !containerRef.current?.contains(mark)) return;
+    const parent = mark.parentNode;
+    while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+    parent.removeChild(mark);
+    parent.normalize();
+    setHtml(containerRef.current.innerHTML);
   };
-
-  const segments = buildSegments(text, ranges);
 
   return (
-    <Tag className={className} onMouseUp={handleMouseUp}>
-      {segments.map((seg, i) =>
-        seg.highlighted ? (
-          <mark
-            key={i}
-            onClick={() => removeRange(seg.start, seg.end)}
-            className="bg-yellow-200 rounded-sm cursor-pointer"
-            title="Belgini olib tashlash uchun bosing"
-          >
-            {seg.text}
-          </mark>
-        ) : (
-          <span key={i}>{seg.text}</span>
-        )
-      )}
-    </Tag>
+    <Tag
+      ref={containerRef}
+      className={className}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }

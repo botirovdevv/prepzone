@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
@@ -7,6 +7,7 @@ import { generateUniqueCode } from "../../utils/sessionCode";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
+import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
 function toDateInputValue(d) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -42,6 +43,35 @@ export default function SessionForm() {
   const [loadingExisting, setLoadingExisting] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Sahifaning "saqlangan" holatini olib qo'yamiz, shu bilan taqqoslab
+  // saqlanmagan o'zgarish bor-yo'qligini bilamiz.
+  const savedSnapshotRef = useRef(null);
+  const currentSnapshot = JSON.stringify({
+    title,
+    accessType,
+    dateStr,
+    timeStr,
+    rwDuration,
+    mathDuration,
+    rwM1,
+    rwM2E,
+    rwM2H,
+    rwM2Mix,
+    mathM1,
+    mathM2E,
+    mathM2H,
+    mathM2Mix,
+  });
+  useEffect(() => {
+    if (!loadingExisting && savedSnapshotRef.current === null) {
+      savedSnapshotRef.current = currentSnapshot;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingExisting, currentSnapshot]);
+
+  const isDirty = savedSnapshotRef.current !== null && currentSnapshot !== savedSnapshotRef.current;
+  useUnsavedChangesWarning(isDirty);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -163,7 +193,10 @@ export default function SessionForm() {
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <button
-        onClick={() => navigate("/admin")}
+        onClick={() => {
+          if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
+          navigate("/admin");
+        }}
         className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
       >
         <LuArrowLeft size={16} /> Barcha testlar

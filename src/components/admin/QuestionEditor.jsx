@@ -13,6 +13,7 @@ import {
 } from "react-icons/lu";
 import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { parseBulkQuestions } from "../../utils/parseBulkQuestions";
+import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
 
 const emptyForm = {
   passage: "",
@@ -79,7 +80,7 @@ export default function QuestionEditor({
     if (!form.prompt.trim() || form.choices.some((c) => !c.trim())) return;
     const q = {
       id: nextId(),
-      passage: showPassage ? form.passage.trim() : "",
+      passage: showPassage && !isRichTextEmpty(form.passage) ? form.passage : "",
       prompt: form.prompt.trim(),
       choices: form.choices.map((text, i) => ({ label: "ABCD"[i], text: text.trim() })),
       correctAnswer: form.correctAnswer,
@@ -221,13 +222,17 @@ export default function QuestionEditor({
             {mode === "single" ? (
               <>
                 {showPassage && (
-                  <textarea
-                    value={form.passage}
-                    onChange={(e) => setForm({ ...form, passage: e.target.value })}
-                    placeholder="Passage (matn) — ixtiyoriy"
-                    rows={3}
-                    className="w-full rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1]"
-                  />
+                  <div>
+                    <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">
+                      Passage (matn) — ixtiyoriy
+                    </label>
+                    <RichTextEditor
+                      key={questions.length}
+                      value={form.passage}
+                      onChange={(html) => setForm((f) => ({ ...f, passage: html }))}
+                      placeholder="Passage matnini shu yerga kiriting... Kerakli qismni belgilab, yuqoridagi B/I/U tugmalari bilan formatlang."
+                    />
+                  </div>
                 )}
 
                 {templates && templates.length > 0 && (

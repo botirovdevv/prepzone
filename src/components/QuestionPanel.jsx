@@ -20,6 +20,7 @@ export default function QuestionPanel({
           <HighlightableText
             key={`passage-${question.id}`}
             text={question.passage}
+            rich
             className="text-[17px] leading-8 text-gray-900 whitespace-pre-line"
           />
         </div>
@@ -52,6 +53,7 @@ export default function QuestionPanel({
           <HighlightableText
             key={`inline-passage-${question.id}`}
             text={question.passage}
+            rich
             className="text-[17px] leading-8 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
           />
         )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
+import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
 export default function SetForm() {
   const { user } = useAuth();
@@ -21,6 +22,22 @@ export default function SetForm() {
   const [loadingExisting, setLoadingExisting] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Sahifa ochilganda (yoki mavjud to'plam yuklab bo'linganda) holatning
+  // "saqlangan" nusxasini olib qo'yamiz — shu nusxa bilan taqqoslab,
+  // hozirgi holatda saqlanmagan o'zgarish bor-yo'qligini bilamiz.
+  const savedSnapshotRef = useRef(null);
+  useEffect(() => {
+    if (!loadingExisting && savedSnapshotRef.current === null) {
+      savedSnapshotRef.current = JSON.stringify({ title, description, rwQuestions, mathQuestions });
+    }
+  }, [loadingExisting, title, description, rwQuestions, mathQuestions]);
+
+  const isDirty =
+    savedSnapshotRef.current !== null &&
+    JSON.stringify({ title, description, rwQuestions, mathQuestions }) !== savedSnapshotRef.current;
+
+  useUnsavedChangesWarning(isDirty);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -97,7 +114,10 @@ export default function SetForm() {
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <button
-        onClick={() => navigate("/admin/sets")}
+        onClick={() => {
+          if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
+          navigate("/admin/sets");
+        }}
         className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
       >
         <LuArrowLeft size={16} /> Amaliyot to'plamlari
