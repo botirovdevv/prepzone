@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, doc, getDoc } from "firebase/firesto
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
-import HandIcon from "../../public/waving-hand-icon.png"
+import HandIcon from '../../public/waving-hand-icon.png'
 import {
   LuNotebookPen,
   LuKeyRound,
@@ -74,7 +74,7 @@ export default function Dashboard() {
               <img
                 src={HandIcon}
                 alt="Waving hand"
-                className="w-8 h-8 sm:w-9 sm:h-9 inline-block object-contain"
+                className="w-7 h-7 sm:w-8 sm:h-8 inline-block object-contain"
               />
             </h1>
           </div>

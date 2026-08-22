@@ -5,6 +5,7 @@ import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import { generateUniqueCode } from "../../utils/sessionCode";
 import QuestionEditor from "../../components/admin/QuestionEditor";
+import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
 
 function toDateInputValue(d) {
@@ -32,9 +33,11 @@ export default function SessionForm() {
   const [rwM1, setRwM1] = useState([]);
   const [rwM2E, setRwM2E] = useState([]);
   const [rwM2H, setRwM2H] = useState([]);
+  const [rwM2Mix, setRwM2Mix] = useState([]);
   const [mathM1, setMathM1] = useState([]);
   const [mathM2E, setMathM2E] = useState([]);
   const [mathM2H, setMathM2H] = useState([]);
+  const [mathM2Mix, setMathM2Mix] = useState([]);
 
   const [loadingExisting, setLoadingExisting] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -61,12 +64,14 @@ export default function SessionForm() {
         setRwM1(rw.module1 || []);
         setRwM2E(rw.module2Easy || []);
         setRwM2H(rw.module2Hard || []);
+        setRwM2Mix(rw.module2Mixed || []);
       }
       if (math) {
         setMathDuration(math.durationMin || 35);
         setMathM1(math.module1 || []);
         setMathM2E(math.module2Easy || []);
         setMathM2H(math.module2Hard || []);
+        setMathM2Mix(math.module2Mixed || []);
       }
       setLoadingExisting(false);
     });
@@ -101,6 +106,7 @@ export default function SessionForm() {
         module1: rwM1,
         module2Easy: rwM2E,
         module2Hard: rwM2H,
+        module2Mixed: rwM2Mix,
       });
     }
     if (mathM1.length > 0) {
@@ -113,6 +119,7 @@ export default function SessionForm() {
         module1: mathM1,
         module2Easy: mathM2E,
         module2Hard: mathM2H,
+        module2Mixed: mathM2Mix,
       });
     }
 
@@ -250,11 +257,15 @@ export default function SessionForm() {
         <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
           <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
           <p>
-            Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing. Agar shu bo'lim
-            uchun <strong>Module 2 (Oson)</strong> va <strong>Module 2 (Qiyin)</strong> savollarini
-            ham qo'shsangiz, test moslashuvchan (adaptiv) bo'ladi: Module 1 natijasiga qarab
-            talaba avtomatik oson yoki qiyin Module 2'ga yo'naltiriladi. Module 2 qo'shilmasa, shu
-            bo'lim faqat Module 1 asosida baholanadi.
+            Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing (bu — barcha
+            talabalar oladigan aralash qiyinlikdagi bazaviy modul). Agar shu bo'lim uchun{" "}
+            <strong>Module 2 (Oson)</strong> va <strong>Module 2 (Qiyin)</strong> ikkalasini ham
+            to'ldirsangiz, test haqiqiy moslashuvchan (adaptiv) bo'ladi: Module 1 natijasiga qarab
+            talaba avtomatik oson yoki qiyin versiyaga yo'naltiriladi. Agar sizda faqat bitta,
+            filial qilinmagan Module 2 to'plami bo'lsa (masalan real testdan olingan, qiyinligi
+            aralash savollar) — ularni <strong>Module 2 — Aralash</strong> bo'limiga qo'shing;
+            bunda barcha talabalar Module 1 natijasidan qat'iy nazar shu bitta to'plamni oladi.
+            Hech qanday Module 2 qo'shilmasa, bo'lim faqat Module 1 asosida baholanadi.
           </p>
         </div>
 
@@ -273,18 +284,37 @@ export default function SessionForm() {
               />
             </div>
           </div>
-          <QuestionEditor title="Module 1" questions={rwM1} onChange={setRwM1} showPassage />
+          <QuestionEditor
+            title="Module 1"
+            questions={rwM1}
+            onChange={setRwM1}
+            showPassage
+            domainOptions={RW_DOMAINS}
+            promptTemplates={RW_PROMPT_TEMPLATES}
+          />
           <QuestionEditor
             title="Module 2 — Oson (ixtiyoriy)"
             questions={rwM2E}
             onChange={setRwM2E}
             showPassage
+            domainOptions={RW_DOMAINS}
+            promptTemplates={RW_PROMPT_TEMPLATES}
           />
           <QuestionEditor
             title="Module 2 — Qiyin (ixtiyoriy)"
             questions={rwM2H}
             onChange={setRwM2H}
             showPassage
+            domainOptions={RW_DOMAINS}
+            promptTemplates={RW_PROMPT_TEMPLATES}
+          />
+          <QuestionEditor
+            title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
+            questions={rwM2Mix}
+            onChange={setRwM2Mix}
+            showPassage
+            domainOptions={RW_DOMAINS}
+            promptTemplates={RW_PROMPT_TEMPLATES}
           />
         </div>
 
@@ -313,6 +343,11 @@ export default function SessionForm() {
             title="Module 2 — Qiyin (ixtiyoriy)"
             questions={mathM2H}
             onChange={setMathM2H}
+          />
+          <QuestionEditor
+            title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
+            questions={mathM2Mix}
+            onChange={setMathM2Mix}
           />
         </div>
 

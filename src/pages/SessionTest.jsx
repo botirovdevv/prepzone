@@ -54,6 +54,7 @@ const FALLBACK_SECTION = {
   module1: [],
   module2Easy: [],
   module2Hard: [],
+  module2Mixed: [],
 };
 
 export default function SessionTest() {
@@ -126,10 +127,18 @@ export default function SessionTest() {
 
   const section = session?.sections?.[groupIndex] || FALLBACK_SECTION;
   const hasModule2 =
+    (section.module2Mixed && section.module2Mixed.length > 0) ||
     (section.module2Easy && section.module2Easy.length > 0) ||
     (section.module2Hard && section.module2Hard.length > 0);
 
+  // Module 2 savollarini tanlash:
+  //  - Agar "Aralash" (filial qilinmagan) to'plam bo'lsa, barcha talabalar
+  //    Module 1 natijasidan qat'iy nazar shu bitta to'plamni oladi.
+  //  - Aks holda, Module 1 natijasiga qarab (decideRoute) Oson yoki Qiyin
+  //    to'plamga yo'naltiriladi; agar tanlangan to'plam bo'sh bo'lsa,
+  //    mavjud bo'lgan yagona to'plamga tushadi (yarim-adaptiv fallback).
   const pickModule2Questions = () => {
+    if (section.module2Mixed && section.module2Mixed.length > 0) return section.module2Mixed;
     const preferred = route === "hard" ? section.module2Hard : section.module2Easy;
     if (preferred && preferred.length > 0) return preferred;
     if (section.module2Hard && section.module2Hard.length > 0) return section.module2Hard;

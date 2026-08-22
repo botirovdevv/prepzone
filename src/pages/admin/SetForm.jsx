@@ -4,6 +4,7 @@ import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "fir
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
+import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
 
 export default function SetForm() {
@@ -151,6 +152,8 @@ export default function SetForm() {
             questions={rwQuestions}
             onChange={setRwQuestions}
             showPassage
+            domainOptions={RW_DOMAINS}
+            promptTemplates={RW_PROMPT_TEMPLATES}
           />
         </div>
 

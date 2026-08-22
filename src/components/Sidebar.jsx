@@ -20,8 +20,8 @@ import {
 import { AiFillHome } from "react-icons/ai";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
-import logo from '../../public/Logo.png';
-import LogoMark from '../../public/Logo-sm.png';
+import logo from "../../public/Logo.png";
+import LogoMark from "../../public/Logo-sm.png";
 
 const NAV_GROUPS = [
   {
@@ -35,7 +35,7 @@ const NAV_GROUPS = [
     label: "PRACTICE",
     items: [
       { to: "/sat/select", label: "Practise tests", icon: LuFileText, iconColor: "text-[#94a3b8]" },
-      { to: "/practice", label: "Practise", icon: LuZap, iconColor: "text-[#e07a5f]" },
+      { to: "/practice", label: "Exam questions", icon: LuZap, iconColor: "text-[#e07a5f]" },
       { to: "/join", label: "Mock with key", icon: LuKeyRound, iconColor: "text-[#94a3b8]" },
     ],
   },
@@ -86,18 +86,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         </NavLink>
       </div>
 
+      {/* Badge / Pill section */}
       {!collapsed && (
         <div className="px-4 mb-3 shrink-0">
           <span className="inline-flex items-center gap-2 text-xs font-semibold text-[#12213D] bg-[#F1F1ED] px-3.5 py-1.5 rounded-full">
-            <LuMapPin size={20} className="text-[#0096c7] fill-[#0096c7] stroke-white" />
+            <LuMapPin size={14} className="text-[#0096c7] fill-[#0096c7] stroke-white" />
             <span>
-              DSAT prep
+              <strong className="font-extrabold text-[#12213D]">DSAT</strong> prep
             </span>
           </span>
         </div>
       )}
 
-      {/* Nav */}
+      {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto px-2 space-y-4 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="w-full">
@@ -114,8 +115,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
                     <div
                       key={item.label}
                       title={collapsed ? `${item.label} — tez orada` : undefined}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#12213D]/30 cursor-not-allowed ${collapsed ? "justify-center" : ""
-                        }`}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#12213D]/30 cursor-not-allowed ${
+                        collapsed ? "justify-center" : ""
+                      }`}
                     >
                       <Icon size={18} className={`shrink-0 ${item.iconColor || ""}`} />
                       {!collapsed && (
@@ -136,10 +138,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
                     onClick={onCloseMobile}
                     title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center" : ""
-                      } ${isActive
-                        ? "bg-[#087fd1]/10 text-[#087fd1]"
-                        : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+                      `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                        collapsed ? "justify-center" : ""
+                      } ${
+                        isActive
+                          ? "bg-[#087fd1]/10 text-[#087fd1]"
+                          : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
                       }`
                     }
                   >
@@ -164,10 +168,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
                 onClick={onCloseMobile}
                 title={collapsed ? "Testlar" : undefined}
                 className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center" : ""
-                  } ${isActive
-                    ? "bg-[#087fd1]/10 text-[#087fd1]"
-                    : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive
+                      ? "bg-[#087fd1]/10 text-[#087fd1]"
+                      : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
                   }`
                 }
               >
@@ -179,10 +185,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
                 onClick={onCloseMobile}
                 title={collapsed ? "Amaliyot to'plamlari" : undefined}
                 className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center" : ""
-                  } ${isActive
-                    ? "bg-[#087fd1]/10 text-[#087fd1]"
-                    : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive
+                      ? "bg-[#087fd1]/10 text-[#087fd1]"
+                      : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
                   }`
                 }
               >
@@ -194,17 +202,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         )}
       </nav>
 
-      {/* Bottom */}
+      {/* Bottom Footer Section */}
       <div className="px-2 pb-3 pt-2 border-t border-[#12213D]/8 space-y-0.5 shrink-0 w-full">
         <NavLink
           to="/account"
           onClick={onCloseMobile}
           title={collapsed ? "Sozlamalar" : undefined}
           className={({ isActive }) =>
-            `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center" : ""
-            } ${isActive
-              ? "bg-[#087fd1]/10 text-[#087fd1]"
-              : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+            `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+              collapsed ? "justify-center" : ""
+            } ${
+              isActive
+                ? "bg-[#087fd1]/10 text-[#087fd1]"
+                : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
             }`
           }
         >
@@ -215,16 +225,18 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         <button
           onClick={handleLogout}
           title={collapsed ? "Chiqish" : undefined}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[#12213D]/65 hover:bg-red-50 hover:text-red-600 transition-all ${collapsed ? "justify-center" : ""
-            }`}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[#12213D]/65 hover:bg-red-50 hover:text-red-600 transition-all ${
+            collapsed ? "justify-center" : ""
+          }`}
         >
           <LuLogOut size={18} className="shrink-0 text-[#12213D]/65" />
           {!collapsed && <span className="flex-1 text-left truncate">Chiqish</span>}
         </button>
 
         <div
-          className={`w-full flex items-center gap-2.5 mt-2 px-2.5 py-2 rounded-xl bg-[#12213D]/[0.03] ${collapsed ? "justify-center" : ""
-            }`}
+          className={`w-full flex items-center gap-2.5 mt-2 px-2.5 py-2 rounded-xl bg-[#12213D]/[0.03] ${
+            collapsed ? "justify-center" : ""
+          }`}
         >
           <div className="w-7 h-7 rounded-full bg-[#12213D] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
             {initials(displayName)}
@@ -250,13 +262,16 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
 
   return (
     <>
+      {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-white border-r border-[#12213D]/8 z-40 transition-all duration-200 ${collapsed ? "w-[76px]" : "w-64"
-          }`}
+        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-white border-r border-[#12213D]/8 z-40 transition-all duration-200 ${
+          collapsed ? "w-[76px]" : "w-64"
+        }`}
       >
         {content}
       </aside>
 
+      {/* Mobile menu button */}
       <button
         onClick={onOpenMobile}
         className="lg:hidden fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-white shadow-md border border-[#12213D]/10 flex items-center justify-center text-[#12213D]"
@@ -264,6 +279,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         <LuMenu size={18} />
       </button>
 
+      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/40" onClick={onCloseMobile} />
