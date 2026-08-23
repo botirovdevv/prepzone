@@ -5,6 +5,7 @@ import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
+import { MATH_DOMAINS } from "../../data/mathDomains";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
@@ -174,12 +175,19 @@ export default function SetForm() {
             showPassage
             domainOptions={RW_DOMAINS}
             promptTemplates={RW_PROMPT_TEMPLATES}
+            bankSubject="rw"
           />
         </div>
 
         <div className="space-y-3">
           <h2 className="font-bold text-[#12213D]">Math</h2>
-          <QuestionEditor title="Savollar" questions={mathQuestions} onChange={setMathQuestions} />
+          <QuestionEditor
+            title="Savollar"
+            questions={mathQuestions}
+            onChange={setMathQuestions}
+            domainOptions={MATH_DOMAINS}
+            bankSubject="math"
+          />
         </div>
 
         {error && (

@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { generateUniqueCode } from "../../utils/sessionCode";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
+import { MATH_DOMAINS } from "../../data/mathDomains";
 import { LuArrowLeft, LuInfo } from "react-icons/lu";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
@@ -324,6 +325,7 @@ export default function SessionForm() {
             showPassage
             domainOptions={RW_DOMAINS}
             promptTemplates={RW_PROMPT_TEMPLATES}
+            bankSubject="rw"
           />
           <QuestionEditor
             title="Module 2 — Oson (ixtiyoriy)"
@@ -332,6 +334,7 @@ export default function SessionForm() {
             showPassage
             domainOptions={RW_DOMAINS}
             promptTemplates={RW_PROMPT_TEMPLATES}
+            bankSubject="rw"
           />
           <QuestionEditor
             title="Module 2 — Qiyin (ixtiyoriy)"
@@ -340,6 +343,7 @@ export default function SessionForm() {
             showPassage
             domainOptions={RW_DOMAINS}
             promptTemplates={RW_PROMPT_TEMPLATES}
+            bankSubject="rw"
           />
           <QuestionEditor
             title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
@@ -348,6 +352,7 @@ export default function SessionForm() {
             showPassage
             domainOptions={RW_DOMAINS}
             promptTemplates={RW_PROMPT_TEMPLATES}
+            bankSubject="rw"
           />
         </div>
 
@@ -366,21 +371,33 @@ export default function SessionForm() {
               />
             </div>
           </div>
-          <QuestionEditor title="Module 1" questions={mathM1} onChange={setMathM1} />
+          <QuestionEditor
+            title="Module 1"
+            questions={mathM1}
+            onChange={setMathM1}
+            domainOptions={MATH_DOMAINS}
+            bankSubject="math"
+          />
           <QuestionEditor
             title="Module 2 — Oson (ixtiyoriy)"
             questions={mathM2E}
             onChange={setMathM2E}
+            domainOptions={MATH_DOMAINS}
+            bankSubject="math"
           />
           <QuestionEditor
             title="Module 2 — Qiyin (ixtiyoriy)"
             questions={mathM2H}
             onChange={setMathM2H}
+            domainOptions={MATH_DOMAINS}
+            bankSubject="math"
           />
           <QuestionEditor
             title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
             questions={mathM2Mix}
             onChange={setMathM2Mix}
+            domainOptions={MATH_DOMAINS}
+            bankSubject="math"
           />
         </div>
 

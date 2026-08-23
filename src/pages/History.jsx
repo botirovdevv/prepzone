@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
-import { LuCalendar, LuChevronRight, LuTrophy, LuClock, LuChartLine } from "react-icons/lu";
+import { LuCalendar, LuChevronRight, LuTrophy, LuClock, LuChartLine, LuGlobe } from "react-icons/lu";
 import PageHero from "../components/PageHero";
 
 export default function History() {
@@ -19,9 +19,14 @@ export default function History() {
 
   useEffect(() => {
     if (!user) return;
-    const qy = query(collection(db, "results"), where("uid", "==", user.uid));
+    // Barcha natijalar (statik SAT testlar HAM admin qo'shgan sessiya
+    // testlari) shu bitta ildiz "results" kolleksiyasida saqlanadi.
+    // Sessiya orqali tugatilgan testlar uchun asosiy nusxa
+    // "testSessions/{id}/results/{uid}" ostida saqlanadi, shu bilan birga
+    // shu yerga ham (sessionId/sessionTitle maydonlari bilan) nusxalab
+    // yoziladi — shunda tarix sahifasi oddiy, bitta so'rov bilan ishlayveradi.
     const unsub = onSnapshot(
-      qy,
+      query(collection(db, "results"), where("uid", "==", user.uid)),
       (snap) => {
         const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         list.sort((a, b) => {
@@ -32,7 +37,8 @@ export default function History() {
         setAttempts(list);
         setFetching(false);
       },
-      () => {
+      (err) => {
+        console.error("[History] natijalarni yuklashda xatolik:", err);
         setError("Natijalarni yuklashda xatolik yuz berdi.");
         setFetching(false);
       }
@@ -90,21 +96,26 @@ export default function History() {
       ) : (
         <div className="grid gap-3">
           {attempts.map((a) => {
-            const date = a.createdAt?.toDate ? a.createdAt.toDate() : null;
+            const date = a.createdAt?.toDate ? a.createdAt.toDate() : a.finishedAt?.toDate ? a.finishedAt.toDate() : null;
             const isBest = attempts.length > 1 && a.total === bestScore;
+            const isSession = !!a.sessionId;
+            const linkTo = isSession ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`;
+            const label = isSession
+              ? a.sessionTitle || "To'liq mock test (sessiya)"
+              : "SAT Practice Test";
             return (
               <Link
                 key={a.id}
-                to={`/sat/results/${a.id}`}
+                to={linkTo}
                 className="group flex items-center gap-4 bg-white rounded-[20px] border border-[#12213D]/7 p-4 sm:p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.18)] transition-all duration-200"
               >
                 <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 flex items-center justify-center text-[#087fd1] shrink-0">
-                  <LuCalendar size={20} />
+                  {isSession ? <LuGlobe size={20} /> : <LuCalendar size={20} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-[15px] font-bold text-[#12213D] truncate">
-                      {a.terminated ? "SAT Practice Test (to'xtatildi)" : "SAT Practice Test"}
+                      {a.terminated ? `${label} (to'xtatildi)` : label}
                     </p>
                     {isBest && (
                       <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">

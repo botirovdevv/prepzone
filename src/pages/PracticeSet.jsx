@@ -8,7 +8,8 @@ import BottomNav from "../components/BottomNav";
 import QuestionNav from "../components/QuestionNav";
 import DesmosCalculator from "../components/DesmosCalculator";
 import { useAuth } from "../context/AuthContext";
-import { LuCircleCheck } from "react-icons/lu";
+import { analyzeTopics, buildTopicAdvice } from "../utils/topicAnalysis";
+import { LuCircleCheck, LuTriangleAlert, LuSparkles, LuCircleAlert } from "react-icons/lu";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
@@ -93,6 +94,9 @@ export default function PracticeSet() {
   const answeredCount = Object.keys(answers).length;
   const correctCount = questions.filter((q) => answers[q.id] === q.correctAnswer).length;
 
+  const topicAnalysis = useMemo(() => analyzeTopics(questions, answers), [questions, answers]);
+  const topicAdvice = useMemo(() => buildTopicAdvice(topicAnalysis), [topicAnalysis]);
+
   if (loading || !user || setLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -119,14 +123,62 @@ export default function PracticeSet() {
 
   if (showSummary) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-[#F7F9FC]">
+      <div className="min-h-screen flex flex-col items-center px-6 py-12 bg-[#F7F9FC]">
         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
           <LuCircleCheck size={30} />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">{set.title}</h1>
-        <p className="text-[#12213D]/60 mb-8">
+        <h1 className="text-2xl font-extrabold text-[#12213D] mb-2 text-center">{set.title}</h1>
+        <p className="text-[#12213D]/60 mb-8 text-center">
           {answeredCount}/{total} savolga javob berdingiz — {correctCount} tasi to'g'ri
         </p>
+
+        {topicAnalysis.domainSummaries.length > 0 && (
+          <div className="w-full max-w-xl bg-white rounded-2xl border border-[#12213D]/8 p-5 mb-6 text-left">
+            <h2 className="font-bold text-[#12213D] mb-4">Mavzular bo'yicha natija</h2>
+            <div className="space-y-3">
+              {topicAnalysis.domainSummaries.map((d) => {
+                const pct = Math.round(d.accuracy * 100);
+                const barColor =
+                  d.accuracy >= 0.85 ? "bg-emerald-500" : d.accuracy >= 0.6 ? "bg-amber-500" : "bg-red-500";
+                return (
+                  <div key={d.domainId}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium text-[#12213D]/80">{d.label}</span>
+                      <span className="text-[#12213D]/50">
+                        {d.correct}/{d.total} · {pct}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[#12213D]/8 overflow-hidden">
+                      <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {topicAdvice.length > 0 && (
+          <div className="w-full max-w-xl space-y-3 mb-8 text-left">
+            {topicAdvice.map((a, i) => {
+              const isWeak = a.type === "weak";
+              const isStrong = a.type === "strong";
+              const Icon = isWeak ? LuTriangleAlert : isStrong ? LuSparkles : LuCircleAlert;
+              const styles = isWeak
+                ? "bg-amber-50 border-amber-200 text-amber-800"
+                : isStrong
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-[#087fd1]/5 border-[#087fd1]/15 text-[#12213D]/70";
+              return (
+                <div key={i} className={`flex items-start gap-2.5 border rounded-xl p-4 text-sm ${styles}`}>
+                  <Icon size={17} className="shrink-0 mt-0.5" />
+                  <p>{a.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={() => {

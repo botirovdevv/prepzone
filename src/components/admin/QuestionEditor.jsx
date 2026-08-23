@@ -10,10 +10,12 @@ import {
   LuLayers,
   LuSparkles,
   LuCircleAlert,
+  LuDatabase,
 } from "react-icons/lu";
 import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { parseBulkQuestions } from "../../utils/parseBulkQuestions";
 import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
+import QuestionBankImporter from "./QuestionBankImporter";
 
 const emptyForm = {
   passage: "",
@@ -47,6 +49,7 @@ export default function QuestionEditor({
   allowImage = true,
   domainOptions, // ixtiyoriy: [{id, label, hint}]
   promptTemplates, // ixtiyoriy: { [domainId]: [{label, text}] }
+  bankSubject, // ixtiyoriy: "rw" | "math" — berilsa, "Bankdan olish" rejimi yoqiladi
 }) {
   const [form, setForm] = useState(emptyForm);
   const [open, setOpen] = useState(false);
@@ -191,10 +194,22 @@ export default function QuestionEditor({
               >
                 <LuLayers size={13} /> Ko'plab qo'shish
               </button>
+              {bankSubject && (
+                <button
+                  type="button"
+                  onClick={() => setMode("bank")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    mode === "bank" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                  }`}
+                >
+                  <LuDatabase size={13} /> Bankdan olish
+                </button>
+              )}
             </div>
 
-            {/* Mavzu bloki (domain) — ikkala rejimda ham umumiy */}
-            {domainOptions && (
+            {/* Mavzu bloki (domain) — faqat bittalab/ko'plab rejimlarda; bank
+                rejimining o'z ichida alohida mavzu tanlovi bor */}
+            {domainOptions && mode !== "bank" && (
               <div>
                 <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">
                   Mavzu bloki (domain)
@@ -219,7 +234,14 @@ export default function QuestionEditor({
               </div>
             )}
 
-            {mode === "single" ? (
+            {mode === "bank" ? (
+              <QuestionBankImporter
+                subject={bankSubject}
+                domainOptions={domainOptions}
+                existingQuestions={questions}
+                onImport={(newQs) => onChange([...questions, ...newQs])}
+              />
+            ) : mode === "single" ? (
               <>
                 {showPassage && (
                   <div>

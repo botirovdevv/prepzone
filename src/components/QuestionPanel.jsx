@@ -21,7 +21,7 @@ export default function QuestionPanel({
             key={`passage-${question.id}`}
             text={question.passage}
             rich
-            className="text-[17px] leading-8 text-gray-900 whitespace-pre-line"
+            className="text-[15px] leading-7 text-gray-900 whitespace-pre-line"
           />
         </div>
       )}
@@ -54,7 +54,7 @@ export default function QuestionPanel({
             key={`inline-passage-${question.id}`}
             text={question.passage}
             rich
-            className="text-[17px] leading-8 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
+            className="text-[15px] leading-7 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
           />
         )}
 

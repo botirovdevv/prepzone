@@ -490,11 +490,37 @@ export default function SessionTest() {
         email: user.email,
         results: finalResults,
         total,
+        sessionTitle: session.title,
         finishedAt: serverTimestamp(),
         ...(extraState.terminated
           ? { terminated: true, terminationReason: extraState.reason }
           : {}),
       });
+      // "Mening natijalarim" (History) sahifasi hozircha faqat ildiz
+      // darajasidagi "results" kolleksiyasini o'qiydi (collectionGroup
+      // so'rovlari index/rules bo'yicha ishonchsiz chiqdi). Shuning uchun
+      // sessiya natijasini shu yerga ham (kichik nusxa sifatida) yozib
+      // qo'yamiz — shunda u ham tarixda avtomatik ko'rinadi.
+      try {
+        await addDoc(collection(db, "results"), {
+          uid: user.uid,
+          email: user.email,
+          results: finalResults,
+          total,
+          sessionId,
+          sessionTitle: session.title,
+          createdAt: serverTimestamp(),
+          ...(extraState.terminated
+            ? { terminated: true, terminationReason: extraState.reason }
+            : {}),
+        });
+      } catch (mirrorErr) {
+        // Bu ikkinchi (ko'zgu) yozuv muvaffaqiyatsiz bo'lsa ham, asosiy
+        // natija testSessions ostida saqlanib bo'lgani uchun talaba hech
+        // narsani yo'qotmaydi — faqat History ro'yxatida darhol
+        // ko'rinmasligi mumkin. Shu sabab xatoni faqat konsolga chiqaramiz.
+        console.error("Natijani 'results' kolleksiyasiga nusxalashda xatolik:", mirrorErr);
+      }
       updateParticipant({
         totalScore: total,
         ...(extraState.terminated ? {} : { status: "finished", finishedAt: serverTimestamp() }),
