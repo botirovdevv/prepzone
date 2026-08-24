@@ -15,6 +15,7 @@ export default function AdminRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (!user.emailVerified) return <Navigate to="/verify-email" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   return children;

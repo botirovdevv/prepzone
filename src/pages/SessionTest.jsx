@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   doc,
+  getDoc,
   onSnapshot,
   setDoc,
   addDoc,
@@ -61,15 +62,26 @@ const FALLBACK_SECTION = {
 export default function SessionTest() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: sessionId } = useParams();
+  // JoinSession sahifasidan o'tkazilgan kod — birinchi marta ishtirokchi
+  // hujjati yaratilganda xavfsizlik qoidasi shuni tekshiradi (pastga qarang).
+  const joinCode = location.state?.code || null;
 
   const studentName = user?.displayName || user?.email?.split("@")[0] || "Student";
   const progressKey = `session:${sessionId}`;
 
   // ------------------------------------------------------------
-  // Sessiya (admin tashkil qilgan test) ma'lumotini jonli kuzatish.
+  // Sessiya META ma'lumoti (nom, kod, jadval, holat) — bularni HAR
+  // QANDAY login qilgan foydalanuvchi o'qiy oladi (Firestore qoidasi).
+  // Savollarning o'zi (module1/2 massivlari) BU YERDA YO'Q — ular
+  // alohida, faqat ishtirokchiga ochiladigan "secure/content"
+  // hujjatida saqlanadi (pastga qarang). Shu ajratish orqali,
+  // kodni bilmagan yoki hali qo'shilmagan foydalanuvchi hech qachon
+  // Firestore orqali to'g'ridan-to'g'ri savollarni (va to'g'ri
+  // javoblarni!) o'qiy olmaydi.
   // ------------------------------------------------------------
-  const [session, setSession] = useState(null);
+  const [sessionMeta, setSessionMeta] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionMissing, setSessionMissing] = useState(false);
 
@@ -82,7 +94,7 @@ export default function SessionTest() {
           setSessionLoading(false);
           return;
         }
-        setSession({ id: snap.id, ...snap.data() });
+        setSessionMeta({ id: snap.id, ...snap.data() });
         setSessionLoading(false);
       },
       () => {
@@ -92,6 +104,47 @@ export default function SessionTest() {
     );
     return unsub;
   }, [sessionId]);
+
+  // Savollarning o'zi (to'g'ri javoblar bilan) — faqat ishtirokchi
+  // hujjati yaratilgach yuklanadi (pastdagi effekt orqali).
+  const [sessionContent, setSessionContent] = useState(null);
+  const [contentError, setContentError] = useState(false);
+
+  const fetchContent = async (attempt = 0) => {
+    try {
+      const snap = await getDoc(doc(db, "testSessions", sessionId, "secure", "content"));
+      if (snap.exists()) {
+        setSessionContent(snap.data());
+      } else {
+        setContentError(true);
+      }
+    } catch (err) {
+      // Xavfsizlik qoidasi ishtirokchi hujjati "ko'rinishi" uchun bir
+      // zumlik kechikish bo'lishi mumkin — bir necha marta qayta urinamiz.
+      if (attempt < 3) {
+        setTimeout(() => fetchContent(attempt + 1), 700);
+      } else {
+        console.error("Savollarni yuklashda xatolik:", err);
+        setContentError(true);
+      }
+    }
+  };
+
+  // Meta va tarkibni birlashtirib, qolgan kod uchun bir xil "session"
+  // shaklini beramiz (quyidagi barcha kod shu birlashtirilgan
+  // obyektdan foydalanadi — module1/2 massivlari tarkib yuklangach
+  // paydo bo'ladi).
+  const session = useMemo(() => {
+    if (!sessionMeta) return null;
+    if (!sessionContent) return sessionMeta;
+    return {
+      ...sessionMeta,
+      sections: (sessionMeta.sections || []).map((metaSec) => {
+        const contentSec = (sessionContent.sections || []).find((c) => c.id === metaSec.id);
+        return contentSec ? { ...metaSec, ...contentSec } : metaSec;
+      }),
+    };
+  }, [sessionMeta, sessionContent]);
 
   const scheduledMs = session?.scheduledAt?.toMillis
     ? session.scheduledAt.toMillis()
@@ -164,7 +217,7 @@ export default function SessionTest() {
   // faqat bir marta.
   // ------------------------------------------------------------
   useEffect(() => {
-    if (!user || !session || participantInitRef.current) return;
+    if (!user || !sessionMeta || participantInitRef.current) return;
     participantInitRef.current = true;
     setDoc(
       doc(db, "testSessions", sessionId, "participants", user.uid),
@@ -174,11 +227,22 @@ export default function SessionTest() {
         email: user.email,
         status: "not_started",
         joinedAt: serverTimestamp(),
+        // Xavfsizlik qoidasi shu maydonni sessiyaning haqiqiy kodi bilan
+        // solishtiradi (faqat "code" turidagi testlar uchun) — shuning
+        // uchun kodni bilmagan/o'tmagan foydalanuvchi ishtirokchi
+        // sifatida ro'yxatdan o'ta olmaydi va savol tarkibiga kira
+        // olmaydi, hatto sessiya ID'sini bilsa ham.
+        enteredCode: sessionMeta.accessType === "open" ? null : joinCode,
       },
       { merge: true }
-    ).catch(() => {});
+    )
+      .then(() => fetchContent())
+      .catch((err) => {
+        console.error("Ishtirokchi sifatida ro'yxatdan o'tishda xatolik:", err);
+        setContentError(true);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, session]);
+  }, [user, sessionMeta]);
 
   const updateParticipant = (data) => {
     if (!user) return;
@@ -219,31 +283,31 @@ export default function SessionTest() {
   };
 
   useEffect(() => {
-    if (!user || !session || initializedRef.current) return;
+    if (!user || !sessionMeta || initializedRef.current) return;
     initializedRef.current = true;
-    if (session.status === "closed") {
+    if (sessionMeta.status === "closed") {
       setPhase("closed");
       return;
     }
-    if (session.accessType !== "open" && scheduledMs && scheduledMs > Date.now()) {
+    if (sessionMeta.accessType !== "open" && scheduledMs && scheduledMs > Date.now()) {
       setPhase("waiting");
       return;
     }
     moveToRulesOrLocked();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, session]);
+  }, [user, sessionMeta]);
 
   // Admin testni yopib qo'ysa — jonli kuzatib, mos ravishda reaksiya beramiz.
   useEffect(() => {
-    if (!session) return;
-    if (session.status !== "closed") return;
+    if (!sessionMeta) return;
+    if (sessionMeta.status !== "closed") return;
     if (phase === "active") {
       handleForceTerminate("closed_by_admin");
     } else if (phase === "waiting" || phase === "rules" || phase === "locked") {
       setPhase("closed");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.status]);
+  }, [sessionMeta?.status]);
 
   const handleUnlocked = () => {
     const saved = loadLocalProgress(user.uid, progressKey);
@@ -631,6 +695,20 @@ export default function SessionTest() {
   }
 
   if (phase === "rules") {
+    if (contentError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-gray-500 text-center px-6">
+          Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang.
+        </div>
+      );
+    }
+    if (!sessionContent) {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-gray-500">
+          Savollar tayyorlanmoqda...
+        </div>
+      );
+    }
     return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} />;
   }
 

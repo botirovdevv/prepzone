@@ -28,7 +28,7 @@ export default function JoinSession() {
         setError("Bu test allaqachon yakunlangan.");
         return;
       }
-      navigate(`/session/${session.id}/test`);
+      navigate(`/session/${session.id}/test`, { state: { code: code.trim() } });
     } catch (err) {
       console.error(err);
       setError("Xatolik yuz berdi. Qaytadan urinib ko'ring.");

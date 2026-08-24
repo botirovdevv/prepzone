@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import { generateUniqueCode } from "../../utils/sessionCode";
@@ -76,29 +76,35 @@ export default function SessionForm() {
 
   useEffect(() => {
     if (!isEdit) return;
-    getDoc(doc(db, "testSessions", id)).then((snap) => {
+    Promise.all([
+      getDoc(doc(db, "testSessions", id)),
+      getDoc(doc(db, "testSessions", id, "secure", "content")),
+    ]).then(([snap, contentSnap]) => {
       if (!snap.exists()) {
         setError("Test topilmadi.");
         setLoadingExisting(false);
         return;
       }
       const s = snap.data();
+      const contentSections = contentSnap.exists() ? contentSnap.data().sections || [] : [];
       setTitle(s.title || "");
       setAccessType(s.accessType === "open" ? "open" : "code");
       const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt || Date.now());
       setDateStr(toDateInputValue(scheduled));
       setTimeStr(toTimeInputValue(scheduled));
-      const rw = (s.sections || []).find((sec) => sec.id === "rw");
-      const math = (s.sections || []).find((sec) => sec.id === "math");
+      const rw = contentSections.find((sec) => sec.id === "rw");
+      const math = contentSections.find((sec) => sec.id === "math");
+      const rwMeta = (s.sections || []).find((sec) => sec.id === "rw");
+      const mathMeta = (s.sections || []).find((sec) => sec.id === "math");
       if (rw) {
-        setRwDuration(rw.durationMin || 32);
+        setRwDuration(rwMeta?.durationMin || 32);
         setRwM1(rw.module1 || []);
         setRwM2E(rw.module2Easy || []);
         setRwM2H(rw.module2Hard || []);
         setRwM2Mix(rw.module2Mixed || []);
       }
       if (math) {
-        setMathDuration(math.durationMin || 35);
+        setMathDuration(mathMeta?.durationMin || 35);
         setMathM1(math.module1 || []);
         setMathM2E(math.module2Easy || []);
         setMathM2H(math.module2Hard || []);
@@ -154,16 +160,28 @@ export default function SessionForm() {
       });
     }
 
+    // XAVFSIZLIK UCHUN MUHIM: savollarning o'zi (module1/2 massivlari,
+    // to'g'ri javoblar bilan) "testSessions" hujjatining ICHIDA
+    // SAQLANMAYDI — chunki o'sha hujjatni har qanday login qilgan
+    // foydalanuvchi (kod bo'yicha qidirish uchun) o'qiy oladi. Buning
+    // o'rniga faqat meta-ma'lumot (nom, kod, jadval) asosiy hujjatda
+    // qoladi, savollarning o'zi esa alohida "secure/content"
+    // pastki hujjatida — uni faqat admin va sessiyaga QO'SHILGAN
+    // ishtirokchilar o'qiy oladi (firestore.rules'ga qarang).
+    const metaSections = sections.map(
+      ({ module1, module2Easy, module2Hard, module2Mixed, ...meta }) => meta
+    );
+
     setSaving(true);
     try {
+      let sessionId = id;
       if (isEdit) {
         await updateDoc(doc(db, "testSessions", id), {
           title: title.trim(),
           accessType,
           scheduledAt,
-          sections,
+          sections: metaSections,
         });
-        navigate(`/admin/sessions/${id}/monitor`);
       } else {
         const code = await generateUniqueCode();
         const ref = await addDoc(collection(db, "testSessions"), {
@@ -171,14 +189,16 @@ export default function SessionForm() {
           accessType,
           code,
           scheduledAt,
-          sections,
+          sections: metaSections,
           status: "scheduled",
           createdBy: user.uid,
           createdByName: user.displayName || user.email,
           createdAt: serverTimestamp(),
         });
-        navigate(`/admin/sessions/${ref.id}/monitor`);
+        sessionId = ref.id;
       }
+      await setDoc(doc(db, "testSessions", sessionId, "secure", "content"), { sections });
+      navigate(`/admin/sessions/${sessionId}/monitor`);
     } catch (err) {
       console.error(err);
       setError("Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");

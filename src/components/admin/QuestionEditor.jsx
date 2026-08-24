@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { parseBulkQuestions } from "../../utils/parseBulkQuestions";
+import { sanitizeRichText } from "../../utils/sanitizeHtml";
 import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
 import QuestionBankImporter from "./QuestionBankImporter";
 
@@ -83,7 +84,7 @@ export default function QuestionEditor({
     if (!form.prompt.trim() || form.choices.some((c) => !c.trim())) return;
     const q = {
       id: nextId(),
-      passage: showPassage && !isRichTextEmpty(form.passage) ? form.passage : "",
+      passage: showPassage && !isRichTextEmpty(form.passage) ? sanitizeRichText(form.passage) : "",
       prompt: form.prompt.trim(),
       choices: form.choices.map((text, i) => ({ label: "ABCD"[i], text: text.trim() })),
       correctAnswer: form.correctAnswer,

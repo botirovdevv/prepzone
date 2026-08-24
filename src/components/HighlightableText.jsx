@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useHighlights } from "../context/HighlightsContext";
+import { sanitizeRichText } from "../utils/sanitizeHtml";
 
 // Oddiy (rich bo'lmagan) matnni HTML sifatida xavfsiz ko'rsatish uchun
 // maxsus belgilarni escape qilamiz. Qatorlar orasidagi bo'shliq CSS
@@ -35,7 +36,7 @@ export default function HighlightableText({
 }) {
   const containerRef = useRef(null);
   const highlights = useHighlights();
-  const baseHtml = rich ? text || "" : escapeHtml(text || "");
+  const baseHtml = rich ? sanitizeRichText(text || "") : escapeHtml(text || "");
   const persisted = highlightKey ? highlights?.getHtml(highlightKey) : null;
   const [html, setHtml] = useState(persisted ?? baseHtml);
 
