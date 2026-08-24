@@ -21,6 +21,8 @@ export default function QuestionPanel({
             key={`passage-${question.id}`}
             text={question.passage}
             rich
+            highlightKey={`q${question.id}-passage`}
+            highlightLabel={`${index + 1}-savol — Matn`}
             className="text-[15px] leading-7 text-gray-900 whitespace-pre-line"
           />
         </div>
@@ -54,6 +56,8 @@ export default function QuestionPanel({
             key={`inline-passage-${question.id}`}
             text={question.passage}
             rich
+            highlightKey={`q${question.id}-passage`}
+            highlightLabel={`${index + 1}-savol — Matn`}
             className="text-[15px] leading-7 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
           />
         )}
@@ -61,6 +65,8 @@ export default function QuestionPanel({
         <HighlightableText
           key={`prompt-${question.id}`}
           text={question.prompt}
+          highlightKey={`q${question.id}-prompt`}
+          highlightLabel={`${index + 1}-savol — Savol matni`}
           className="text-[17px] leading-7 text-gray-900 font-medium mt-5 mb-4 select-text"
         />
 

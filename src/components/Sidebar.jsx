@@ -249,13 +249,6 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
           )}
         </div>
 
-        <button
-          onClick={onToggleCollapse}
-          className="hidden lg:flex w-full items-center gap-2 px-3 py-2 mt-1 rounded-xl text-xs font-medium text-[#12213D]/45 hover:bg-[#12213D]/5 hover:text-[#12213D]/70 transition-all justify-center"
-        >
-          {collapsed ? <LuChevronsRight size={16} /> : <LuChevronsLeft size={16} />}
-          {!collapsed && "Yig'ish"}
-        </button>
       </div>
     </div>
   );
@@ -269,6 +262,15 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         }`}
       >
         {content}
+
+        {/* Yig'ish/yoyish tugmasi — sidebar chekkasida, o'rtada suzib turadi */}
+        <button
+          onClick={onToggleCollapse}
+          title={collapsed ? "Sidebarni yoyish" : "Sidebarni yig'ish"}
+          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-[#12213D]/12 shadow-sm items-center justify-center text-[#12213D]/50 hover:text-[#087fd1] hover:border-[#087fd1]/30 hover:shadow-md transition-all z-50"
+        >
+          {collapsed ? <LuChevronsRight size={13} /> : <LuChevronsLeft size={13} />}
+        </button>
       </aside>
 
       {/* Mobile menu button */}

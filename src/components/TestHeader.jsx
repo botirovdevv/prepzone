@@ -6,6 +6,8 @@ import {
   LuCalculator,
   LuLogOut,
 } from "react-icons/lu";
+import HighlightsPanel from "./HighlightsPanel";
+import MathReferenceSheet from "./MathReferenceSheet";
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -25,6 +27,8 @@ export default function TestHeader({
 }) {
   const [hidden, setHidden] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showHighlights, setShowHighlights] = useState(false);
+  const [showReference, setShowReference] = useState(false);
 
   return (
     <div className="w-full sticky top-0 z-30">
@@ -75,7 +79,10 @@ export default function TestHeader({
               Calculator
             </button>
           )}
-          <button className="flex flex-col items-center gap-0.5 hover:text-[#375DFB]">
+          <button
+            onClick={() => setShowHighlights(true)}
+            className="flex flex-col items-center gap-0.5 hover:text-[#375DFB]"
+          >
             <LuHighlighter size={18} />
             Highlights &amp; Notes
           </button>
@@ -91,9 +98,17 @@ export default function TestHeader({
                 <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
                   Test Directions
                 </button>
-                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                  Reference
-                </button>
+                {showCalcButton && (
+                  <button
+                    onClick={() => {
+                      setShowReference(true);
+                      setShowMore(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Reference
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -104,6 +119,9 @@ export default function TestHeader({
           THIS IS A PRACTICE TEST
         </div>
       )}
+
+      {showHighlights && <HighlightsPanel onClose={() => setShowHighlights(false)} />}
+      {showReference && <MathReferenceSheet onClose={() => setShowReference(false)} />}
     </div>
   );
 }

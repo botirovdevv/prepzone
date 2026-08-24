@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useHighlights } from "../context/HighlightsContext";
 
 // Oddiy (rich bo'lmagan) matnni HTML sifatida xavfsiz ko'rsatish uchun
 // maxsus belgilarni escape qilamiz. Qatorlar orasidagi bo'shliq CSS
@@ -18,18 +19,41 @@ function escapeHtml(str) {
  * Belgilash to'g'ridan-to'g'ri DOM ustida ishlaydi (character-offset
  * hisoblash o'rniga), shuning uchun ichida HTML formatlash (qalin,
  * tagiga chizish) bo'lgan taqdirda ham to'g'ri ishlaydi.
+ *
+ * `highlightKey` va `highlightLabel` berilsa (odatda savol ID'siga
+ * bog'liq holda), belgilashlar HighlightsContext orqali saqlanadi —
+ * shunda savoldan-savolga o'tib qaytilganda ham belgilashlar saqlanib
+ * qoladi, va "Highlights & Notes" paneli ularni ko'rsata oladi.
  */
-export default function HighlightableText({ text, className, rich = false, as: Tag = "div" }) {
+export default function HighlightableText({
+  text,
+  className,
+  rich = false,
+  as: Tag = "div",
+  highlightKey,
+  highlightLabel,
+}) {
   const containerRef = useRef(null);
+  const highlights = useHighlights();
   const baseHtml = rich ? text || "" : escapeHtml(text || "");
-  const [html, setHtml] = useState(baseHtml);
+  const persisted = highlightKey ? highlights?.getHtml(highlightKey) : null;
+  const [html, setHtml] = useState(persisted ?? baseHtml);
 
-  // Savol/passage almashganda (masalan, keyingi savolga o'tilganda)
-  // belgilashlarni tozalab, asl matnni qayta o'rnatamiz.
+  // Savol/passage almashganda (masalan, keyingi savolga o'tilganda) shu
+  // maydon uchun avval saqlangan belgilash bo'lsa o'shani tiklaymiz,
+  // bo'lmasa asl matnni qayta o'rnatamiz.
   useEffect(() => {
-    setHtml(baseHtml);
+    const stored = highlightKey ? highlights?.getHtml(highlightKey) : null;
+    setHtml(stored ?? baseHtml);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, rich]);
+  }, [text, rich, highlightKey]);
+
+  const persistHtml = (newHtml) => {
+    setHtml(newHtml);
+    if (highlightKey && highlights) {
+      highlights.setHtml(highlightKey, highlightLabel || highlightKey, newHtml);
+    }
+  };
 
   const handleMouseUp = () => {
     const selection = window.getSelection();
@@ -53,7 +77,7 @@ export default function HighlightableText({ text, className, rich = false, as: T
       range.insertNode(mark);
     }
     selection.removeAllRanges();
-    setHtml(container.innerHTML);
+    persistHtml(container.innerHTML);
   };
 
   const handleClick = (e) => {
@@ -63,7 +87,7 @@ export default function HighlightableText({ text, className, rich = false, as: T
     while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
     parent.removeChild(mark);
     parent.normalize();
-    setHtml(containerRef.current.innerHTML);
+    persistHtml(containerRef.current.innerHTML);
   };
 
   return (

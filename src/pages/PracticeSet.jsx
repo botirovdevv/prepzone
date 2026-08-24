@@ -10,6 +10,7 @@ import DesmosCalculator from "../components/DesmosCalculator";
 import { useAuth } from "../context/AuthContext";
 import { analyzeTopics, buildTopicAdvice } from "../utils/topicAnalysis";
 import { LuCircleCheck, LuTriangleAlert, LuSparkles, LuCircleAlert } from "react-icons/lu";
+import { HighlightsProvider } from "../context/HighlightsContext";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
@@ -201,6 +202,7 @@ export default function PracticeSet() {
   }
 
   return (
+    <HighlightsProvider>
     <div className="h-screen flex flex-col bg-white">
       <TestHeader
         sectionLabel="Amaliyot"
@@ -256,5 +258,6 @@ export default function PracticeSet() {
 
       {calcOpen && <DesmosCalculator onClose={() => setCalcOpen(false)} />}
     </div>
+    </HighlightsProvider>
   );
 }

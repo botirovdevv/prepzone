@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/config";
-import { LuNotebookPen, LuArrowRight, LuTimer, LuGlobe, LuListChecks } from "react-icons/lu";
+import { LuNotebookPen, LuArrowRight, LuTimer, LuGlobe, LuListChecks, LuClock, LuLayers } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { testsCatalog } from "../data/testsCatalog";
 import { loadLocalProgress, getCooldownRemainingMs } from "../utils/testProgress";
@@ -13,6 +13,16 @@ function formatRemaining(ms) {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function sessionMeta(session) {
+  const sections = session.sections || [];
+  const totalMinutes = sections.reduce((sum, sec) => sum + (sec.durationMin || 0) * 2, 0);
+  const totalQuestions = sections.reduce((sum, sec) => sum + (sec.module1?.length || 0) * 2, 0);
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  const timeLabel = hours > 0 ? `${hours} soat${mins ? ` ${mins} daqiqa` : ""}` : `${mins} daqiqa`;
+  return { totalMinutes, totalQuestions, timeLabel };
 }
 
 export default function TestSelect() {
@@ -83,18 +93,24 @@ export default function TestSelect() {
       go: () => navigate("/sat/test", { state: { testId: t.id } }),
       kind: "builtin",
     })),
-    ...openSessions.map((s) => ({
-      key: `session:${s.id}`,
-      lockKey: `session:${s.id}`,
-      title: s.title,
-      description: "Doimiy ochiq mashg'ulot",
-      go: () => navigate(`/session/${s.id}/test`),
-      kind: "open",
-    })),
+    ...openSessions.map((s) => {
+      const meta = sessionMeta(s);
+      return {
+        key: `session:${s.id}`,
+        lockKey: `session:${s.id}`,
+        title: s.title,
+        description:
+          meta.totalQuestions > 0
+            ? `${meta.totalQuestions} ta savol · ${meta.timeLabel}`
+            : "Reading&Writing + Math",
+        go: () => navigate(`/session/${s.id}/test`),
+        kind: "open",
+      };
+    }),
   ];
 
   return (
-    <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
+    <div className="px-5 sm:px-8 py-8 max-w-5xl mx-auto">
       <PageHero
         eyebrow="MOCK TESTLAR"
         icon={LuListChecks}
@@ -106,63 +122,78 @@ export default function TestSelect() {
         ]}
       />
 
-      <div className="grid gap-3">
-        {papers.map((p) => {
-          const locked = !!lockRemaining[p.lockKey];
-          const available = !locked;
-          const iconWrap =
-            locked
-              ? "bg-[#087fd1]/10 text-[#087fd1]"
-              : p.kind === "open"
-              ? "bg-[#087fd1]/10 text-[#087fd1]"
-              : "bg-[#087fd1]/10 text-[#087fd1]";
-          return (
-            <button
-              key={p.key}
-              disabled={!available}
-              onClick={() => available && p.go()}
-              className={`group flex items-center gap-5 p-5 sm:p-6 rounded-[22px] border text-left transition-all duration-200
-                ${
-                  available
-                    ? "bg-white border-[#12213D]/7 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(47,111,237,0.18)]"
-                    : "bg-[#12213D]/[0.025] border-transparent opacity-70 cursor-not-allowed"
-                }`}
-            >
-              <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${iconWrap}`}>
-                {locked ? (
-                  <LuTimer size={24} />
-                ) : p.kind === "open" ? (
-                  <LuGlobe size={24} />
-                ) : (
-                  <LuNotebookPen size={24} />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-display font-extrabold text-[#12213D] text-[17px] leading-tight truncate">
-                    {p.title}
-                  </h3>
-                  {p.kind === "open" && (
-                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[#087fd1] bg-[#087fd1]/10 px-2 py-0.5 rounded-full">
+      {papers.length === 0 ? (
+        <div className="mt-4 flex flex-col items-center justify-center text-center py-16 px-6 bg-white rounded-[24px] border border-dashed border-[#12213D]/12">
+          <div className="w-14 h-14 rounded-2xl bg-[#12213D]/[0.04] flex items-center justify-center text-[#12213D]/30 mb-4">
+            <LuLayers size={26} />
+          </div>
+          <p className="font-semibold text-[#12213D]/70">Hozircha mock test mavjud emas</p>
+          <p className="text-sm text-[#12213D]/40 mt-1 max-w-sm">
+            Yangi to'liq mock testlar qo'shilishi bilan ular shu yerda paydo bo'ladi.
+          </p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4 mt-4">
+          {papers.map((p) => {
+            const locked = !!lockRemaining[p.lockKey];
+            const available = !locked;
+            return (
+              <button
+                key={p.key}
+                disabled={!available}
+                onClick={() => available && p.go()}
+                className={`group relative flex flex-col text-left rounded-[24px] p-6 border transition-all duration-200 overflow-hidden
+                  ${
+                    available
+                      ? "bg-white border-[#12213D]/7 hover:border-[#087fd1]/30 hover:shadow-[0_12px_32px_-12px_rgba(8,127,209,0.25)] hover:-translate-y-0.5"
+                      : "bg-[#12213D]/[0.025] border-transparent opacity-70 cursor-not-allowed"
+                  }`}
+              >
+                {/* Fon bezagi */}
+                <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-gradient-to-br from-[#087fd1]/10 to-transparent group-hover:scale-125 transition-transform duration-500" />
+
+                <div className="relative flex items-start justify-between mb-5">
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                      locked ? "bg-[#12213D]/8 text-[#12213D]/40" : "bg-[#087fd1]/10 text-[#087fd1]"
+                    }`}
+                  >
+                    {locked ? (
+                      <LuTimer size={22} />
+                    ) : p.kind === "open" ? (
+                      <LuGlobe size={22} />
+                    ) : (
+                      <LuNotebookPen size={22} />
+                    )}
+                  </div>
+                  {p.kind === "open" && !locked && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full">
                       Ochiq
                     </span>
                   )}
                 </div>
-                <p className="text-[#12213D]/50 text-sm mt-1">
+
+                <h3 className="relative font-display font-extrabold text-[#12213D] text-lg leading-tight mb-1.5">
+                  {p.title}
+                </h3>
+                <p className="relative text-[#12213D]/45 text-sm flex items-center gap-1.5">
+                  {locked && <LuClock size={13} className="shrink-0" />}
                   {locked
-                    ? `Testdan chiqdingiz — ${formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin`
+                    ? `${formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin`
                     : p.description}
                 </p>
-              </div>
-              {available && (
-                <div className="w-10 h-10 rounded-full bg-[#12213D]/[0.03] flex items-center justify-center text-[#12213D]/30 group-hover:bg-[#087fd1] group-hover:text-white transition-colors shrink-0">
-                  <LuArrowRight size={18} />
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+
+                {available && (
+                  <div className="relative flex items-center gap-1.5 text-sm font-semibold text-[#087fd1] mt-5">
+                    Boshlash
+                    <LuArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

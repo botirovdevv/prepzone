@@ -23,6 +23,7 @@ import TestLockedScreen from "../components/TestLockedScreen";
 import TestTerminatedScreen from "../components/TestTerminatedScreen";
 import CheatWarningToast from "../components/CheatWarningToast";
 import ExitTestModal from "../components/ExitTestModal";
+import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 
 const MAX_WARNINGS = 3;
@@ -436,6 +437,7 @@ export default function SATTest() {
   }
 
   return (
+    <HighlightsProvider>
     <div className="h-screen flex flex-col bg-white">
       <TestHeader
         sectionLabel={sectionLabel}
@@ -498,5 +500,6 @@ export default function SATTest() {
         />
       )}
     </div>
+    </HighlightsProvider>
   );
 }

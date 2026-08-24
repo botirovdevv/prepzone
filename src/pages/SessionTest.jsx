@@ -35,6 +35,7 @@ import TestTerminatedScreen from "../components/TestTerminatedScreen";
 import CheatWarningToast from "../components/CheatWarningToast";
 import ExitTestModal from "../components/ExitTestModal";
 import SessionWaitingScreen from "../components/SessionWaitingScreen";
+import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 
 const MAX_WARNINGS = 3;
@@ -658,6 +659,7 @@ export default function SessionTest() {
   }
 
   return (
+    <HighlightsProvider>
     <div className="h-screen flex flex-col bg-white">
       <TestHeader
         sectionLabel={sectionLabel}
@@ -720,5 +722,6 @@ export default function SessionTest() {
         />
       )}
     </div>
+    </HighlightsProvider>
   );
 }
