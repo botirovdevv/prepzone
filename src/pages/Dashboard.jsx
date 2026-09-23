@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, doc, getDoc } from "firebase/firesto
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
+import { getSatTest } from "../data/satTest";
 import HandIcon from "../../public/waving-hand-icon.png";
 import {
   LuNotebookPen,
@@ -153,7 +154,7 @@ export default function Dashboard() {
                     <IconTile icon={LuClock} tone="ink" size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-[#12213D]">
-                        {a.sessionTitle || "SAT Practice Test"}
+                        {a.sessionTitle || getSatTest(a.testId).testTitle}
                         {a.terminated && <span className="font-normal text-red-500"> · to'xtatilgan</span>}
                       </p>
                       <p className="text-xs text-[#12213D]/45">{formatDate(a.createdAt)}</p>

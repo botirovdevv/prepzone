@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase/config";
-import { satTest, getModuleQuestions } from "../data/satTest";
+import { getSatTest, getModuleQuestions } from "../data/satTest";
 import { countCorrect } from "../utils/scoring";
 import { buildResponses, decideRouteIrt, scoreSection } from "../utils/irtScoring";
 import {
@@ -29,7 +29,6 @@ import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 
 const MAX_WARNINGS = 3;
-const TEST_ID = satTest.id;
 
 const emptyModuleState = (count) => ({
   answers: Array(count).fill(null),
@@ -78,6 +77,10 @@ function buildGroupResult(group, prev, stage, route, answers, incomplete = false
 export default function SATTest() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Qaysi test ochilgani TestSelect sahifasidan state orqali keladi.
+  const satTest = getSatTest(location.state?.testId);
+  const TEST_ID = satTest.id;
 
   const studentName = user?.displayName || user?.email?.split("@")[0] || "Student";
 
@@ -144,7 +147,7 @@ export default function SATTest() {
       return;
     }
     setPhase("rules");
-  }, [user]);
+  }, [user, TEST_ID]);
 
   const handleUnlocked = () => {
     const saved = loadLocalProgress(user.uid, TEST_ID);
@@ -315,13 +318,13 @@ export default function SATTest() {
       });
       maybeUpdateLeaderboard(user, total);
       navigate("/sat/results", {
-        state: { results: finalResults, resultId: docRef.id, ...extraState },
+        state: { results: finalResults, resultId: docRef.id, testId: TEST_ID, ...extraState },
       });
     } catch (err) {
       // Firestore'ga saqlanmasa ham, natijani ko'rsatishda davom etamiz
       console.error("Natijani saqlashda xatolik:", err);
       navigate("/sat/results", {
-        state: { results: finalResults, saveError: true, ...extraState },
+        state: { results: finalResults, saveError: true, testId: TEST_ID, ...extraState },
       });
     } finally {
       setSavingResult(false);

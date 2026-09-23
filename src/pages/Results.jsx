@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { LuCheck, LuX, LuMinus, LuSearchX, LuChartColumn, LuRotateCcw, LuChevronDown } from "react-icons/lu";
 import { db } from "../firebase/config";
-import { satTest, getModuleQuestions } from "../data/satTest";
+import { getSatTest, getModuleQuestions } from "../data/satTest";
 import { isAnswerCorrect } from "../utils/irtScoring";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
@@ -111,6 +111,7 @@ export default function Results() {
 
   const terminated = location.state?.terminated;
   const [results, setResults] = useState(location.state?.results || null);
+  const [testId, setTestId] = useState(location.state?.testId || null);
   const [loading, setLoading] = useState(!location.state?.results && !!id);
   const [notFound, setNotFound] = useState(false);
 
@@ -123,6 +124,7 @@ export default function Results() {
       .then((snap) => {
         if (snap.exists()) {
           setResults(snap.data().results);
+          setTestId(snap.data().testId || null);
         } else {
           setNotFound(true);
         }
@@ -152,6 +154,7 @@ export default function Results() {
     );
   }
 
+  const satTest = getSatTest(testId);
   const groupResults = satTest.groups.map((g) => results[g.id]).filter(Boolean);
   const total = groupResults.reduce((sum, r) => sum + (r.scaledScore || 0), 0);
 

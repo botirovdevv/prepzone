@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, onSnapshot, collection, query, orderBy, limit, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, orderBy, limit, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import {
   LuArrowLeft,
@@ -13,6 +13,7 @@ import {
   LuLock,
   LuPencil,
   LuPause,
+  LuTrash2,
   LuCheck,
   LuUsers,
   LuActivity,
@@ -58,6 +59,7 @@ export default function SessionMonitor() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -111,6 +113,29 @@ export default function SessionMonitor() {
     }
   };
 
+  // Testni butunlay o'chirish. Firestore klient SDK'si pastki
+  // kolleksiyalarni (participants/events/results) avtomatik
+  // o'chirmaydi — ular bazada qoladi, lekin asosiy hujjat va savollar
+  // o'chgach hech qayerda ko'rinmaydi.
+  const handleDeleteSession = async () => {
+    if (
+      !window.confirm(
+        `"${session.title}" testini butunlay o'chirishni tasdiqlaysizmi? Savollar va kirish kodi o'chadi, bu amalni qaytarib bo'lmaydi.`
+      )
+    )
+      return;
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, "testSessions", id, "secure", "content"));
+      await deleteDoc(doc(db, "testSessions", id));
+      navigate("/admin");
+    } catch (err) {
+      console.error("Testni o'chirishda xatolik:", err);
+      window.alert("Testni o'chirib bo'lmadi. Firestore qoidalari admin uchun o'chirishga ruxsat berishini tekshiring.");
+      setDeleting(false);
+    }
+  };
+
   if (loading) return <PageLoader />;
   if (!session) {
     return (
@@ -145,6 +170,9 @@ export default function SessionMonitor() {
             </Button>
             <Button variant="danger" size="sm" onClick={handleCloseSession} disabled={closing || session.status === "closed"}>
               <LuLock size={15} /> {session.status === "closed" ? "Yakunlangan" : "Testni yopish"}
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDeleteSession} disabled={deleting}>
+              <LuTrash2 size={15} /> {deleting ? "O'chirilmoqda..." : "O'chirish"}
             </Button>
           </>
         }
