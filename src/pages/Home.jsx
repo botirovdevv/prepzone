@@ -1,11 +1,224 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LuArrowRight,
+  LuArrowUp,
   LuBookOpenCheck,
   LuHeadphones,
   LuMapPin,
+  LuMenu,
+  LuX,
 } from "react-icons/lu";
 import logo from '../../public/Logo.png'
+
+const NAV_LINKS = [
+  { id: "tests", label: "Mock tests" },
+  { id: "features", label: "Platform" },
+  { id: "how", label: "Qanday ishlaydi" },
+];
+
+const scrollToSection = (id) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+};
+
+// Yuqorida shaffof, sahifa pastga aylantirilganda markazda "suzuvchi"
+// pill ko'rinishiga o'tadigan navbar. Mobil'da — ochiladigan menyu.
+function Navbar({ onLogin, onRegister }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const go = (id) => {
+    setMenuOpen(false);
+    scrollToSection(id);
+  };
+
+  return (
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
+      <div
+        className={`mx-auto flex h-16 items-center justify-between rounded-full border px-3 transition-[max-width,background-color,border-color,box-shadow] duration-500 ease-out-strong sm:px-4 ${
+          scrolled || menuOpen
+            ? "max-w-[980px] border-[#111827]/[0.08] bg-white/80 shadow-[0_10px_40px_-12px_rgba(17,24,39,0.18)] backdrop-blur-xl"
+            : "max-w-[1280px] border-transparent bg-transparent"
+        }`}
+      >
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="flex h-10 shrink-0 items-center overflow-hidden pl-2"
+          aria-label="Prepzone — sahifa boshiga"
+        >
+          <img src={logo} alt="Prepzone" className="w-32 max-h-full object-contain" />
+        </button>
+
+        <nav className="hidden items-center gap-1 rounded-full p-1 text-[14px] font-medium text-[#566176] md:flex">
+          {NAV_LINKS.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => go(l.id)}
+              className="rounded-full px-4 py-2 transition hover:bg-[#111827]/[0.05] hover:text-[#111827]"
+            >
+              {l.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onLogin}
+            className="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-[#111827] transition hover:bg-[#111827]/[0.05] sm:block"
+          >
+            Kirish
+          </button>
+          <button
+            onClick={onRegister}
+            className="group hidden items-center gap-1.5 rounded-full bg-[#111827] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#087fd1] sm:inline-flex"
+          >
+            Boshlash
+            <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label={menuOpen ? "Menyuni yopish" : "Menyuni ochish"}
+            aria-expanded={menuOpen}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#111827] transition hover:bg-[#111827]/[0.05] md:hidden"
+          >
+            {menuOpen ? <LuX size={20} /> : <LuMenu size={20} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobil menyu */}
+      {menuOpen && (
+        <div className="home-menu-in mx-auto mt-2 max-w-[980px] rounded-3xl border border-[#111827]/[0.08] bg-white p-2 shadow-[0_20px_50px_-15px_rgba(17,24,39,0.25)] md:hidden">
+          {NAV_LINKS.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => go(l.id)}
+              className="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold text-[#111827] transition hover:bg-[#111827]/[0.04]"
+            >
+              {l.label}
+              <LuArrowRight size={16} className="text-[#111827]/30" />
+            </button>
+          ))}
+          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[#111827]/[0.06] p-2 pt-3">
+            <button
+              onClick={onLogin}
+              className="rounded-full border border-[#111827]/12 py-3 text-sm font-bold text-[#111827] transition hover:bg-[#111827]/[0.04]"
+            >
+              Kirish
+            </button>
+            <button
+              onClick={onRegister}
+              className="rounded-full bg-[#087fd1] py-3 text-sm font-bold text-white transition hover:bg-[#066fb8]"
+            >
+              Ro‘yxatdan o‘tish
+            </button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+const FOOTER_COLUMNS = [
+  {
+    title: "Platforma",
+    links: NAV_LINKS.map((l) => ({ label: l.label, section: l.id })),
+  },
+  {
+    title: "Imtihonlar",
+    links: [
+      { label: "SAT", section: "tests" },
+      { label: "IELTS", soon: true },
+      { label: "CEFR Speaking", soon: true },
+    ],
+  },
+  {
+    title: "Hisob",
+    links: [
+      { label: "Kirish", route: "/login" },
+      { label: "Ro‘yxatdan o‘tish", route: "/register" },
+    ],
+  },
+];
+
+function Footer({ onNavigate }) {
+  return (
+    <footer className="border-t border-[#111827]/[0.08] bg-white">
+      <div className="mx-auto max-w-[1280px] px-5 sm:px-8">
+        <div className="grid gap-12 py-16 lg:grid-cols-[1.3fr_2fr] lg:py-20">
+          <div className="max-w-[360px]">
+            <img src={logo} alt="Prepzone" className="h-8 w-auto object-contain" />
+            <p className="mt-5 text-[15px] leading-7 text-[#667085]">
+              SAT, IELTS va CEFR uchun real imtihon formatiga yaqin online mock test platformasi.
+            </p>
+            <button
+              onClick={() => onNavigate("/register")}
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#066fb8]"
+            >
+              Hoziroq boshlash
+              <LuArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+            {FOOTER_COLUMNS.map((col) => (
+              <div key={col.title}>
+                <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#98a2b3]">
+                  {col.title}
+                </p>
+                <ul className="mt-5 space-y-3.5">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      {link.soon ? (
+                        <span className="flex items-center gap-2 text-[15px] text-[#98a2b3]">
+                          {link.label}
+                          <span className="rounded-full bg-[#f1f3f5] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8b95a3]">
+                            Soon
+                          </span>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            link.route ? onNavigate(link.route) : scrollToSection(link.section)
+                          }
+                          className="text-[15px] text-[#344054] transition hover:text-[#087fd1]"
+                        >
+                          {link.label}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start justify-between gap-4 border-t border-[#111827]/[0.08] py-7 sm:flex-row sm:items-center">
+          <p className="text-[13px] text-[#98a2b3]">
+            © {new Date().getFullYear()} Prepzone. Online mock test platform.
+          </p>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="group inline-flex items-center gap-2 text-[13px] font-semibold text-[#667085] transition hover:text-[#111827]"
+          >
+            Yuqoriga qaytish
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#111827]/10 transition group-hover:border-[#111827]/25 group-hover:bg-[#111827]/[0.03]">
+              <LuArrowUp size={14} className="transition-transform group-hover:-translate-y-0.5" />
+            </span>
+          </button>
+        </div>
+      </div>
+    </footer>
+  );
+}
 
 // Eslatma: bu sahifa faqat login QILMAGAN foydalanuvchilarga ko'rsatiladi.
 // Login qilgan foydalanuvchi "/" ga kirsa, App.jsx'dagi RootRoute uni
@@ -16,49 +229,14 @@ export default function Home() {
 
   const handleSAT = () => navigate("/login");
 
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollTo = scrollToSection;
 
   return (
     <div className="min-h-screen bg-[#fcfcfa] text-[#111827] font-['Inter']">
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 border-b border-[#111827]/[0.08] bg-[#fcfcfa]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 sm:px-8">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="flex items-center shrink-0 h-12 overflow-hidden"
-          >
-            <img
-              src={logo}
-              alt="Prepzone"
-              className="w-36 max-h-full object-contain"
-            />
-          </button>
-
-          <nav className="hidden items-center gap-8 text-[14px] font-medium text-[#566176] md:flex">
-            <button onClick={() => scrollTo("tests")} className="transition hover:text-[#111827]">
-              Mock tests
-            </button>
-            <button onClick={() => scrollTo("features")} className="transition hover:text-[#111827]">
-              Platform
-            </button>
-            <button onClick={() => scrollTo("how")} className="transition hover:text-[#111827]">
-              Qanday ishlaydi
-            </button>
-          </nav>
-
-          <button
-            onClick={() => navigate("/login")}
-            className="rounded-full bg-[#087fd1] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#066fb8]"
-          >
-            Kirish
-          </button>
-        </div>
-      </header>
+      <Navbar onLogin={() => navigate("/login")} onRegister={() => navigate("/register")} />
 
       {/* Hero */}
-      <section className="mx-auto max-w-[1280px] px-5 pb-20 pt-20 sm:px-8 lg:pb-28 lg:pt-24">
+      <section className="mx-auto max-w-[1280px] px-5 pb-20 pt-16 sm:px-8 lg:pb-28 lg:pt-20">
         <div className="grid items-center gap-14 lg:grid-cols-[0.82fr_1.18fr]">
           <div>
             <div className="mb-7 flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.18em] text-[#0788d5]">
@@ -214,7 +392,7 @@ export default function Home() {
       </section>
 
       {/* Tests */}
-      <section id="tests" className="mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">
+      <section id="tests" className="scroll-mt-24 mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">
         <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <div>
             <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#0788d5]">
@@ -295,7 +473,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section id="features" className="border-y border-[#111827]/[0.08] bg-[#f7f8f7]">
+      <section id="features" className="scroll-mt-24 border-y border-[#111827]/[0.08] bg-[#f7f8f7]">
         <div className="mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">
           <div className="max-w-[580px]">
             <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#0788d5]">
@@ -326,7 +504,7 @@ export default function Home() {
       </section>
 
       {/* How */}
-      <section id="how" className="mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">
+      <section id="how" className="scroll-mt-24 mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">
         <div className="grid gap-14 lg:grid-cols-[0.75fr_1.25fr]">
           <div>
             <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#0788d5]">
@@ -383,15 +561,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[#111827]/[0.08] bg-white">
-        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8">
-          <img src={logo} alt="Prepzone" className="h-7 w-auto object-contain" />
-          <p className="text-xs text-[#98a2b3]">
-            © {new Date().getFullYear()} Prepzone. Online mock test platform.
-          </p>
-        </div>
-      </footer>
+      <Footer onNavigate={navigate} />
     </div>
   );
 }

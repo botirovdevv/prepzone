@@ -217,3 +217,21 @@ h6 {
     animation: pz-fade-out 150ms linear both;
   }
 }
+
+/* Home sahifasi — mobil menyu ochilishi */
+@keyframes home-menu-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.98;
+  }
+}
+.home-menu-in {
+  transform-origin: top center;
+  animation: home-menu-in 220ms var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-menu-in {
+    animation: pz-fade-in 150ms linear both;
+  }
+}
