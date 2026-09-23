@@ -9,7 +9,14 @@
 // dangerouslySetInnerHTML ishlatilishidan OLDIN chaqirilishi shart —
 // manba (admin tahririchi, bulk import yoki eski ma'lumot) qanday
 // bo'lishidan qat'i nazar.
-const ALLOWED_TAGS = new Set(["B", "STRONG", "I", "EM", "U", "BR", "SPAN", "DIV", "P"]);
+// Jadval, daraja (x²) va ro'yxat teglari Bluebook savollaridagi
+// ma'lumot jadvallari, formulalar va eslatmalar (notes) uchun kerak —
+// atributlar baribir olib tashlangani uchun ular ham xavfsiz.
+const ALLOWED_TAGS = new Set([
+  "B", "STRONG", "I", "EM", "U", "BR", "SPAN", "DIV", "P",
+  "SUP", "SUB", "UL", "OL", "LI",
+  "TABLE", "CAPTION", "THEAD", "TBODY", "TR", "TH", "TD",
+]);
 const STRIP_ENTIRELY = new Set([
   "SCRIPT",
   "STYLE",

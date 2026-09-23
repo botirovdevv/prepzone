@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
-import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye } from "react-icons/lu";
+import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye, LuBookOpen } from "react-icons/lu";
+import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
 export default function SetsDashboard() {
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(collection(db, "questionSets"), orderBy("createdAt", "desc"));
@@ -33,72 +33,77 @@ export default function SetsDashboard() {
     (s.sections || []).reduce((sum, sec) => sum + (sec.questions?.length || 0), 0);
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#087fd1] mb-1">
-            Admin panel
-          </p>
-          <h1 className="text-2xl font-extrabold text-[#12213D]">Amaliyot to'plamlari</h1>
-          <p className="text-sm text-[#12213D]/50 mt-1">
-            Vaqt cheklanmagan, darhol javob ko'rsatiladigan savol to'plamlari (masalan, o'tgan
-            imtihonlardagi savollar).
-          </p>
-        </div>
-        <button
-          onClick={() => navigate("/admin/sets/new")}
-          className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-4 py-2.5 rounded-full hover:bg-[#066fb8] shrink-0"
-        >
-          <LuPlus size={17} /> Yangi to'plam
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="Admin panel"
+        icon={LuLibrary}
+        title="Amaliyot to'plamlari"
+        subtitle="Vaqt cheklanmagan, darhol javob ko'rsatiladigan savol to'plamlari (masalan, o'tgan imtihonlardagi savollar)."
+        actions={
+          <Button to="/admin/sets/new">
+            <LuPlus size={17} /> Yangi to'plam
+          </Button>
+        }
+      />
 
       {loading ? (
-        <p className="text-[#12213D]/40 text-sm">Yuklanmoqda...</p>
-      ) : sets.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-10 text-center text-[#12213D]/50">
-          Hali birorta to'plam yaratilmagan.
-        </div>
-      ) : (
         <div className="space-y-3">
-          {sets.map((s) => (
-            <Link
-              key={s.id}
-              to={`/admin/sets/${s.id}/edit`}
-              className="flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/8 p-5 hover:border-[#087fd1]/40 hover:shadow-md transition"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0">
-                <LuLibrary size={19} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-[#12213D] truncate">{s.title}</p>
-                <p className="text-sm text-[#12213D]/50 truncate">
-                  {countQuestions(s)} ta savol
-                  {s.description ? ` · ${s.description}` : ""}
-                </p>
-              </div>
-              <a
-                href={`/practice/${s.id}`}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                title="Talaba sifatida ko'rish"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[#12213D]/40 hover:bg-[#12213D]/5 hover:text-[#12213D] shrink-0"
-              >
-                <LuEye size={17} />
-              </a>
-              <button
-                onClick={(e) => handleDelete(e, s.id, s.title)}
-                title="O'chirish"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 shrink-0"
-              >
-                <LuTrash2 size={17} />
-              </button>
-              <LuChevronRight size={18} className="text-[#12213D]/30 shrink-0" />
-            </Link>
-          ))}
+          <Skeleton className="h-[76px]" />
+          <Skeleton className="h-[76px]" />
         </div>
+      ) : sets.length === 0 ? (
+        <EmptyState
+          icon={LuLibrary}
+          title="Hali birorta to'plam yaratilmagan"
+          action={
+            <Button to="/admin/sets/new">
+              <LuPlus size={17} /> Yangi to'plam
+            </Button>
+          }
+        />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="grid divide-y divide-[#12213D]/[0.06]">
+            {sets.map((s) => (
+              <Link
+                key={s.id}
+                to={`/admin/sets/${s.id}/edit`}
+                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+              >
+                <IconTile icon={LuLibrary} tone="blue" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-[#12213D]">{s.title}</p>
+                  {s.description && <p className="mt-0.5 truncate text-sm text-[#12213D]/50">{s.description}</p>}
+                </div>
+                <Badge tone="blue" icon={LuBookOpen} className="hidden sm:inline-flex">
+                  {countQuestions(s)} ta savol
+                </Badge>
+                <a
+                  href={`/practice/${s.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Talaba sifatida ko'rish"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/40 transition hover:bg-white hover:text-[#12213D] hover:shadow-sm"
+                >
+                  <LuEye size={17} />
+                </a>
+                <button
+                  onClick={(e) => handleDelete(e, s.id, s.title)}
+                  title="O'chirish"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-red-400 transition hover:bg-red-50 hover:text-red-600"
+                >
+                  <LuTrash2 size={17} />
+                </button>
+                <LuChevronRight
+                  size={18}
+                  className="shrink-0 text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]"
+                />
+              </Link>
+            ))}
+          </div>
+        </Card>
       )}
-    </div>
+    </Page>
   );
 }

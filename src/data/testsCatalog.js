@@ -1,7 +1,13 @@
 // ------------------------------------------------------------------
-// Tayyor (statik) mock testlar ro'yxati. Hozircha bo'sh — barcha
-// to'liq mock testlar admin panel orqali ("Doimiy ochiq" turida)
-// qo'shiladi va TestSelect sahifasida ko'rsatiladi.
+// Tayyor (statik) mock testlar ro'yxati. Bular admin panelidan
+// qo'shiladigan "Doimiy ochiq" testlar bilan birga TestSelect
+// sahifasida ko'rsatiladi.
 // ------------------------------------------------------------------
 
-export const testsCatalog = [];
+export const testsCatalog = [
+  {
+    id: "bluebook-1",
+    title: "SAT Practice Test 1",
+    description: "Bluebook formati · adaptiv · 98 savol · 2 soat 14 daqiqa",
+  },
+];

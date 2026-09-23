@@ -2,11 +2,21 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/config";
-import { LuNotebookPen, LuArrowRight, LuTimer, LuGlobe, LuListChecks, LuClock, LuLayers } from "react-icons/lu";
+import {
+  LuNotebookPen,
+  LuArrowRight,
+  LuTimer,
+  LuGlobe,
+  LuListChecks,
+  LuClock,
+  LuLayers,
+  LuBookOpenText,
+  LuCalculator,
+} from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { testsCatalog } from "../data/testsCatalog";
 import { loadLocalProgress, getCooldownRemainingMs } from "../utils/testProgress";
-import PageHero from "../components/PageHero";
+import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, PageLoader } from "../components/ui";
 
 function formatRemaining(ms) {
   const totalSec = Math.ceil(ms / 1000);
@@ -73,13 +83,7 @@ export default function TestSelect() {
     return () => clearInterval(interval);
   }, [user, openSessions]);
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-[#12213D]/40">
-        Yuklanmoqda...
-      </div>
-    );
-  }
+  if (loading || !user) return <PageLoader />;
 
   // Statik va admin tomonidan qo'shilgan "doimiy ochiq" testlarni bitta
   // ro'yxatga birlashtiramiz — foydalanuvchi uchun ular bir xil toifa:
@@ -110,90 +114,86 @@ export default function TestSelect() {
   ];
 
   return (
-    <div className="px-5 sm:px-8 py-8 max-w-5xl mx-auto">
-      <PageHero
-        eyebrow="MOCK TESTLAR"
+    <Page>
+      <PageHeader
+        eyebrow="Mock testlar"
         icon={LuListChecks}
         title="Qaysi testni topshirasiz?"
-        subtitle="Har biri to'liq, moslashuvchan (adaptiv) Reading&Writing va Math bo'limlaridan iborat. Boshlagach vaqt hisobi yuritiladi."
-        stats={[
-          { icon: LuNotebookPen, value: papers.length, label: "test mavjud", iconClass: "bg-[#087fd1]/10 text-[#087fd1]" },
-          { icon: LuGlobe, value: openSessions.length, label: "doimiy ochiq", iconClass: "bg-emerald-500/10 text-emerald-600" },
-        ]}
+        subtitle="Har bir test to'liq, moslashuvchan (adaptiv) Reading & Writing va Math bo'limlaridan iborat. Boshlagach vaqt hisobi yuritiladi."
+        actions={
+          <>
+            <Badge tone="blue" icon={LuNotebookPen}>
+              {papers.length} ta test
+            </Badge>
+            {openSessions.length > 0 && (
+              <Badge tone="emerald" icon={LuGlobe}>
+                {openSessions.length} ta doimiy ochiq
+              </Badge>
+            )}
+          </>
+        }
       />
 
       {papers.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center justify-center text-center py-16 px-6 bg-white rounded-[24px] border border-dashed border-[#12213D]/12">
-          <div className="w-14 h-14 rounded-2xl bg-[#12213D]/[0.04] flex items-center justify-center text-[#12213D]/30 mb-4">
-            <LuLayers size={26} />
-          </div>
-          <p className="font-semibold text-[#12213D]/70">Hozircha mock test mavjud emas</p>
-          <p className="text-sm text-[#12213D]/40 mt-1 max-w-sm">
-            Yangi to'liq mock testlar qo'shilishi bilan ular shu yerda paydo bo'ladi.
-          </p>
-        </div>
+        <EmptyState
+          icon={LuLayers}
+          title="Hozircha mock test mavjud emas"
+          text="Yangi to'liq mock testlar qo'shilishi bilan ular shu yerda paydo bo'ladi."
+        />
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4 mt-4">
+        <div className="grid gap-5 md:grid-cols-2">
           {papers.map((p) => {
             const locked = !!lockRemaining[p.lockKey];
-            const available = !locked;
             return (
-              <button
-                key={p.key}
-                disabled={!available}
-                onClick={() => available && p.go()}
-                className={`group relative flex flex-col text-left rounded-[24px] p-6 border transition-all duration-200 overflow-hidden
-                  ${
-                    available
-                      ? "bg-white border-[#12213D]/7 hover:border-[#087fd1]/30 hover:shadow-[0_12px_32px_-12px_rgba(8,127,209,0.25)] hover:-translate-y-0.5"
-                      : "bg-[#12213D]/[0.025] border-transparent opacity-70 cursor-not-allowed"
-                  }`}
-              >
-                {/* Fon bezagi */}
-                <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full bg-gradient-to-br from-[#087fd1]/10 to-transparent group-hover:scale-125 transition-transform duration-500" />
-
-                <div className="relative flex items-start justify-between mb-5">
-                  <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                      locked ? "bg-[#12213D]/8 text-[#12213D]/40" : "bg-[#087fd1]/10 text-[#087fd1]"
-                    }`}
-                  >
-                    {locked ? (
-                      <LuTimer size={22} />
-                    ) : p.kind === "open" ? (
-                      <LuGlobe size={22} />
-                    ) : (
-                      <LuNotebookPen size={22} />
-                    )}
-                  </div>
-                  {p.kind === "open" && !locked && (
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                      Ochiq
-                    </span>
+              <Card key={p.key} className="flex flex-col p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <IconTile
+                    icon={locked ? LuTimer : p.kind === "open" ? LuGlobe : LuNotebookPen}
+                    tone={locked ? "ink" : "blue"}
+                    size="lg"
+                  />
+                  {locked ? (
+                    <Badge tone="amber" icon={LuClock}>
+                      Pauzada
+                    </Badge>
+                  ) : p.kind === "open" ? (
+                    <Badge tone="emerald">Ochiq</Badge>
+                  ) : (
+                    <Badge tone="blue">Bluebook formati</Badge>
                   )}
                 </div>
 
-                <h3 className="relative font-display font-extrabold text-[#12213D] text-lg leading-tight mb-1.5">
+                <h3 className="mt-5 font-display text-xl font-extrabold tracking-[-0.01em] text-[#12213D]">
                   {p.title}
                 </h3>
-                <p className="relative text-[#12213D]/45 text-sm flex items-center gap-1.5">
-                  {locked && <LuClock size={13} className="shrink-0" />}
-                  {locked
-                    ? `${formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin`
-                    : p.description}
-                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#12213D]/50">{p.description}</p>
 
-                {available && (
-                  <div className="relative flex items-center gap-1.5 text-sm font-semibold text-[#087fd1] mt-5">
-                    Boshlash
-                    <LuArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
-                  </div>
-                )}
-              </button>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 text-xs font-semibold text-[#12213D]/60">
+                    <LuBookOpenText size={13} /> Reading &amp; Writing
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 text-xs font-semibold text-[#12213D]/60">
+                    <LuCalculator size={13} /> Math
+                  </span>
+                </div>
+
+                <div className="mt-6 flex flex-1 items-end">
+                  {locked ? (
+                    <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#12213D]/[0.04] px-3 text-center text-sm font-semibold text-[#12213D]/55">
+                      <LuClock size={15} className="shrink-0" />
+                      {formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin
+                    </div>
+                  ) : (
+                    <Button className="w-full" onClick={p.go}>
+                      Boshlash <LuArrowRight size={17} />
+                    </Button>
+                  )}
+                </div>
+              </Card>
             );
           })}
         </div>
       )}
-    </div>
+    </Page>
   );
 }

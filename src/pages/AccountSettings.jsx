@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LuUser, LuLockKeyhole, LuCheck } from "react-icons/lu";
+import { LuUser, LuLockKeyhole, LuCheck, LuMail, LuSettings } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
+import { Page, PageHeader, Card, CardHeader, Button, Field, inputClass, PageLoader } from "../components/ui";
+
+function initials(nameOrEmail) {
+  const parts = (nameOrEmail || "?").split(/[\s@.]+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
 
 export default function AccountSettings() {
   const { user, loading, updateDisplayName, changePassword } = useAuth();
@@ -27,13 +34,7 @@ export default function AccountSettings() {
     if (user) setName(user.displayName || "");
   }, [user]);
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
-  }
+  if (loading || !user) return <PageLoader />;
 
   const handleNameSubmit = async (e) => {
     e.preventDefault();
@@ -82,139 +83,117 @@ export default function AccountSettings() {
     }
   };
 
+  const displayName = user.displayName || user.email?.split("@")[0] || "Foydalanuvchi";
+
   return (
-    <div className="py-14 px-6">
-      <div className="max-w-xl mx-auto">
-        <h1 className="font-display text-2xl font-extrabold text-[#12213D] mb-1">
-          Sozlamalar
-        </h1>
-        <p className="text-sm text-[#12213D]/55 mb-8">
-          Profil ma'lumotlaringizni shu yerdan boshqarasiz.
-        </p>
+    <Page>
+      <PageHeader
+        eyebrow="Hisob"
+        icon={LuSettings}
+        title="Sozlamalar"
+        subtitle="Profil ma'lumotlaringiz va xavfsizlik sozlamalarini shu yerdan boshqarasiz."
+      />
 
-        {/* Profil */}
-        <form
-          onSubmit={handleNameSubmit}
-          className="bg-white rounded-2xl border border-[#12213D]/8 p-6 mb-6"
-        >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
-              <LuUser size={17} />
-            </div>
-            <h2 className="font-bold text-[#12213D]">Profil</h2>
+      <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
+        {/* Profil xulosasi */}
+        <Card className="p-6 lg:sticky lg:top-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#12213D] font-display text-xl font-bold text-white">
+            {initials(displayName)}
           </div>
+          <p className="mt-4 truncate font-display text-lg font-bold text-[#12213D]">{displayName}</p>
+          <p className="mt-1 flex items-center gap-1.5 truncate text-sm text-[#12213D]/50">
+            <LuMail size={14} className="shrink-0" /> {user.email}
+          </p>
+        </Card>
 
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">To'liq ism</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-              />
+        <div className="space-y-6">
+          {/* Profil */}
+          <Card as="form" onSubmit={handleNameSubmit}>
+            <CardHeader title="Profil" subtitle="Ismingiz reyting va natijalarda ko'rinadi." action={<LuUser size={18} className="text-[#12213D]/30" />} />
+            <div className="space-y-4 p-5 sm:p-6">
+              <Field label="To'liq ism">
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+              </Field>
+              <Field label="Email" hint="Email manzilni o'zgartirib bo'lmaydi.">
+                <input type="email" value={user.email || ""} disabled className={`${inputClass} cursor-not-allowed`} />
+              </Field>
+              {nameError && <p className="text-sm text-red-600">{nameError}</p>}
             </div>
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">Email</label>
-              <input
-                type="email"
-                value={user.email || ""}
-                disabled
-                className="mt-1 w-full border border-[#12213D]/10 rounded-lg px-3 py-2 bg-[#12213D]/[0.03] text-[#12213D]/50 cursor-not-allowed"
-              />
+            <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+              <Button type="submit" disabled={nameSaving}>
+                {nameSaved ? (
+                  <>
+                    <LuCheck size={16} /> Saqlandi
+                  </>
+                ) : nameSaving ? (
+                  "Saqlanmoqda..."
+                ) : (
+                  "Saqlash"
+                )}
+              </Button>
             </div>
+          </Card>
 
-            {nameError && <p className="text-sm text-red-600">{nameError}</p>}
-
-            <button
-              type="submit"
-              disabled={nameSaving}
-              className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#066fb8] transition disabled:opacity-60"
-            >
-              {nameSaved ? (
-                <>
-                  <LuCheck size={16} /> Saqlandi
-                </>
-              ) : nameSaving ? (
-                "Saqlanmoqda..."
-              ) : (
-                "Saqlash"
-              )}
-            </button>
-          </div>
-        </form>
-
-        {/* Parol */}
-        <form
-          onSubmit={handlePasswordSubmit}
-          className="bg-white rounded-2xl border border-[#12213D]/8 p-6"
-        >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-9 h-9 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
-              <LuLockKeyhole size={17} />
+          {/* Parol */}
+          <Card as="form" onSubmit={handlePasswordSubmit}>
+            <CardHeader
+              title="Parolni almashtirish"
+              subtitle="Yangi parol kamida 6 ta belgidan iborat bo'lsin."
+              action={<LuLockKeyhole size={18} className="text-[#12213D]/30" />}
+            />
+            <div className="space-y-4 p-5 sm:p-6">
+              <Field label="Joriy parol">
+                <input
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClass}
+                  placeholder="••••••••"
+                />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Yangi parol">
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className={inputClass}
+                    placeholder="Kamida 6 ta belgi"
+                  />
+                </Field>
+                <Field label="Yangi parolni tasdiqlang">
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={inputClass}
+                    placeholder="••••••••"
+                  />
+                </Field>
+              </div>
+              {pwError && <p className="text-sm text-red-600">{pwError}</p>}
             </div>
-            <h2 className="font-bold text-[#12213D]">Parolni almashtirish</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">Joriy parol</label>
-              <input
-                type="password"
-                required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-                placeholder="••••••••"
-              />
+            <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+              <Button type="submit" variant="dark" disabled={pwSaving}>
+                {pwSaved ? (
+                  <>
+                    <LuCheck size={16} /> Yangilandi
+                  </>
+                ) : pwSaving ? (
+                  "Yangilanmoqda..."
+                ) : (
+                  "Parolni yangilash"
+                )}
+              </Button>
             </div>
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">Yangi parol</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-                placeholder="Kamida 6 ta belgi"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">
-                Yangi parolni tasdiqlang
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {pwError && <p className="text-sm text-red-600">{pwError}</p>}
-
-            <button
-              type="submit"
-              disabled={pwSaving}
-              className="flex items-center gap-2 bg-[#12213D] text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-[#12213D]/85 transition disabled:opacity-60"
-            >
-              {pwSaved ? (
-                <>
-                  <LuCheck size={16} /> Yangilandi
-                </>
-              ) : pwSaving ? (
-                "Yangilanmoqda..."
-              ) : (
-                "Parolni yangilash"
-              )}
-            </button>
-          </div>
-        </form>
+          </Card>
+        </div>
       </div>
-    </div>
+    </Page>
   );
 }
 

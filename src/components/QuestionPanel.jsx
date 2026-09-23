@@ -1,5 +1,37 @@
 import { LuBookmark, LuCheck, LuX } from "react-icons/lu";
 import HighlightableText from "./HighlightableText";
+import { sanitizeRichText } from "../utils/sanitizeHtml";
+
+// Bluebook qoidasi: musbat javob uchun 5 ta, manfiy uchun 6 ta belgi.
+function isValidSprInput(value) {
+  if (!/^-?[0-9./]*$/.test(value)) return false;
+  return value.length <= (value.startsWith("-") ? 6 : 5);
+}
+
+function SprDirections() {
+  return (
+    <div className="text-[15px] leading-7 text-gray-900">
+      <p className="font-bold mb-3">Student-produced response directions</p>
+      <ul className="list-disc pl-5 space-y-2">
+        <li>If you find more than one correct answer, enter only one answer.</li>
+        <li>
+          You can enter up to 5 characters for a positive answer and up to 6 characters
+          (including the negative sign) for a negative answer.
+        </li>
+        <li>If your answer is a fraction that doesn&apos;t fit in the space, enter the decimal equivalent.</li>
+        <li>
+          If your answer is a decimal that doesn&apos;t fit in the space, enter it by truncating or
+          rounding at the fourth digit.
+        </li>
+        <li>
+          If your answer is a mixed number (such as 3&frac12;), enter it as an improper fraction
+          (7/2) or its decimal equivalent (3.5).
+        </li>
+        <li>Don&apos;t enter symbols such as a percent sign, comma, or dollar sign.</li>
+      </ul>
+    </div>
+  );
+}
 
 export default function QuestionPanel({
   question,
@@ -13,8 +45,18 @@ export default function QuestionPanel({
   showPassage,
   feedbackMode,
 }) {
+  const isSpr = question.type === "spr";
+  const splitView = showPassage || isSpr;
+  const renderRich = (text) =>
+    question.html ? <span dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }} /> : text;
+
   return (
-    <div className={`flex-1 min-h-0 flex ${showPassage ? "flex-row" : "flex-col"}`}>
+    <div className={`flex-1 min-h-0 flex ${splitView ? "flex-row" : "flex-col"}`}>
+      {isSpr && !showPassage && (
+        <div className="w-1/2 border-r border-gray-300 p-8 overflow-y-auto passage-scroll">
+          <SprDirections />
+        </div>
+      )}
       {showPassage && (
         <div className="w-1/2 border-r border-gray-300 p-8 overflow-y-auto passage-scroll select-text">
           <HighlightableText
@@ -23,12 +65,12 @@ export default function QuestionPanel({
             rich
             highlightKey={`q${question.id}-passage`}
             highlightLabel={`${index + 1}-savol — Matn`}
-            className="text-[15px] leading-7 text-gray-900 whitespace-pre-line"
+            className="sat-rich text-[15px] leading-7 text-gray-900 whitespace-pre-line"
           />
         </div>
       )}
 
-      <div className={`${showPassage ? "w-1/2" : "w-full max-w-3xl mx-auto"} p-8 overflow-y-auto passage-scroll`}>
+      <div className={`${splitView ? "w-1/2" : "w-full max-w-3xl mx-auto"} p-8 overflow-y-auto passage-scroll`}>
         <div className="flex items-stretch border border-gray-300 rounded-t-md overflow-hidden text-sm">
           <div className="bg-gray-900 text-white font-bold w-9 flex items-center justify-center">
             {index + 1}
@@ -58,16 +100,17 @@ export default function QuestionPanel({
             rich
             highlightKey={`q${question.id}-passage`}
             highlightLabel={`${index + 1}-savol — Matn`}
-            className="text-[15px] leading-7 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
+            className="sat-rich text-[15px] leading-7 text-gray-900 mb-4 mt-4 whitespace-pre-line select-text"
           />
         )}
 
         <HighlightableText
           key={`prompt-${question.id}`}
           text={question.prompt}
+          rich={!!question.html}
           highlightKey={`q${question.id}-prompt`}
           highlightLabel={`${index + 1}-savol — Savol matni`}
-          className="text-[17px] leading-7 text-gray-900 font-medium mt-5 mb-4 select-text"
+          className="sat-rich text-[17px] leading-7 text-gray-900 font-medium mt-5 mb-4 select-text"
         />
 
         {question.image && (
@@ -80,8 +123,29 @@ export default function QuestionPanel({
           </div>
         )}
 
+        {isSpr && (
+          <div className="mt-2">
+            <input
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              aria-label="Your answer"
+              value={selected || ""}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\s/g, "");
+                if (isValidSprInput(v)) onSelectAnswer(v || null);
+              }}
+              className="w-44 border-2 border-gray-400 rounded-md px-3 py-2.5 text-lg font-semibold tracking-wide focus:outline-none focus:border-[#375DFB]"
+            />
+            <div className="mt-4 text-sm text-gray-600">
+              Answer Preview:{" "}
+              <span className="font-semibold text-gray-900 text-base">{selected || ""}</span>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {question.choices.map((choice) => {
+          {(question.choices || []).map((choice) => {
             const isSelected = selected === choice.label;
             const isCrossed = crossedOut?.includes(choice.label);
             const isCorrectChoice = choice.label === question.correctAnswer;
@@ -130,7 +194,7 @@ export default function QuestionPanel({
                       choice.label
                     )}
                   </span>
-                  <span className={isCrossed ? "line-through" : ""}>{choice.text}</span>
+                  <span className={isCrossed ? "line-through" : ""}>{renderRich(choice.text)}</span>
                 </button>
 
                 {/* Eliminate (crossout) tugmasi doim ko'rinadi — alohida "mode"

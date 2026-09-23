@@ -2,14 +2,21 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query, limit } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
-import { LuTrophy } from "react-icons/lu";
-import PageHero from "../components/PageHero";
+import { LuTrophy, LuCrown, LuMedal } from "react-icons/lu";
+import { Page, PageHeader, Card, Button, EmptyState, Skeleton } from "../components/ui";
 
 function initials(name) {
   const parts = (name || "?").split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
+
+// Podium tartibi: 2-o'rin, 1-o'rin, 3-o'rin (o'rtadagisi eng baland).
+const PODIUM = [
+  { index: 1, height: "h-24", ring: "ring-[#12213D]/15", avatar: "bg-[#12213D]" },
+  { index: 0, height: "h-32", ring: "ring-amber-400", avatar: "bg-[#087fd1]" },
+  { index: 2, height: "h-20", ring: "ring-[#12213D]/10", avatar: "bg-[#12213D]/70" },
+];
 
 export default function Leaderboard() {
   const { user } = useAuth();
@@ -30,80 +37,101 @@ export default function Leaderboard() {
   }, []);
 
   const myRank = rows.findIndex((r) => r.uid === user?.uid);
+  const rest = rows.slice(3);
 
   return (
-    <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
-      <PageHero
-        eyebrow="REYTING"
+    <Page width="narrow">
+      <PageHeader
+        eyebrow="Reyting"
         icon={LuTrophy}
         title="Eng yaxshi natijalar"
         subtitle="Har bir foydalanuvchining eng yuqori mock test balli bo'yicha TOP-15."
       />
 
       {loading ? (
-        <div className="grid gap-2.5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 bg-white rounded-2xl border border-[#12213D]/6 animate-pulse" />
-          ))}
+        <div className="space-y-3">
+          <Skeleton className="h-56" />
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
         </div>
       ) : rows.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-dashed border-[#12213D]/12 p-14 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center mx-auto mb-4">
-            <LuTrophy size={24} />
-          </div>
-          <p className="text-[#12213D]/50 font-medium">
-            Hali hech kim mock test yakunlamagan — birinchi bo'ling!
-          </p>
-        </div>
+        <EmptyState
+          icon={LuTrophy}
+          title="Reyting hali bo'sh"
+          text="Hali hech kim mock test yakunlamagan — birinchi bo'ling!"
+          action={<Button to="/sat/select">Testni boshlash</Button>}
+        />
       ) : (
-        <div className="grid gap-2.5">
-          {rows.map((r, i) => {
-            const isMe = r.uid === user?.uid;
-            const isTop3 = i < 3;
-            return (
-              <div
-                key={r.id}
-                className={`flex items-center gap-4 rounded-2xl border p-4 transition-colors ${
-                  isMe
-                    ? "bg-[#087fd1]/[0.05] border-[#087fd1]/25"
-                    : "bg-white border-[#12213D]/7"
-                }`}
-              >
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-display font-extrabold text-sm shrink-0 ${
-                    isTop3
-                      ? "bg-[#087fd1] text-white"
-                      : "bg-[#12213D]/[0.05] text-[#12213D]/50"
-                  }`}
-                >
-                  {i + 1}
-                </div>
+        <>
+          {/* Podium */}
+          <Card className="mb-6 px-4 pb-0 pt-8 sm:px-8">
+            <div className="grid grid-cols-3 items-end gap-3 sm:gap-6">
+              {PODIUM.map(({ index, height, ring, avatar }) => {
+                const r = rows[index];
+                if (!r) return <div key={index} />;
+                const isMe = r.uid === user?.uid;
+                return (
+                  <div key={r.id} className="flex flex-col items-center text-center">
+                    {index === 0 && <LuCrown size={22} className="mb-1.5 text-amber-500" />}
+                    <div
+                      className={`flex h-14 w-14 items-center justify-center rounded-2xl text-sm font-bold text-white ring-4 ring-offset-2 ${avatar} ${ring}`}
+                    >
+                      {initials(r.name)}
+                    </div>
+                    <p className="mt-3 w-full truncate text-sm font-semibold text-[#12213D]">
+                      {r.name}
+                      {isMe && <span className="text-[#087fd1]"> (Siz)</span>}
+                    </p>
+                    <p className="font-display text-xl font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
+                    <div
+                      className={`mt-3 flex w-full items-start justify-center rounded-t-2xl pt-3 ${height} ${
+                        index === 0 ? "bg-[#087fd1] text-white" : "bg-[#F6F7FB] text-[#12213D]/50"
+                      }`}
+                    >
+                      <span className="font-display text-2xl font-extrabold">{index + 1}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
 
-                <div className="w-10 h-10 rounded-full bg-[#12213D] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                  {initials(r.name)}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-bold text-[#12213D] truncate">
-                    {r.name}
-                    {isMe && <span className="text-[#087fd1] font-semibold"> (Siz)</span>}
-                  </p>
-                </div>
-
-                <p className="font-display text-xl font-black text-[#12213D] shrink-0">
-                  {r.bestScore}
-                </p>
+          {rest.length > 0 && (
+            <Card className="overflow-hidden">
+              <div className="grid divide-y divide-[#12213D]/[0.06]">
+                {rest.map((r, i) => {
+                  const isMe = r.uid === user?.uid;
+                  return (
+                    <div
+                      key={r.id}
+                      className={`flex items-center gap-4 px-5 py-3.5 sm:px-6 ${isMe ? "bg-[#087fd1]/[0.06]" : ""}`}
+                    >
+                      <span className="w-6 text-center font-display text-sm font-bold tabular-nums text-[#12213D]/35">
+                        {i + 4}
+                      </span>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#12213D] text-xs font-bold text-white">
+                        {initials(r.name)}
+                      </div>
+                      <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#12213D]">
+                        {r.name}
+                        {isMe && <span className="font-semibold text-[#087fd1]"> (Siz)</span>}
+                      </p>
+                      <p className="font-display text-lg font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </Card>
+          )}
 
-      {user && myRank === -1 && !loading && rows.length > 0 && (
-        <p className="text-center text-sm text-[#12213D]/40 mt-6">
-          Siz hali TOP-15'da emassiz — yaxshiroq natija ko'rsatib, ro'yxatga kiring!
-        </p>
+          {user && myRank === -1 && (
+            <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-[#12213D]/45">
+              <LuMedal size={16} />
+              Siz hali TOP-15'da emassiz — yaxshiroq natija ko'rsatib, ro'yxatga kiring!
+            </p>
+          )}
+        </>
       )}
-    </div>
+    </Page>
   );
 }

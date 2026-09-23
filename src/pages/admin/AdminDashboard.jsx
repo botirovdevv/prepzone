@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
-import { LuPlus, LuCalendarClock, LuChevronRight } from "react-icons/lu";
+import { LuPlus, LuCalendarClock, LuChevronRight, LuShieldCheck, LuGlobe, LuCalendarX } from "react-icons/lu";
+import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
@@ -17,19 +18,18 @@ function formatDateTime(ts) {
 }
 
 function sessionStatusLabel(session) {
-  if (session.status === "closed") return { text: "Yakunlangan", color: "bg-gray-100 text-gray-500" };
-  if (session.accessType === "open") return { text: "Doimiy ochiq", color: "bg-emerald-50 text-emerald-600" };
+  if (session.status === "closed") return { text: "Yakunlangan", tone: "ink" };
+  if (session.accessType === "open") return { text: "Doimiy ochiq", tone: "emerald" };
   const scheduled = session.scheduledAt?.toDate
     ? session.scheduledAt.toDate()
     : new Date(session.scheduledAt);
-  if (scheduled > new Date()) return { text: "Hali boshlanmagan", color: "bg-amber-50 text-amber-600" };
-  return { text: "Faol", color: "bg-emerald-50 text-emerald-600" };
+  if (scheduled > new Date()) return { text: "Hali boshlanmagan", tone: "amber" };
+  return { text: "Faol", tone: "emerald" };
 }
 
 export default function AdminDashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(collection(db, "testSessions"), orderBy("scheduledAt", "desc"));
@@ -45,59 +45,69 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#087fd1] mb-1">
-            Admin panel
-          </p>
-          <h1 className="text-2xl font-extrabold text-[#12213D]">Vaqti belgilangan testlar</h1>
-        </div>
-        <button
-          onClick={() => navigate("/admin/sessions/new")}
-          className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-4 py-2.5 rounded-full hover:bg-[#066fb8]"
-        >
-          <LuPlus size={17} /> Yangi test
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow="Admin panel"
+        icon={LuShieldCheck}
+        title="Mock testlar"
+        subtitle="Vaqti belgilangan va doimiy ochiq testlarni yarating, kuzating va boshqaring."
+        actions={
+          <Button to="/admin/sessions/new">
+            <LuPlus size={17} /> Yangi test
+          </Button>
+        }
+      />
 
       {loading ? (
-        <p className="text-[#12213D]/40 text-sm">Yuklanmoqda...</p>
-      ) : sessions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-10 text-center text-[#12213D]/50">
-          Hali birorta test tashkil qilinmagan.
-        </div>
-      ) : (
         <div className="space-y-3">
-          {sessions.map((s) => {
-            const badge = sessionStatusLabel(s);
-            return (
-              <Link
-                key={s.id}
-                to={`/admin/sessions/${s.id}/monitor`}
-                className="flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/8 p-5 hover:border-[#087fd1]/40 hover:shadow-md transition"
-              >
-                <div className="w-11 h-11 rounded-xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0">
-                  <LuCalendarClock size={19} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-bold text-[#12213D] truncate">{s.title}</p>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${badge.color}`}>
-                      {badge.text}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[#12213D]/50">
-                    {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)} · Kod:{" "}
-                    <span className="font-mono font-bold text-[#12213D]/70">{s.code}</span>
-                  </p>
-                </div>
-                <LuChevronRight size={18} className="text-[#12213D]/30 shrink-0" />
-              </Link>
-            );
-          })}
+          <Skeleton className="h-[76px]" />
+          <Skeleton className="h-[76px]" />
         </div>
+      ) : sessions.length === 0 ? (
+        <EmptyState
+          icon={LuCalendarX}
+          title="Hali birorta test tashkil qilinmagan"
+          text="Birinchi testni yarating — talabalar unga kod yoki doimiy ochiq havola orqali kiradi."
+          action={
+            <Button to="/admin/sessions/new">
+              <LuPlus size={17} /> Yangi test
+            </Button>
+          }
+        />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="grid divide-y divide-[#12213D]/[0.06]">
+            {sessions.map((s) => {
+              const badge = sessionStatusLabel(s);
+              return (
+                <Link
+                  key={s.id}
+                  to={`/admin/sessions/${s.id}/monitor`}
+                  className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                >
+                  <IconTile icon={s.accessType === "open" ? LuGlobe : LuCalendarClock} tone="blue" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-semibold text-[#12213D]">{s.title}</p>
+                      <Badge tone={badge.tone}>{badge.text}</Badge>
+                    </div>
+                    <p className="mt-0.5 text-sm text-[#12213D]/50">
+                      {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)}
+                    </p>
+                  </div>
+                  <span className="hidden rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-[#12213D]/70 sm:inline">
+                    {s.code}
+                  </span>
+                  <LuChevronRight
+                    size={18}
+                    className="shrink-0 text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]"
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        </Card>
       )}
-    </div>
+    </Page>
   );
 }

@@ -6,7 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
-import { LuArrowLeft, LuInfo } from "react-icons/lu";
+import { LuArrowLeft, LuInfo, LuLibrary } from "react-icons/lu";
+import { Page, PageHeader, Card, CardHeader, Button, Field, inputClass, PageLoader } from "../../components/ui";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
 export default function SetForm() {
@@ -108,57 +109,52 @@ export default function SetForm() {
     }
   };
 
-  if (loadingExisting) {
-    return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
-  }
+  if (loadingExisting) return <PageLoader />;
 
   return (
-    <div className="p-6 lg:p-10 max-w-3xl mx-auto">
+    <Page width="narrow">
       <button
         onClick={() => {
           if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
           navigate("/admin/sets");
         }}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
       >
         <LuArrowLeft size={16} /> Amaliyot to'plamlari
       </button>
 
-      <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
-        {isEdit ? "To'plamni tahrirlash" : "Yangi amaliyot to'plami"}
-      </h1>
-      <p className="text-sm text-[#12213D]/50 mb-8">
-        Masalan, biror imtihonda (Iyun, Mart, Oktabr) chiqqan savollarni shu yerga joylashtiring.
-      </p>
+      <PageHeader
+        eyebrow="Admin panel"
+        icon={LuLibrary}
+        title={isEdit ? "To'plamni tahrirlash" : "Yangi amaliyot to'plami"}
+        subtitle="Masalan, biror imtihonda (Iyun, Mart, Oktabr) chiqqan savollarni shu yerga joylashtiring."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-              To'plam nomi
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Masalan: Iyun 2024 savollari"
-              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
-            />
+        <Card>
+          <CardHeader title="Asosiy ma'lumotlar" />
+          <div className="space-y-5 p-5 sm:p-6">
+            <Field label="To'plam nomi">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Masalan: Iyun 2024 savollari"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Tavsif (ixtiyoriy)">
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Masalan: 2024-yil iyun oyi imtihonida chiqqan savollar"
+                className={inputClass}
+              />
+            </Field>
           </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-              Tavsif (ixtiyoriy)
-            </label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Masalan: 2024-yil iyun oyi imtihonida chiqqan savollar"
-              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
-            />
-          </div>
-        </div>
+        </Card>
 
-        <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
-          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
+        <div className="flex items-start gap-3 rounded-2xl border border-[#087fd1]/15 bg-[#087fd1]/[0.04] p-4 text-sm leading-relaxed text-[#12213D]/70">
+          <LuInfo size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
           <p>
             Bu to'plam <strong>vaqt cheklanmagan</strong> holatda ko'rsatiladi va talaba javob
             belgilashi bilanoq to'g'ri/noto'g'riligini darhol ko'radi — moslashuvchan (Module 1/2)
@@ -166,44 +162,45 @@ export default function SetForm() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          <h2 className="font-bold text-[#12213D]">Reading and Writing</h2>
-          <QuestionEditor
-            title="Savollar"
-            questions={rwQuestions}
-            onChange={setRwQuestions}
-            showPassage
-            domainOptions={RW_DOMAINS}
-            promptTemplates={RW_PROMPT_TEMPLATES}
-            bankSubject="rw"
-          />
-        </div>
+        <Card>
+          <CardHeader title="Reading and Writing" subtitle="Bo'lim 1" />
+          <div className="p-5 sm:p-6">
+            <QuestionEditor
+              title="Savollar"
+              questions={rwQuestions}
+              onChange={setRwQuestions}
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              bankSubject="rw"
+            />
+          </div>
+        </Card>
 
-        <div className="space-y-3">
-          <h2 className="font-bold text-[#12213D]">Math</h2>
-          <QuestionEditor
-            title="Savollar"
-            questions={mathQuestions}
-            onChange={setMathQuestions}
-            domainOptions={MATH_DOMAINS}
-            bankSubject="math"
-          />
-        </div>
+        <Card>
+          <CardHeader title="Math" subtitle="Bo'lim 2" />
+          <div className="p-5 sm:p-6">
+            <QuestionEditor
+              title="Savollar"
+              questions={mathQuestions}
+              onChange={setMathQuestions}
+              domainOptions={MATH_DOMAINS}
+              bankSubject="math"
+            />
+          </div>
+        </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
-            {error}
-          </div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
         )}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-[#087fd1] text-white font-semibold py-3.5 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
-        >
-          {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "To'plamni yaratish"}
-        </button>
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-[#12213D]/[0.07] bg-white/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
+          <p className="text-sm text-[#12213D]/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "To'plamni yaratish"}
+          </Button>
+        </div>
       </form>
-    </div>
+    </Page>
   );
 }

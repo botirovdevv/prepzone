@@ -4,16 +4,21 @@ import { collection, query, where, getDocs, doc, getDoc } from "firebase/firesto
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
-import HandIcon from '../../public/waving-hand-icon.png'
+import HandIcon from "../../public/waving-hand-icon.png";
 import {
   LuNotebookPen,
   LuKeyRound,
   LuHistory,
   LuLayers,
   LuArrowRight,
+  LuArrowUpRight,
   LuShieldCheck,
   LuTrophy,
+  LuChartLine,
+  LuClipboardCheck,
+  LuClock,
 } from "react-icons/lu";
+import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton } from "../components/ui";
 
 function greeting() {
   const h = new Date().getHours();
@@ -23,12 +28,26 @@ function greeting() {
   return "Xayrli kech";
 }
 
+function formatDate(ts) {
+  const d = ts?.toDate ? ts.toDate() : null;
+  if (!d) return "—";
+  return d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
+}
+
+const QUICK_LINKS = [
+  { to: "/sat/select", icon: LuNotebookPen, title: "Mock testlar", text: "To'liq adaptiv SAT", tone: "blue" },
+  { to: "/practice", icon: LuLayers, title: "Amaliyot", text: "Vaqtsiz, darhol javob", tone: "emerald" },
+  { to: "/sat/history", icon: LuHistory, title: "Natijalarim", text: "Barcha urinishlar", tone: "ink" },
+  { to: "/leaderboard", icon: LuTrophy, title: "Reyting", text: "TOP-15 natija", tone: "amber" },
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
-  const [recent, setRecent] = useState(null);
-  const [myRank, setMyRank] = useState(null);
+  // null — yuklanmoqda, [] — natija yo'q
+  const [attempts, setAttempts] = useState(null);
+  const [bestScore, setBestScore] = useState(null);
   const [code, setCode] = useState("");
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
@@ -37,19 +56,15 @@ export default function Dashboard() {
     if (!user) return;
     getDocs(query(collection(db, "results"), where("uid", "==", user.uid)))
       .then((snap) => {
-        if (snap.empty) {
-          setRecent(false);
-          return;
-        }
-        const all = snap.docs.map((d) => d.data());
+        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         all.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        setRecent(all[0]);
+        setAttempts(all);
       })
-      .catch(() => setRecent(false));
+      .catch(() => setAttempts([]));
 
     getDoc(doc(db, "leaderboard", user.uid))
-      .then((snap) => setMyRank(snap.exists() ? snap.data().bestScore : null))
-      .catch(() => setMyRank(null));
+      .then((snap) => setBestScore(snap.exists() ? snap.data().bestScore : null))
+      .catch(() => setBestScore(null));
   }, [user]);
 
   const handleJoin = (e) => {
@@ -58,164 +73,158 @@ export default function Dashboard() {
     navigate("/join", { state: { prefillCode: code.trim() } });
   };
 
+  const loadingAttempts = attempts === null;
+  const recent = attempts?.[0];
+  const best = bestScore ?? (attempts?.length ? Math.max(...attempts.map((a) => a.total || 0)) : null);
+  const trend = (attempts || [])
+    .slice(0, 10)
+    .reverse()
+    .map((a) => ({ value: a.total || 0, label: formatDate(a.createdAt) }));
+
   return (
-    <div className="px-5 sm:px-8 py-8 max-w-4xl mx-auto">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-[28px] border border-[#12213D]/6 px-6 py-8 sm:px-9 sm:py-10 mb-6 bg-[linear-gradient(135deg,#eaf0ff_0%,#f6f7fb_55%,#ffffff_100%)]">
-        <div className="pointer-events-none absolute -right-16 -top-20 w-72 h-72 rounded-full bg-[#087fd1]/10" />
-        <div className="pointer-events-none absolute right-28 bottom-[-60px] w-40 h-40 rounded-full bg-[#087fd1]/10" />
-        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#12213D]/45 mb-2">
-              {greeting()}
-            </p>
-            <h1 className="font-display text-[28px] sm:text-[32px] font-extrabold text-[#12213D] leading-[1.1] flex items-center gap-2">
-              <span>Salom, {displayName}</span>
-              <img
-                src={HandIcon}
-                alt="Waving hand"
-                className="w-7 h-7 sm:w-8 sm:h-8 inline-block object-contain"
-              />
-            </h1>
-          </div>
-          {(recent || myRank) && (
-            <div className="flex gap-2.5">
-              {recent && (
-                <div className="flex items-center gap-2.5 bg-white/90 rounded-2xl px-4 py-2.5 shadow-sm border border-white">
-                  <span className="w-7 h-7 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
-                    <LuHistory size={14} />
-                  </span>
-                  <div className="leading-tight">
-                    <p className="font-display text-base font-extrabold text-[#12213D]">{recent.total}</p>
-                    <p className="text-[11px] text-[#12213D]/45 font-medium">oxirgi ball</p>
-                  </div>
-                </div>
-              )}
-              {myRank && (
-                <div className="flex items-center gap-2.5 bg-white/90 rounded-2xl px-4 py-2.5 shadow-sm border border-white">
-                  <span className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                    <LuTrophy size={14} />
-                  </span>
-                  <div className="leading-tight">
-                    <p className="font-display text-base font-extrabold text-[#12213D]">{myRank}</p>
-                    <p className="text-[11px] text-[#12213D]/45 font-medium">eng yaxshi</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        eyebrow={greeting()}
+        title={
+          <span className="flex items-center gap-3">
+            Salom, {displayName}
+            <img src={HandIcon} alt="" className="h-8 w-8 object-contain" />
+          </span>
+        }
+        subtitle="Bugun qayerdan davom etamiz? Mock test yechib, natijangizni kuzatib boring."
+        actions={
+          <Button to="/sat/select" size="lg">
+            Mock testni boshlash <LuArrowRight size={18} />
+          </Button>
+        }
+      />
 
-      <div className="grid sm:grid-cols-2 gap-3.5 mb-3.5">
-        <Link
-          to="/sat/select"
-          className="group flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/7 p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(47,111,237,0.18)] transition-all"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0 group-hover:bg-[#087fd1] group-hover:text-white transition-colors">
-            <LuNotebookPen size={22} />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">Mock testlar</p>
-            <p className="text-sm text-[#12213D]/45">To'liq adaptiv SAT testlarini yeching</p>
-          </div>
-          <LuArrowRight size={18} className="text-[#12213D]/25 shrink-0" />
-        </Link>
+      {/* Statistika */}
+      <section className="grid gap-4 sm:grid-cols-3 mb-6">
+        <StatTile icon={LuChartLine} label="Oxirgi ball" value={recent?.total} hint={recent ? formatDate(recent.createdAt) : "Hali test yo'q"} />
+        <StatTile icon={LuTrophy} tone="amber" label="Eng yaxshi" value={best} hint="400–1600 shkala" />
+        <StatTile icon={LuClipboardCheck} tone="emerald" label="Topshirilgan" value={attempts ? attempts.length : null} hint="to'liq mock test" />
+      </section>
 
-        <Link
-          to="/practice"
-          className="group flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/7 p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.2)] transition-all"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0 group-hover:bg-[#087fd1] group-hover:text-white transition-colors">
-            <LuLayers size={22} />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">Amaliyot to'plamlari</p>
-            <p className="text-sm text-[#12213D]/45">Vaqt cheklovisiz, darhol javob bilan</p>
-          </div>
-          <LuArrowRight size={18} className="text-[#12213D]/25 shrink-0" />
-        </Link>
-
-        <Link
-          to="/sat/history"
-          className="group flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/7 p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.18)] transition-all"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0 group-hover:bg-[#087fd1] group-hover:text-white transition-colors">
-            <LuHistory size={22} />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">Mening natijalarim</p>
-            <p className="text-sm text-[#12213D]/45">
-              {recent ? `Oxirgi natija: ${recent.total} ball` : "Hali test topshirmagansiz"}
-            </p>
-          </div>
-          <LuArrowRight size={18} className="text-[#12213D]/25 shrink-0" />
-        </Link>
-
-        <Link
-          to="/leaderboard"
-          className="group flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/7 p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.2)] transition-all"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0 group-hover:bg-[#087fd1] group-hover:text-white transition-colors">
-            <LuTrophy size={22} />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">Reyting</p>
-            <p className="text-sm text-[#12213D]/45">Eng yaxshi TOP-15 natija</p>
-          </div>
-          <LuArrowRight size={18} className="text-[#12213D]/25 shrink-0" />
-        </Link>
-      </div>
-
-      {/* Kod bilan kirish */}
-      <div className="relative overflow-hidden bg-[#12213D] rounded-2xl p-6 sm:p-8 text-white mb-3.5">
-        <div className="pointer-events-none absolute -right-10 -bottom-16 w-52 h-52 rounded-full bg-[#087fd1]/20" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-              <LuKeyRound size={18} />
-            </div>
-            <h2 className="font-display font-bold text-lg">Kirish kodi bilan test</h2>
-          </div>
-          <p className="text-white/55 text-sm mb-5">
-            O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiritib, vaqti belgilangan
-            testga qo'shiling.
-          </p>
-          <form onSubmit={handleJoin} className="flex flex-col sm:flex-row gap-3">
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              inputMode="numeric"
-              placeholder="000000"
-              className="flex-1 text-center sm:text-left tracking-[0.4em] text-xl font-black font-mono rounded-xl bg-white/10 border border-white/10 px-4 py-3 outline-none focus:border-white/30 placeholder:text-white/30"
+      <section className="grid gap-6 lg:grid-cols-3">
+        {/* Chap ustun: dinamika + oxirgi natijalar */}
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader
+              title="Ball dinamikasi"
+              subtitle="Oxirgi 10 ta urinish"
+              action={
+                <Link to="/sat/history" className="flex items-center gap-1 text-sm font-semibold text-[#087fd1] hover:text-[#066fb8]">
+                  Hammasi <LuArrowUpRight size={15} />
+                </Link>
+              }
             />
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 bg-[#087fd1] text-white font-semibold px-6 py-3 rounded-xl hover:bg-[#066fb8] transition"
-            >
-              Davom etish <LuArrowRight size={17} />
-            </button>
-          </form>
-        </div>
-      </div>
+            <div className="px-3 pb-4 pt-3 sm:px-4">
+              {loadingAttempts ? (
+                <Skeleton className="h-36 mx-2" />
+              ) : trend.length > 0 ? (
+                <ScoreTrend scores={trend} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <p className="font-semibold text-[#12213D]/70">Hali ma'lumot yo'q</p>
+                  <p className="mt-1 text-sm text-[#12213D]/45">Birinchi mock testni yeching — grafik shu yerda paydo bo'ladi.</p>
+                </div>
+              )}
+            </div>
+          </Card>
 
-      {isAdmin && (
-        <Link
-          to="/admin"
-          className="group flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/7 p-5 hover:border-[#087fd1]/30 hover:shadow-md transition-all"
-        >
-          <div className="w-11 h-11 rounded-xl bg-[#12213D]/8 text-[#12213D]/70 flex items-center justify-center shrink-0">
-            <LuShieldCheck size={20} />
+          <Card>
+            <CardHeader title="Oxirgi natijalar" />
+            <div className="mt-3 divide-y divide-[#12213D]/[0.06]">
+              {loadingAttempts ? (
+                <div className="space-y-2 px-5 pb-5">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : attempts.length === 0 ? (
+                <p className="px-6 pb-6 text-sm text-[#12213D]/50">Hali birorta test topshirmagansiz.</p>
+              ) : (
+                attempts.slice(0, 4).map((a) => (
+                  <Link
+                    key={a.id}
+                    to={a.sessionId ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`}
+                    className="group flex items-center gap-4 px-5 py-3.5 transition hover:bg-[#F6F7FB] sm:px-6"
+                  >
+                    <IconTile icon={LuClock} tone="ink" size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[#12213D]">
+                        {a.sessionTitle || "SAT Practice Test"}
+                        {a.terminated && <span className="font-normal text-red-500"> · to'xtatilgan</span>}
+                      </p>
+                      <p className="text-xs text-[#12213D]/45">{formatDate(a.createdAt)}</p>
+                    </div>
+                    <p className="font-display text-lg font-extrabold tabular-nums text-[#12213D]">{a.total}</p>
+                    <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+                  </Link>
+                ))
+              )}
+            </div>
+            <div className="h-2" />
+          </Card>
+        </div>
+
+        {/* O'ng ustun: kod bilan kirish + tezkor havolalar */}
+        <div className="space-y-6">
+          <div className="relative overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#087fd1]/25 blur-2xl" />
+            <div className="relative">
+              <IconTile icon={LuKeyRound} tone="solid" />
+              <h2 className="mt-4 font-display text-lg font-bold">Kirish kodi bilan test</h2>
+              <p className="mt-1 text-sm text-white/55">
+                O'qituvchingiz bergan 6 xonali kodni kiriting.
+              </p>
+              <form onSubmit={handleJoin} className="mt-5 space-y-2.5">
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  placeholder="000000"
+                  aria-label="Kirish kodi"
+                  className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.07] px-4 text-center font-mono text-xl font-black tracking-[0.4em] text-white outline-none transition placeholder:text-white/25 focus:border-[#087fd1] focus:bg-white/10"
+                />
+                <Button type="submit" className="w-full" disabled={code.length !== 6}>
+                  Davom etish <LuArrowRight size={17} />
+                </Button>
+              </form>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">Admin panel</p>
-            <p className="text-sm text-[#12213D]/45">
-              Mock testlar, amaliyot to'plamlari va nazoratni boshqaring
-            </p>
-          </div>
-          <LuArrowRight size={18} className="text-[#12213D]/25 shrink-0" />
-        </Link>
-      )}
-    </div>
+
+          <Card className="p-2">
+            {QUICK_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="group flex items-center gap-3.5 rounded-xl p-3 transition hover:bg-[#F6F7FB]"
+              >
+                <IconTile icon={l.icon} tone={l.tone} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#12213D]">{l.title}</p>
+                  <p className="text-xs text-[#12213D]/45">{l.text}</p>
+                </div>
+                <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="group mt-1 flex items-center gap-3.5 rounded-xl border-t border-[#12213D]/[0.06] p-3 transition hover:bg-[#F6F7FB]"
+              >
+                <IconTile icon={LuShieldCheck} tone="dark" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#12213D]">Admin panel</p>
+                  <p className="text-xs text-[#12213D]/45">Testlar va to'plamlarni boshqarish</p>
+                </div>
+                <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+              </Link>
+            )}
+          </Card>
+        </div>
+      </section>
+    </Page>
   );
 }

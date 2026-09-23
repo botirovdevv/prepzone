@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { LuSearchX, LuChartColumn, LuArrowRight } from "react-icons/lu";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
+import { Page, PageHeader, Card, CardHeader, Button, Badge, EmptyState, PageLoader } from "../components/ui";
+import { ScoreSummary, ModuleBreakdown } from "../components/ScoreSummary";
 
 export default function SessionResults() {
   const { user } = useAuth();
@@ -43,22 +46,18 @@ export default function SessionResults() {
       .finally(() => setLoading(false));
   }, [sessionId, user, location.state]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   if (notFound || !results) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-gray-600">
-        <p>Bu natija topilmadi.</p>
-        <Link to="/dashboard" className="bg-[#375DFB] text-white px-5 py-2 rounded-lg font-semibold">
-          Bosh sahifa
-        </Link>
-      </div>
+      <Page width="narrow">
+        <EmptyState
+          icon={LuSearchX}
+          title="Natija topilmadi"
+          text="Bu natija mavjud emas yoki hali saqlanmagan."
+          action={<Button to="/dashboard">Bosh sahifa</Button>}
+        />
+      </Page>
     );
   }
 
@@ -68,98 +67,66 @@ export default function SessionResults() {
     total ?? groupResults.reduce((sum, { r }) => sum + (r.scaledScore || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {terminated && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
-            <p className="font-semibold mb-0.5">
-              Test xavfsizlik qoidasi buzilgani uchun avtomatik yakunlandi.
-            </p>
-            <p className="text-red-600/80">
-              Natija shu paytgacha bergan javoblaringiz asosida hisoblandi.
-            </p>
-          </div>
-        )}
+    <Page width="narrow">
+      <PageHeader
+        eyebrow="Test natijasi"
+        icon={LuChartColumn}
+        title={sessionTitle || "Mock test"}
+        subtitle="Bo'limlar bo'yicha ball va to'g'ri javoblar soni."
+        actions={
+          <Button onClick={() => navigate("/sat/history")}>
+            Barcha natijalarim <LuArrowRight size={16} />
+          </Button>
+        }
+      />
 
-        <div className="bg-[#0B2265] text-white rounded-2xl p-8 text-center shadow-xl mb-8">
-          {sessionTitle && (
-            <p className="text-sm uppercase tracking-wide text-white/70 mb-2">{sessionTitle}</p>
-          )}
-          <p className="text-6xl font-black">{computedTotal}</p>
-          <p className="text-white/70 mt-1">400 - 1600 shkala bo'yicha</p>
-        </div>
+      <ScoreSummary
+        total={computedTotal}
+        terminated={terminated}
+        sections={groupResults.map(({ meta, r }) => ({ id: meta.id, title: meta.title, score: r.scaledScore }))}
+      />
 
-        <div className="space-y-5">
-          {groupResults.map(({ meta, r }) => {
-            const totalCorrect = (r.module1Correct || 0) + (r.module2Correct || 0);
-            const totalQ = (r.module1Total || 0) + (r.module2Total || 0);
-            return (
-              <div key={meta.id} className="bg-white rounded-xl shadow p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-lg text-gray-900">{meta.title}</h2>
-                  <span className="text-3xl font-black text-[#375DFB]">{r.scaledScore}</span>
-                </div>
-
-                <div className="text-sm text-gray-600 space-y-1.5">
-                  <div className="flex justify-between">
-                    <span>{r.singleModule ? "Savollar" : "Module 1 (baza)"}</span>
-                    <span className="font-medium text-gray-800">
-                      {r.module1Correct}/{r.module1Total} to'g'ri
-                    </span>
-                  </div>
-                  {!r.singleModule && (
-                    <div className="flex justify-between items-center">
-                      <span>
-                        Module 2 —{" "}
-                        <span
-                          className={`font-semibold ${
-                            r.route === "hard" ? "text-red-600" : "text-emerald-600"
-                          }`}
-                        >
-                          {r.route === "hard" ? "Qiyin" : "Oson"}
-                        </span>{" "}
-                        versiya
-                      </span>
-                      <span className="font-medium text-gray-800">
-                        {r.module2Correct}/{r.module2Total} to'g'ri
-                      </span>
-                    </div>
-                  )}
-                  {!r.singleModule && (
-                    <div className="flex justify-between border-t border-gray-200 pt-1.5 mt-1.5">
-                      <span>Jami</span>
-                      <span className="font-medium text-gray-800">
-                        {totalCorrect}/{totalQ} to'g'ri
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {r.incomplete && (
-                  <p className="text-xs text-amber-600 mt-4">
-                    Bu bo'lim to'liq tugallanmagan — test muddatidan oldin yakunlangan.
-                  </p>
-                )}
+      <div className="space-y-6">
+        {groupResults.map(({ meta, r }) => {
+          const totalCorrect = (r.module1Correct || 0) + (r.module2Correct || 0);
+          const totalQ = (r.module1Total || 0) + (r.module2Total || 0);
+          const rows = r.singleModule
+            ? [{ label: "Savollar", value: `${r.module1Correct}/${r.module1Total}` }]
+            : [
+                { label: "Module 1", value: `${r.module1Correct}/${r.module1Total}` },
+                {
+                  label: "Module 2",
+                  tag: (
+                    <Badge tone={r.route === "hard" ? "red" : "emerald"}>
+                      {r.route === "hard" ? "Qiyin" : "Oson"}
+                    </Badge>
+                  ),
+                  value: `${r.module2Correct}/${r.module2Total}`,
+                },
+                { label: "Jami", value: `${totalCorrect}/${totalQ}` },
+              ];
+          return (
+            <Card key={meta.id}>
+              <CardHeader
+                title={meta.title}
+                subtitle={r.incomplete ? "Bu bo'lim to'liq tugallanmagan — test muddatidan oldin yakunlangan." : undefined}
+                action={
+                  <span className="font-display text-3xl font-extrabold tabular-nums text-[#087fd1]">{r.scaledScore}</span>
+                }
+              />
+              <div className="p-5 sm:p-6">
+                <ModuleBreakdown rows={rows} />
               </div>
-            );
-          })}
-        </div>
-
-        <div className="flex justify-center gap-3 mt-8">
-          <Link
-            to="/dashboard"
-            className="border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-semibold hover:bg-white"
-          >
-            Bosh sahifa
-          </Link>
-          <button
-            onClick={() => navigate("/sat/history")}
-            className="bg-[#375DFB] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#2b4bd9]"
-          >
-            Barcha natijalarim
-          </button>
-        </div>
+            </Card>
+          );
+        })}
       </div>
-    </div>
+
+      <div className="mt-8 flex justify-center">
+        <Button variant="outline" to="/dashboard">
+          Bosh sahifa
+        </Button>
+      </div>
+    </Page>
   );
 }

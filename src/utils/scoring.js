@@ -11,6 +11,8 @@
 // takrorlamaydi, faqat undagi adaptiv mantiqni his qildirish uchun.
 // ------------------------------------------------------------------
 
+import { isAnswerCorrect } from "./irtScoring";
+
 // Module 1'da to'g'ri javoblar ulushi shu chegaradan yuqori bo'lsa,
 // talaba qiyinroq Module 2'ga yo'naltiriladi.
 export const ROUTING_THRESHOLD = 0.7;
@@ -36,10 +38,12 @@ export function calcSectionScaledScore({ route, rawCorrect, maxRaw }) {
   return Math.round(scaled / 10) * 10;
 }
 
-// Berilgan javoblar massivi asosida to'g'ri javoblar sonini hisoblaydi.
+// Berilgan javoblar massivi asosida to'g'ri javoblar sonini hisoblaydi
+// (grid-in savollarda "3/4" va "0.75" kabi ekvivalent yozuvlar ham
+// to'g'ri hisoblanadi).
 export function countCorrect(questions, answers) {
   return questions.reduce(
-    (acc, q, i) => acc + (answers[i] === q.correctAnswer ? 1 : 0),
+    (acc, q, i) => acc + (isAnswerCorrect(q, answers[i]) ? 1 : 0),
     0
   );
 }

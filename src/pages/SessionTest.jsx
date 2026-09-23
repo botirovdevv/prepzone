@@ -116,6 +116,10 @@ export default function SessionTest() {
       if (snap.exists()) {
         setSessionContent(snap.data());
       } else {
+        console.error(
+          `Savollar topilmadi: testSessions/${sessionId}/secure/content mavjud emas. ` +
+            "Admin paneldan testni ochib, qayta saqlang."
+        );
         setContentError(true);
       }
     } catch (err) {

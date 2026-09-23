@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { doc, onSnapshot, collection, query, orderBy, limit, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import {
@@ -13,8 +13,13 @@ import {
   LuLock,
   LuPencil,
   LuPause,
+  LuCheck,
+  LuUsers,
+  LuActivity,
+  LuSearchX,
 } from "react-icons/lu";
 import { generateUniqueCode } from "../../utils/sessionCode";
+import { Page, PageHeader, Card, CardHeader, Button, Badge, StatTile, EmptyState, PageLoader } from "../../components/ui";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
@@ -29,11 +34,11 @@ function formatDateTime(ts) {
 }
 
 const STATUS_META = {
-  active: { text: "Test yechmoqda", color: "text-blue-600 bg-blue-50", icon: LuLoaderCircle },
-  finished: { text: "Yakunladi", color: "text-emerald-600 bg-emerald-50", icon: LuCircleCheck },
-  terminated: { text: "Chetlatildi", color: "text-red-600 bg-red-50", icon: LuCircleX },
-  paused: { text: "Pauzada (chiqib ketgan)", color: "text-amber-600 bg-amber-50", icon: LuPause },
-  not_started: { text: "Hali kirmagan", color: "text-gray-500 bg-gray-100", icon: LuLoaderCircle },
+  active: { text: "Test yechmoqda", color: "text-[#087fd1] bg-[#087fd1]/10", icon: LuLoaderCircle },
+  finished: { text: "Yakunladi", color: "text-emerald-600 bg-emerald-500/10", icon: LuCircleCheck },
+  terminated: { text: "Chetlatildi", color: "text-red-600 bg-red-500/10", icon: LuCircleX },
+  paused: { text: "Pauzada (chiqib ketgan)", color: "text-amber-600 bg-amber-500/10", icon: LuPause },
+  not_started: { text: "Hali kirmagan", color: "text-[#12213D]/50 bg-[#12213D]/[0.06]", icon: LuLoaderCircle },
 };
 
 const EVENT_LABEL = {
@@ -106,130 +111,130 @@ export default function SessionMonitor() {
     }
   };
 
-  if (loading) return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
-  if (!session) return <div className="p-10 text-[#12213D]/40">Test topilmadi.</div>;
+  if (loading) return <PageLoader />;
+  if (!session) {
+    return (
+      <Page width="narrow">
+        <EmptyState icon={LuSearchX} title="Test topilmadi" action={<Button to="/admin">Barcha testlar</Button>} />
+      </Page>
+    );
+  }
+
+  const counts = participants.reduce((acc, p) => {
+    acc[p.status] = (acc[p.status] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto">
+    <Page>
       <button
         onClick={() => navigate("/admin")}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">{session.title}</h1>
-          <p className="text-sm text-[#12213D]/50">
-            {session.accessType === "open" ? "Doimiy ochiq test" : formatDateTime(session.scheduledAt)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/admin/sessions/${id}/edit`}
-            className="flex items-center gap-1.5 border border-[#12213D]/15 text-[#12213D] text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-[#12213D]/5"
-          >
-            <LuPencil size={15} /> Tahrirlash
-          </Link>
-          <button
-            onClick={handleCloseSession}
-            disabled={closing || session.status === "closed"}
-            className="flex items-center gap-1.5 border border-red-200 text-red-600 text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-red-50 disabled:opacity-50"
-          >
-            <LuLock size={15} /> {session.status === "closed" ? "Yakunlangan" : "Testni yopish"}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={session.accessType === "open" ? "Doimiy ochiq test" : formatDateTime(session.scheduledAt)}
+        icon={LuActivity}
+        title={session.title}
+        actions={
+          <>
+            <Button variant="outline" size="sm" to={`/admin/sessions/${id}/edit`}>
+              <LuPencil size={15} /> Tahrirlash
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleCloseSession} disabled={closing || session.status === "closed"}>
+              <LuLock size={15} /> {session.status === "closed" ? "Yakunlangan" : "Testni yopish"}
+            </Button>
+          </>
+        }
+      />
 
       {/* Kirish kodi */}
-      <div className="bg-[#12213D] text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-white/50 mb-1">
-            {session.accessType === "open" ? "Kirish kodi (ixtiyoriy — test doimiy ochiq)" : "Kirish kodi"}
-          </p>
-          <p className="text-4xl font-black font-mono tracking-widest">{session.code}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleCopyCode}
-            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-sm font-semibold px-3.5 py-2 rounded-full"
-          >
-            <LuCopy size={15} /> {copied ? "Nusxalandi!" : "Nusxalash"}
-          </button>
-          <button
-            onClick={handleRegenerateCode}
-            disabled={regenerating}
-            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-sm font-semibold px-3.5 py-2 rounded-full disabled:opacity-50"
-          >
-            <LuRefreshCw size={15} className={regenerating ? "animate-spin" : ""} /> Yangilash
-          </button>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Ishtirokchilar */}
-        <div className="lg:col-span-3">
-          <h2 className="font-bold text-[#12213D] mb-3">Ishtirokchilar ({participants.length})</h2>
-          {participants.length === 0 ? (
-            <p className="text-sm text-[#12213D]/40 bg-white rounded-xl border border-[#12213D]/8 p-5">
-              Hali hech kim kirmadi.
+      <section className="relative mb-6 overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white sm:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-[#087fd1]/25 blur-2xl" />
+        <div className="relative flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
+              {session.accessType === "open" ? "Kirish kodi (ixtiyoriy — test doimiy ochiq)" : "Kirish kodi"}
             </p>
+            <p className="mt-2 font-mono text-4xl font-black tracking-[0.25em]">{session.code}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="light" size="sm" onClick={handleCopyCode}>
+              {copied ? <LuCheck size={15} /> : <LuCopy size={15} />} {copied ? "Nusxalandi!" : "Nusxalash"}
+            </Button>
+            <Button variant="light" size="sm" onClick={handleRegenerateCode} disabled={regenerating}>
+              <LuRefreshCw size={15} className={regenerating ? "animate-spin" : ""} /> Yangilash
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile icon={LuUsers} label="Ishtirokchilar" value={participants.length} />
+        <StatTile icon={LuLoaderCircle} label="Yechmoqda" value={counts.active || 0} />
+        <StatTile icon={LuCircleCheck} tone="emerald" label="Yakunladi" value={counts.finished || 0} />
+        <StatTile icon={LuTriangleAlert} tone="red" label="Hodisalar" value={events.length} />
+      </section>
+
+      <section className="grid items-start gap-6 lg:grid-cols-5">
+        {/* Ishtirokchilar */}
+        <Card className="lg:col-span-3">
+          <CardHeader title="Ishtirokchilar" subtitle={`${participants.length} ta talaba`} />
+          {participants.length === 0 ? (
+            <p className="px-6 pb-6 pt-3 text-sm text-[#12213D]/45">Hali hech kim kirmadi.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="mt-4 divide-y divide-[#12213D]/[0.06] border-t border-[#12213D]/[0.06]">
               {participants.map((p) => {
                 const meta = STATUS_META[p.status] || STATUS_META.not_started;
                 const Icon = meta.icon;
                 return (
-                  <div
-                    key={p.uid}
-                    className="flex items-center gap-3 bg-white rounded-xl border border-[#12213D]/8 p-3.5"
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
-                      <Icon size={15} />
+                  <div key={p.uid} className="flex items-center gap-3 px-5 py-3.5 sm:px-6">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${meta.color}`}>
+                      <Icon size={16} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#12213D] truncate">
-                        {p.name || p.email}
-                      </p>
-                      <p className="text-xs text-[#12213D]/40">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[#12213D]">{p.name || p.email}</p>
+                      <p className="text-xs text-[#12213D]/45">
                         {meta.text}
                         {typeof p.totalScore === "number" ? ` · ${p.totalScore} ball` : ""}
                       </p>
                     </div>
                     {(p.violationCount || 0) > 0 && (
-                      <span className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full shrink-0">
-                        <LuTriangleAlert size={12} /> {p.violationCount}
-                      </span>
+                      <Badge tone="red" icon={LuTriangleAlert}>
+                        {p.violationCount}
+                      </Badge>
                     )}
                   </div>
                 );
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Jonli xavfsizlik hodisalari */}
-        <div className="lg:col-span-2">
-          <h2 className="font-bold text-[#12213D] mb-3">Xavfsizlik hodisalari</h2>
+        <Card className="lg:col-span-2">
+          <CardHeader title="Xavfsizlik hodisalari" subtitle="Oxirgi 50 ta, jonli" />
           {events.length === 0 ? (
-            <p className="text-sm text-[#12213D]/40 bg-white rounded-xl border border-[#12213D]/8 p-5">
-              Hozircha hech qanday hodisa yo'q.
-            </p>
+            <p className="px-6 pb-6 pt-3 text-sm text-[#12213D]/45">Hozircha hech qanday hodisa yo'q.</p>
           ) : (
-            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+            <div className="mt-4 max-h-[520px] divide-y divide-[#12213D]/[0.06] overflow-y-auto border-t border-[#12213D]/[0.06]">
               {events.map((e) => (
-                <div key={e.id} className="bg-white rounded-xl border border-red-100 p-3 text-sm">
-                  <p className="font-semibold text-red-600">{EVENT_LABEL[e.type] || e.type}</p>
-                  <p className="text-[#12213D]/60 text-xs mt-0.5">
-                    {e.name} · {formatDateTime(e.at)}
-                  </p>
+                <div key={e.id} className="flex gap-3 px-5 py-3 text-sm sm:px-6">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[#12213D]">{EVENT_LABEL[e.type] || e.type}</p>
+                    <p className="mt-0.5 truncate text-xs text-[#12213D]/45">
+                      {e.name} · {formatDateTime(e.at)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+        </Card>
+      </section>
+    </Page>
   );
 }

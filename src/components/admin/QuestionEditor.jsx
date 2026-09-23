@@ -125,7 +125,7 @@ export default function QuestionEditor({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 bg-[#12213D]/[0.025]"
+        className="w-full flex items-center justify-between px-4 py-3.5 bg-[#F6F7FB]"
       >
         <span className="font-semibold text-sm text-[#12213D]">
           {title}{" "}
@@ -218,7 +218,7 @@ export default function QuestionEditor({
                 <select
                   value={form.domain}
                   onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
-                  className="w-full rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1] bg-white"
+                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10 bg-white"
                 >
                   <option value="">— tanlanmagan —</option>
                   {domainOptions.map((d) => (
@@ -284,7 +284,7 @@ export default function QuestionEditor({
                   onChange={(e) => setForm({ ...form, prompt: e.target.value })}
                   placeholder="Savol matni"
                   rows={2}
-                  className="w-full rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1]"
+                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
                 />
 
                 {allowImage && (
@@ -343,7 +343,7 @@ export default function QuestionEditor({
                           setForm({ ...form, choices: next });
                         }}
                         placeholder={`${"ABCD"[i]} varianti`}
-                        className="flex-1 rounded-xl border border-[#12213D]/15 px-3 py-1.5 text-sm outline-none focus:border-[#087fd1]"
+                        className="flex-1 rounded-xl border border-[#12213D]/12 px-3 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
                       />
                     </div>
                   ))}
@@ -353,7 +353,7 @@ export default function QuestionEditor({
                   <select
                     value={form.correctAnswer}
                     onChange={(e) => setForm({ ...form, correctAnswer: e.target.value })}
-                    className="rounded-xl border border-[#12213D]/15 px-2 py-1.5 text-sm outline-none focus:border-[#087fd1]"
+                    className="rounded-xl border border-[#12213D]/12 px-2 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
                   >
                     {["A", "B", "C", "D"].map((l) => (
                       <option key={l} value={l}>
@@ -384,7 +384,7 @@ export default function QuestionEditor({
                   onChange={(e) => setBulkText(e.target.value)}
                   placeholder={BULK_PLACEHOLDER}
                   rows={10}
-                  className="w-full rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm font-mono outline-none focus:border-[#087fd1]"
+                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm font-mono outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
                 />
 
                 {bulkErrors.length > 0 && (

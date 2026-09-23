@@ -41,7 +41,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   const handleInput = () => onChange(editorRef.current?.innerHTML || "");
 
   return (
-    <div className="rounded-xl border border-[#12213D]/15 overflow-hidden focus-within:border-[#087fd1] bg-white">
+    <div className="rounded-xl border border-[#12213D]/12 overflow-hidden bg-white transition focus-within:border-[#087fd1] focus-within:ring-4 focus-within:ring-[#087fd1]/10">
       <div className="flex items-center gap-1 bg-[#12213D]/[0.03] border-b border-[#12213D]/10 px-2 py-1.5">
         {TOOLS.map(({ command, label, Icon }) => (
           <button

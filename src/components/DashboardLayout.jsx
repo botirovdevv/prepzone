@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }) {
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div className="pz-app min-h-screen bg-[#F6F7FB]">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}
@@ -21,8 +21,8 @@ export default function DashboardLayout({ children }) {
         onCloseMobile={() => setMobileOpen(false)}
       />
       <div
-        className={`transition-all duration-200 pt-16 lg:pt-0 ${
-          collapsed ? "lg:pl-[76px]" : "lg:pl-64"
+        className={`pz-page transition-[padding] duration-300 ease-in-out-strong pt-14 lg:pt-0 ${
+          collapsed ? "lg:pl-[84px]" : "lg:pl-[260px]"
         }`}
       >
         {children}

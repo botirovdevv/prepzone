@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LuCompass,
@@ -12,7 +13,6 @@ import {
   LuChevronsRight,
   LuMenu,
   LuX,
-  LuMapPin,
   LuShieldCheck,
   LuLibrary,
   LuKeyRound,
@@ -27,8 +27,8 @@ const NAV_GROUPS = [
   {
     label: "MAIN",
     items: [
-      { to: "/dashboard", label: "Today", icon: AiFillHome, badge: "Route", badgeType: "route", iconColor: "text-[#0096c7]" },
-      { label: "Study Plan", icon: LuCompass, soon: true, badge: "Soon", badgeType: "soon", iconColor: "text-[#0096c7]" },
+      { to: "/dashboard", label: "Today", icon: AiFillHome, iconColor: "text-[#0096c7]" },
+      { label: "Study Plan", icon: LuCompass, soon: true },
     ],
   },
   {
@@ -41,9 +41,7 @@ const NAV_GROUPS = [
   },
   {
     label: "LEARN",
-    items: [
-      { label: "Vocabulary", icon: LuBookOpen, soon: true, badge: "Soon", badgeType: "soon", iconColor: "text-[#0096c7]" },
-    ],
+    items: [{ label: "Vocabulary", icon: LuBookOpen, soon: true }],
   },
   {
     label: "PROGRESS",
@@ -54,11 +52,65 @@ const NAV_GROUPS = [
   },
 ];
 
+const ADMIN_ITEMS = [
+  { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]" },
+  { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary },
+];
+
 function initials(nameOrEmail) {
   const base = nameOrEmail || "?";
   const parts = base.split(/[\s@.]+/).filter(Boolean);
   if (parts.length === 0) return "?";
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
+function NavItem({ item, collapsed, onNavigate }) {
+  const Icon = item.icon;
+  const base = `group relative w-full flex items-center gap-3 h-10 rounded-xl text-[14px] font-medium ${
+    collapsed ? "justify-center px-0" : "px-3"
+  }`;
+
+  if (item.soon) {
+    return (
+      <div
+        title={collapsed ? `${item.label} — tez orada` : undefined}
+        className={`${base} text-[#12213D]/30 cursor-not-allowed`}
+      >
+        <Icon size={18} className="shrink-0" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 truncate">{item.label}</span>
+            <span className="text-[10px] font-bold text-[#12213D]/40 bg-[#12213D]/[0.05] px-1.5 py-0.5 rounded-md">
+              Soon
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onNavigate}
+      title={collapsed ? item.label : undefined}
+      className={({ isActive }) =>
+        `${base} transition ${
+          isActive
+            ? "bg-[#12213D] text-white shadow-[0_6px_16px_-8px_rgba(18,33,61,0.6)]"
+            : "text-[#12213D]/60 hover:bg-[#12213D]/[0.05] hover:text-[#12213D]"
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <Icon size={18} className={`shrink-0 ${isActive ? "text-white" : item.iconColor || ""}`} />
+          {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+        </>
+      )}
+    </NavLink>
+  );
 }
 
 export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpenMobile, onCloseMobile }) {
@@ -68,231 +120,160 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
 
+  // Mobil drawer yopilganda darhol yo'qolmaydi — chiqish animatsiyasi
+  // tugagach (onAnimationEnd) DOM'dan olib tashlanadi.
+  const [drawerMounted, setDrawerMounted] = useState(mobileOpen);
+  if (mobileOpen && !drawerMounted) setDrawerMounted(true);
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
 
-  const content = (
-    <div className="flex flex-col h-full w-full">
-      {/* Brand */}
-      <div className={`flex items-center h-16 px-4 shrink-0 ${collapsed ? "justify-center px-0" : ""}`}>
-        <NavLink to="/dashboard" className={`flex items-center ${collapsed ? "h-9 w-9" : "h-8"}`}>
-          {collapsed ? (
-            <img src={LogoMark} alt="Prepzone" className="h-full w-auto object-contain" />
-          ) : (
-            <img src={logo} alt="Prepzone" className="h-full w-auto object-contain" />
-          )}
+  const renderContent = (isCollapsed) => (
+    <div className="flex h-full w-full flex-col">
+      {/* Brend */}
+      <div className={`flex h-16 shrink-0 items-center ${isCollapsed ? "justify-center" : "px-5"}`}>
+        <NavLink to="/dashboard" onClick={onCloseMobile} className={`flex items-center ${isCollapsed ? "h-8 w-8" : "h-7"}`}>
+          <img
+            src={isCollapsed ? LogoMark : logo}
+            alt="Prepzone"
+            className="h-full w-auto object-contain"
+          />
         </NavLink>
       </div>
 
-      {/* Badge / Pill section */}
-      {!collapsed && (
-        <div className="px-4 mb-3 shrink-0">
-          <span className="inline-flex items-center gap-2 text-xs font-semibold text-[#12213D] bg-[#F1F1ED] px-3.5 py-1.5 rounded-full">
-            <LuMapPin size={14} className="text-[#0096c7] fill-[#0096c7] stroke-white" />
-            <span>
-              <strong className="font-extrabold text-[#12213D]">DSAT</strong> prep
-            </span>
-          </span>
-        </div>
-      )}
-
-      {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto px-2 space-y-4 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+      {/* Navigatsiya */}
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pt-2 [scrollbar-width:none]">
         {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="w-full">
-            {!collapsed && (
-              <p className="px-3 mb-1 text-[10px] font-bold tracking-wider text-[#12213D]/35">
+          <div key={group.label}>
+            {isCollapsed ? (
+              <div className="mx-auto mb-2 h-px w-6 bg-[#12213D]/10" />
+            ) : (
+              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#12213D]/35">
                 {group.label}
               </p>
             )}
-            <div className="space-y-0.5 w-full">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                if (item.soon) {
-                  return (
-                    <div
-                      key={item.label}
-                      title={collapsed ? `${item.label} — tez orada` : undefined}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#12213D]/30 cursor-not-allowed ${
-                        collapsed ? "justify-center" : ""
-                      }`}
-                    >
-                      <Icon size={18} className={`shrink-0 ${item.iconColor || ""}`} />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 truncate">{item.label}</span>
-                          <span className="text-[9px] font-bold bg-[#12213D]/6 px-1.5 py-0.5 rounded-full shrink-0">
-                            Soon
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={onCloseMobile}
-                    title={collapsed ? item.label : undefined}
-                    className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                        collapsed ? "justify-center" : ""
-                      } ${
-                        isActive
-                          ? "bg-[#087fd1]/10 text-[#087fd1]"
-                          : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
-                      }`
-                    }
-                  >
-                    <Icon size={18} className={`shrink-0 ${item.iconColor || ""}`} />
-                    {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-                  </NavLink>
-                );
-              })}
+            <div className="space-y-1">
+              {group.items.map((item) => (
+                <NavItem key={item.label} item={item} collapsed={isCollapsed} onNavigate={onCloseMobile} />
+              ))}
             </div>
           </div>
         ))}
 
         {isAdmin && (
-          <div className="w-full">
-            <p className="px-3 mb-1 text-[10px] font-bold tracking-wider text-[#12213D]/35">
-              {collapsed ? "" : "ADMIN"}
-            </p>
-            <div className="space-y-0.5 w-full">
-              <NavLink
-                to="/admin"
-                end
-                onClick={onCloseMobile}
-                title={collapsed ? "Testlar" : undefined}
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    collapsed ? "justify-center" : ""
-                  } ${
-                    isActive
-                      ? "bg-[#087fd1]/10 text-[#087fd1]"
-                      : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
-                  }`
-                }
-              >
-                <LuShieldCheck size={18} className="shrink-0 text-[#087fd1]" />
-                {!collapsed && <span className="flex-1 truncate">Testlar (admin)</span>}
-              </NavLink>
-              <NavLink
-                to="/admin/sets"
-                onClick={onCloseMobile}
-                title={collapsed ? "Amaliyot to'plamlari" : undefined}
-                className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                    collapsed ? "justify-center" : ""
-                  } ${
-                    isActive
-                      ? "bg-[#087fd1]/10 text-[#087fd1]"
-                      : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
-                  }`
-                }
-              >
-                <LuLibrary size={18} className="shrink-0 text-[#12213D]/65" />
-                {!collapsed && <span className="flex-1 truncate">To'plamlar (admin)</span>}
-              </NavLink>
+          <div>
+            {isCollapsed ? (
+              <div className="mx-auto mb-2 h-px w-6 bg-[#12213D]/10" />
+            ) : (
+              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#12213D]/35">
+                ADMIN
+              </p>
+            )}
+            <div className="space-y-1">
+              {ADMIN_ITEMS.map((item) => (
+                <NavItem key={item.to} item={item} collapsed={isCollapsed} onNavigate={onCloseMobile} />
+              ))}
             </div>
           </div>
         )}
       </nav>
 
-      {/* Bottom Footer Section */}
-      <div className="px-2 pb-3 pt-2 border-t border-[#12213D]/8 space-y-0.5 shrink-0 w-full">
-        <NavLink
-          to="/account"
-          onClick={onCloseMobile}
-          title={collapsed ? "Sozlamalar" : undefined}
-          className={({ isActive }) =>
-            `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-              collapsed ? "justify-center" : ""
-            } ${
-              isActive
-                ? "bg-[#087fd1]/10 text-[#087fd1]"
-                : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
-            }`
-          }
-        >
-          <LuSettings size={18} className="shrink-0 text-[#12213D]/65" />
-          {!collapsed && <span className="flex-1 truncate">Sozlamalar</span>}
-        </NavLink>
-
-        <button
-          onClick={handleLogout}
-          title={collapsed ? "Chiqish" : undefined}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[#12213D]/65 hover:bg-red-50 hover:text-red-600 transition-all ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <LuLogOut size={18} className="shrink-0 text-[#12213D]/65" />
-          {!collapsed && <span className="flex-1 text-left truncate">Chiqish</span>}
-        </button>
-
+      {/* Foydalanuvchi */}
+      <div className="shrink-0 p-3">
         <div
-          className={`w-full flex items-center gap-2.5 mt-2 px-2.5 py-2 rounded-xl bg-[#12213D]/[0.03] ${
-            collapsed ? "justify-center" : ""
+          className={`flex items-center gap-2.5 rounded-2xl bg-[#F6F7FB] p-2 ${
+            isCollapsed ? "flex-col" : ""
           }`}
         >
-          <div className="w-7 h-7 rounded-full bg-[#12213D] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#12213D] text-[12px] font-bold text-white">
             {initials(displayName)}
           </div>
-          {!collapsed && (
+          {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-[#12213D] truncate">{displayName}</p>
-              <p className="text-[10px] text-[#12213D]/40 truncate">{user?.email}</p>
+              <p className="truncate text-[13px] font-semibold text-[#12213D]">{displayName}</p>
+              <p className="truncate text-[11px] text-[#12213D]/45">{user?.email}</p>
             </div>
           )}
+          <div className={`flex ${isCollapsed ? "flex-col" : ""} gap-0.5`}>
+            <NavLink
+              to="/account"
+              onClick={onCloseMobile}
+              title="Sozlamalar"
+              className={({ isActive }) =>
+                `flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                  isActive ? "bg-white text-[#087fd1] shadow-sm" : "text-[#12213D]/50 hover:bg-white hover:text-[#12213D]"
+                }`
+              }
+            >
+              <LuSettings size={16} />
+            </NavLink>
+            <button
+              onClick={handleLogout}
+              title="Chiqish"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#12213D]/50 transition hover:bg-white hover:text-red-600"
+            >
+              <LuLogOut size={16} />
+            </button>
+          </div>
         </div>
-
       </div>
     </div>
   );
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Desktop: sahifadan ajralib turuvchi "suzuvchi" panel */}
       <aside
-        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-white border-r border-[#12213D]/8 z-40 transition-all duration-200 ${
-          collapsed ? "w-[76px]" : "w-64"
+        className={`fixed bottom-3 left-3 top-3 z-40 hidden rounded-[22px] border border-[#12213D]/[0.07] bg-white shadow-[0_1px_2px_rgba(18,33,61,0.04),0_12px_32px_-16px_rgba(18,33,61,0.18)] transition-[width] duration-300 ease-in-out-strong lg:flex ${
+          collapsed ? "w-[72px]" : "w-[248px]"
         }`}
       >
-        {content}
+        {renderContent(collapsed)}
 
-        {/* Yig'ish/yoyish tugmasi — sidebar chekkasida, o'rtada suzib turadi */}
         <button
           onClick={onToggleCollapse}
           title={collapsed ? "Sidebarni yoyish" : "Sidebarni yig'ish"}
-          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-[#12213D]/12 shadow-sm items-center justify-center text-[#12213D]/50 hover:text-[#087fd1] hover:border-[#087fd1]/30 hover:shadow-md transition-all z-50"
+          className="absolute -right-3 top-[76px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#12213D]/12 bg-white text-[#12213D]/50 shadow-sm transition hover:border-[#087fd1]/40 hover:text-[#087fd1]"
         >
           {collapsed ? <LuChevronsRight size={13} /> : <LuChevronsLeft size={13} />}
         </button>
       </aside>
 
-      {/* Mobile menu button */}
-      <button
-        onClick={onOpenMobile}
-        className="lg:hidden fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-white shadow-md border border-[#12213D]/10 flex items-center justify-center text-[#12213D]"
-      >
-        <LuMenu size={18} />
-      </button>
+      {/* Mobil: yuqori panel */}
+      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-[#12213D]/[0.07] bg-white/85 px-4 backdrop-blur lg:hidden">
+        <button
+          onClick={onOpenMobile}
+          aria-label="Menyuni ochish"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#12213D] hover:bg-[#12213D]/5"
+        >
+          <LuMenu size={19} />
+        </button>
+        <img src={logo} alt="Prepzone" className="h-6 w-auto object-contain" />
+      </header>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/40" onClick={onCloseMobile} />
-          <aside className="relative w-72 max-w-[80%] bg-white h-full shadow-xl">
+      {/* Mobil drawer */}
+      {drawerMounted && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div
+            className={`absolute inset-0 bg-[#12213D]/40 ${mobileOpen ? "pz-overlay-in" : "pz-overlay-out"}`}
+            onClick={onCloseMobile}
+          />
+          <aside
+            className={`relative h-full w-[280px] max-w-[82%] bg-white shadow-xl ${
+              mobileOpen ? "pz-drawer-in" : "pz-drawer-out"
+            }`}
+            onAnimationEnd={() => !mobileOpen && setDrawerMounted(false)}
+          >
             <button
               onClick={onCloseMobile}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-[#12213D]/60 hover:bg-[#12213D]/5"
+              aria-label="Menyuni yopish"
+              className="absolute right-3 top-3.5 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-[#12213D]/60 hover:bg-[#12213D]/5"
             >
               <LuX size={18} />
             </button>
-            {content}
+            {renderContent(false)}
           </aside>
         </div>
       )}

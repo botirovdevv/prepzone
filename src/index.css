@@ -84,3 +84,136 @@ h6 {
 .richtext-editable u {
   text-decoration: underline;
 }
+
+/* Bluebook savollaridagi jadval, ro'yxat va formulalar */
+.sat-rich table {
+  border-collapse: collapse;
+  margin: 0 auto 1rem;
+  font-size: 14px;
+  white-space: normal;
+}
+.sat-rich caption {
+  font-weight: 700;
+  padding-bottom: 0.4rem;
+}
+.sat-rich th,
+.sat-rich td {
+  border: 1px solid #9ca3af;
+  padding: 0.3rem 0.75rem;
+  text-align: center;
+}
+.sat-rich th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+.sat-rich ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 0;
+  white-space: normal;
+}
+.sat-rich li {
+  margin-bottom: 0.35rem;
+}
+.sat-rich sup {
+  font-size: 0.7em;
+}
+
+/* ------------------------------------------------------------------
+   Motion — dashboard (login'dan keyingi sahifalar)
+   Faqat transform/opacity animatsiya qilinadi (GPU, layout'siz).
+   `translate`/`scale` alohida xususiyatlar ishlatiladi — shunda
+   Tailwind'ning hover:-translate-y kabi `transform` klasslari bilan
+   to'qnashmaydi.
+------------------------------------------------------------------ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes pz-enter {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes pz-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pz-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pz-drawer-in {
+  from {
+    translate: -100% 0;
+  }
+}
+@keyframes pz-drawer-out {
+  to {
+    translate: -100% 0;
+  }
+}
+
+/* Sahifa ochilganda uning bo'limlari (hero, kartalar, ro'yxatlar)
+   ketma-ket, 50ms oraliq bilan paydo bo'ladi. */
+.pz-page > * > * {
+  animation: pz-enter 420ms var(--ease-out) both;
+}
+.pz-page > * > :nth-child(2) { animation-delay: 50ms; }
+.pz-page > * > :nth-child(3) { animation-delay: 100ms; }
+.pz-page > * > :nth-child(4) { animation-delay: 150ms; }
+.pz-page > * > :nth-child(n + 5) { animation-delay: 200ms; }
+
+/* Kartalar to'ri ichidagi elementlar ham ketma-ket chiqadi (ma'lumot
+   Firestore'dan kechroq kelsa ham — ular shu paytda mount bo'ladi). */
+.pz-page .grid > * {
+  animation: pz-enter 420ms var(--ease-out) both;
+}
+.pz-page .grid > :nth-child(2) { animation-delay: 40ms; }
+.pz-page .grid > :nth-child(3) { animation-delay: 80ms; }
+.pz-page .grid > :nth-child(4) { animation-delay: 120ms; }
+.pz-page .grid > :nth-child(5) { animation-delay: 160ms; }
+.pz-page .grid > :nth-child(n + 6) { animation-delay: 200ms; }
+
+/* Bosilganda javob: tugma/havola biroz kichrayadi. Transition'ni
+   Tailwind klasslari bo'lmagan elementlar uchun ham beramiz
+   (:where — nol specificity, Tailwind klasslari ustun turadi). */
+:where(.pz-app) :where(button, a[href]) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform, scale, translate;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+}
+.pz-app :is(button, a[href]):not(:disabled):active {
+  scale: 0.97;
+}
+
+/* Mobil sidebar drawer */
+.pz-overlay-in { animation: pz-fade-in 240ms var(--ease-out) both; }
+.pz-overlay-out { animation: pz-fade-out 200ms var(--ease-out) both; }
+.pz-drawer-in { animation: pz-drawer-in 320ms var(--ease-drawer) both; }
+.pz-drawer-out { animation: pz-drawer-out 200ms var(--ease-in-out) both; }
+
+/* Harakatni kamaytirishni so'ragan foydalanuvchilar uchun: siljish va
+   kichrayish o'chadi, faqat qisqa opacity o'tishlari qoladi. */
+@media (prefers-reduced-motion: reduce) {
+  .pz-page > * > *,
+  .pz-page .grid > * {
+    animation-name: pz-fade-in;
+    animation-duration: 150ms;
+    animation-delay: 0ms;
+  }
+  .pz-app :is(button, a[href]):not(:disabled):active {
+    scale: none;
+  }
+  .pz-drawer-in {
+    animation: pz-fade-in 150ms linear both;
+  }
+  .pz-drawer-out {
+    animation: pz-fade-out 150ms linear both;
+  }
+}

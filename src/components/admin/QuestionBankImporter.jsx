@@ -108,7 +108,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
           <select
             value={domainId}
             onChange={(e) => handleDomainChange(e.target.value)}
-            className="w-full rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1] bg-white"
+            className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10 bg-white"
           >
             {domainOptions.map((d) => (
               <option key={d.id} value={d.id}>
@@ -151,7 +151,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
             max={100}
             value={count}
             onChange={(e) => setCount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
-            className="w-24 rounded-xl border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1]"
+            className="w-24 rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
           />
         </div>
         <button

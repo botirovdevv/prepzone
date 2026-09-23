@@ -7,7 +7,8 @@ import { generateUniqueCode } from "../../utils/sessionCode";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
-import { LuArrowLeft, LuInfo } from "react-icons/lu";
+import { LuArrowLeft, LuInfo, LuShieldCheck } from "react-icons/lu";
+import { Page, PageHeader, Card, CardHeader, Button, Field, inputClass, PageLoader } from "../../components/ui";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
 function toDateInputValue(d) {
@@ -86,7 +87,12 @@ export default function SessionForm() {
         return;
       }
       const s = snap.data();
-      const contentSections = contentSnap.exists() ? contentSnap.data().sections || [] : [];
+      // Eski testlarda (secure/content ajratilishidan oldin yaratilgan)
+      // savollar asosiy hujjatning o'zida turadi — shunda o'shalarni
+      // olamiz; qayta saqlanganda ular secure/content'ga ko'chiriladi.
+      const contentSections = contentSnap.exists()
+        ? contentSnap.data().sections || []
+        : s.sections || [];
       setTitle(s.title || "");
       setAccessType(s.accessType === "open" ? "open" : "code");
       const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt || Date.now());
@@ -207,109 +213,94 @@ export default function SessionForm() {
     }
   };
 
-  if (loadingExisting) {
-    return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
-  }
+  if (loadingExisting) return <PageLoader />;
+
+  const goBack = () => {
+    if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
+    navigate("/admin");
+  };
+
+  const accessOption = (value, title, text) => (
+    <button
+      type="button"
+      onClick={() => setAccessType(value)}
+      className={`rounded-xl border-2 px-4 py-3.5 text-left transition ${
+        accessType === value
+          ? "border-[#087fd1] bg-[#087fd1]/[0.04]"
+          : "border-[#12213D]/10 hover:border-[#12213D]/25"
+      }`}
+    >
+      <p className="text-sm font-semibold text-[#12213D]">{title}</p>
+      <p className="mt-0.5 text-xs text-[#12213D]/50">{text}</p>
+    </button>
+  );
+
+  const durationInput = (value, onChange) => (
+    <label className="flex items-center gap-2 text-sm text-[#12213D]/50">
+      Davomiyligi
+      <input
+        type="number"
+        min={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-20 rounded-lg border border-[#12213D]/12 px-2.5 text-sm text-[#12213D] outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+      />
+      daqiqa
+    </label>
+  );
 
   return (
-    <div className="p-6 lg:p-10 max-w-3xl mx-auto">
+    <Page width="narrow">
       <button
-        onClick={() => {
-          if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
-          navigate("/admin");
-        }}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
+        onClick={goBack}
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
 
-      <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
-        {isEdit ? "Testni tahrirlash" : "Yangi test tashkil qilish"}
-      </h1>
-      <p className="text-sm text-[#12213D]/50 mb-8">
-        Sana, vaqt va savollarni belgilang. Kirish kodi saqlagandan keyin avtomatik yaratiladi.
-      </p>
+      <PageHeader
+        eyebrow="Admin panel"
+        icon={LuShieldCheck}
+        title={isEdit ? "Testni tahrirlash" : "Yangi test tashkil qilish"}
+        subtitle="Sana, vaqt va savollarni belgilang. Kirish kodi saqlagandan keyin avtomatik yaratiladi."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-              Test nomi
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Masalan: Avgust oyi sinov testi"
-              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
-            />
-          </div>
+        <Card>
+          <CardHeader title="Asosiy ma'lumotlar" />
+          <div className="space-y-5 p-5 sm:p-6">
+            <Field label="Test nomi">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Masalan: Avgust oyi sinov testi"
+                className={inputClass}
+              />
+            </Field>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-              Kirish turi
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setAccessType("code")}
-                className={`rounded-xl border px-4 py-3 text-left transition ${
-                  accessType === "code"
-                    ? "border-[#087fd1] bg-[#087fd1]/5"
-                    : "border-[#12213D]/15 hover:border-[#12213D]/30"
-                }`}
-              >
-                <p className="font-semibold text-sm text-[#12213D]">Kod bilan, vaqti belgilangan</p>
-                <p className="text-xs text-[#12213D]/50 mt-0.5">
-                  6 xonali kod va belgilangan sana/vaqtda ochiladi
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAccessType("open")}
-                className={`rounded-xl border px-4 py-3 text-left transition ${
-                  accessType === "open"
-                    ? "border-[#087fd1] bg-[#087fd1]/5"
-                    : "border-[#12213D]/15 hover:border-[#12213D]/30"
-                }`}
-              >
-                <p className="font-semibold text-sm text-[#12213D]">Doimiy ochiq</p>
-                <p className="text-xs text-[#12213D]/50 mt-0.5">
-                  Har doim ochiq, "Testlar" bo'limida hammaga ko'rinadi
-                </p>
-              </button>
-            </div>
-          </div>
-
-          {accessType === "code" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-                  Sana
-                </label>
-                <input
-                  type="date"
-                  value={dateStr}
-                  onChange={(e) => setDateStr(e.target.value)}
-                  className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
-                  Vaqt
-                </label>
-                <input
-                  type="time"
-                  value={timeStr}
-                  onChange={(e) => setTimeStr(e.target.value)}
-                  className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
-                />
+            <div>
+              <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">Kirish turi</span>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {accessOption("code", "Kod bilan, vaqti belgilangan", "6 xonali kod va belgilangan sana/vaqtda ochiladi")}
+                {accessOption("open", "Doimiy ochiq", "Har doim ochiq, \"Testlar\" bo'limida hammaga ko'rinadi")}
               </div>
             </div>
-          )}
-        </div>
 
-        <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
-          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
+            {accessType === "code" && (
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Sana">
+                  <input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)} className={inputClass} />
+                </Field>
+                <Field label="Vaqt">
+                  <input type="time" value={timeStr} onChange={(e) => setTimeStr(e.target.value)} className={inputClass} />
+                </Field>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-[#087fd1]/15 bg-[#087fd1]/[0.04] p-4 text-sm leading-relaxed text-[#12213D]/70">
+          <LuInfo size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
           <p>
             Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing (bu — barcha
             talabalar oladigan aralash qiyinlikdagi bazaviy modul). Agar shu bo'lim uchun{" "}
@@ -324,117 +315,99 @@ export default function SessionForm() {
         </div>
 
         {/* Reading and Writing */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold text-[#12213D]">Reading and Writing</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <label className="text-[#12213D]/50">Davomiyligi (daqiqa):</label>
-              <input
-                type="number"
-                min={1}
-                value={rwDuration}
-                onChange={(e) => setRwDuration(e.target.value)}
-                className="w-20 rounded-lg border border-[#12213D]/15 px-2 py-1.5 text-sm outline-none focus:border-[#087fd1]"
-              />
-            </div>
+        <Card>
+          <CardHeader
+            title="Reading and Writing"
+            subtitle="Bo'lim 1"
+            action={durationInput(rwDuration, setRwDuration)}
+          />
+          <div className="space-y-3 p-5 sm:p-6">
+            <QuestionEditor
+              title="Module 1"
+              questions={rwM1}
+              onChange={setRwM1}
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              bankSubject="rw"
+            />
+            <QuestionEditor
+              title="Module 2 — Oson (ixtiyoriy)"
+              questions={rwM2E}
+              onChange={setRwM2E}
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              bankSubject="rw"
+            />
+            <QuestionEditor
+              title="Module 2 — Qiyin (ixtiyoriy)"
+              questions={rwM2H}
+              onChange={setRwM2H}
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              bankSubject="rw"
+            />
+            <QuestionEditor
+              title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
+              questions={rwM2Mix}
+              onChange={setRwM2Mix}
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              bankSubject="rw"
+            />
           </div>
-          <QuestionEditor
-            title="Module 1"
-            questions={rwM1}
-            onChange={setRwM1}
-            showPassage
-            domainOptions={RW_DOMAINS}
-            promptTemplates={RW_PROMPT_TEMPLATES}
-            bankSubject="rw"
-          />
-          <QuestionEditor
-            title="Module 2 — Oson (ixtiyoriy)"
-            questions={rwM2E}
-            onChange={setRwM2E}
-            showPassage
-            domainOptions={RW_DOMAINS}
-            promptTemplates={RW_PROMPT_TEMPLATES}
-            bankSubject="rw"
-          />
-          <QuestionEditor
-            title="Module 2 — Qiyin (ixtiyoriy)"
-            questions={rwM2H}
-            onChange={setRwM2H}
-            showPassage
-            domainOptions={RW_DOMAINS}
-            promptTemplates={RW_PROMPT_TEMPLATES}
-            bankSubject="rw"
-          />
-          <QuestionEditor
-            title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
-            questions={rwM2Mix}
-            onChange={setRwM2Mix}
-            showPassage
-            domainOptions={RW_DOMAINS}
-            promptTemplates={RW_PROMPT_TEMPLATES}
-            bankSubject="rw"
-          />
-        </div>
+        </Card>
 
         {/* Math */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold text-[#12213D]">Math</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <label className="text-[#12213D]/50">Davomiyligi (daqiqa):</label>
-              <input
-                type="number"
-                min={1}
-                value={mathDuration}
-                onChange={(e) => setMathDuration(e.target.value)}
-                className="w-20 rounded-lg border border-[#12213D]/15 px-2 py-1.5 text-sm outline-none focus:border-[#087fd1]"
-              />
-            </div>
+        <Card>
+          <CardHeader title="Math" subtitle="Bo'lim 2" action={durationInput(mathDuration, setMathDuration)} />
+          <div className="space-y-3 p-5 sm:p-6">
+            <QuestionEditor
+              title="Module 1"
+              questions={mathM1}
+              onChange={setMathM1}
+              domainOptions={MATH_DOMAINS}
+              bankSubject="math"
+            />
+            <QuestionEditor
+              title="Module 2 — Oson (ixtiyoriy)"
+              questions={mathM2E}
+              onChange={setMathM2E}
+              domainOptions={MATH_DOMAINS}
+              bankSubject="math"
+            />
+            <QuestionEditor
+              title="Module 2 — Qiyin (ixtiyoriy)"
+              questions={mathM2H}
+              onChange={setMathM2H}
+              domainOptions={MATH_DOMAINS}
+              bankSubject="math"
+            />
+            <QuestionEditor
+              title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
+              questions={mathM2Mix}
+              onChange={setMathM2Mix}
+              domainOptions={MATH_DOMAINS}
+              bankSubject="math"
+            />
           </div>
-          <QuestionEditor
-            title="Module 1"
-            questions={mathM1}
-            onChange={setMathM1}
-            domainOptions={MATH_DOMAINS}
-            bankSubject="math"
-          />
-          <QuestionEditor
-            title="Module 2 — Oson (ixtiyoriy)"
-            questions={mathM2E}
-            onChange={setMathM2E}
-            domainOptions={MATH_DOMAINS}
-            bankSubject="math"
-          />
-          <QuestionEditor
-            title="Module 2 — Qiyin (ixtiyoriy)"
-            questions={mathM2H}
-            onChange={setMathM2H}
-            domainOptions={MATH_DOMAINS}
-            bankSubject="math"
-          />
-          <QuestionEditor
-            title="Module 2 — Aralash / filial qilinmagan (ixtiyoriy)"
-            questions={mathM2Mix}
-            onChange={setMathM2Mix}
-            domainOptions={MATH_DOMAINS}
-            bankSubject="math"
-          />
-        </div>
+        </Card>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
-            {error}
-          </div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
         )}
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-[#087fd1] text-white font-semibold py-3.5 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
-        >
-          {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Testni yaratish"}
-        </button>
+        {/* Saqlash paneli — pastda yopishib turadi */}
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-[#12213D]/[0.07] bg-white/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
+          <p className="text-sm text-[#12213D]/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Testni yaratish"}
+          </Button>
+        </div>
       </form>
-    </div>
+    </Page>
   );
 }
