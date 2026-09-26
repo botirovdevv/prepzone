@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { LuUser, LuLockKeyhole, LuCheck, LuMail, LuSettings } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { Page, PageHeader, Card, CardHeader, Button, Field, inputClass, PageLoader } from "../components/ui";
+import PasswordStrength from "../components/PasswordStrength";
+import { checkPassword } from "../utils/passwordPolicy";
 
 function initials(nameOrEmail) {
   const parts = (nameOrEmail || "?").split(/[\s@.]+/).filter(Boolean);
@@ -36,6 +38,8 @@ export default function AccountSettings() {
 
   if (loading || !user) return <PageLoader />;
 
+  const pwCheck = checkPassword(newPassword, { email: user.email || "", name });
+
   const handleNameSubmit = async (e) => {
     e.preventDefault();
     setNameError("");
@@ -60,8 +64,12 @@ export default function AccountSettings() {
     e.preventDefault();
     setPwError("");
     setPwSaved(false);
-    if (newPassword.length < 6) {
-      setPwError("Yangi parol kamida 6 ta belgidan iborat bo'lishi kerak.");
+    if (!pwCheck.valid) {
+      setPwError("Yangi parol xavfsizlik talablariga javob bermaydi.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPwError("Yangi parol joriy paroldan farq qilishi kerak.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -112,7 +120,7 @@ export default function AccountSettings() {
             <CardHeader title="Profil" subtitle="Ismingiz reyting va natijalarda ko'rinadi." action={<LuUser size={18} className="text-[#12213D]/30" />} />
             <div className="space-y-4 p-5 sm:p-6">
               <Field label="To'liq ism">
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+                <input type="text" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
               </Field>
               <Field label="Email" hint="Email manzilni o'zgartirib bo'lmaydi.">
                 <input type="email" value={user.email || ""} disabled className={`${inputClass} cursor-not-allowed`} />
@@ -138,7 +146,7 @@ export default function AccountSettings() {
           <Card as="form" onSubmit={handlePasswordSubmit}>
             <CardHeader
               title="Parolni almashtirish"
-              subtitle="Yangi parol kamida 6 ta belgidan iborat bo'lsin."
+              subtitle="Kamida 10 ta belgi: katta va kichik harf, raqam va maxsus belgi."
               action={<LuLockKeyhole size={18} className="text-[#12213D]/30" />}
             />
             <div className="space-y-4 p-5 sm:p-6">
@@ -157,11 +165,11 @@ export default function AccountSettings() {
                   <input
                     type="password"
                     required
-                    minLength={6}
+                    autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className={inputClass}
-                    placeholder="Kamida 6 ta belgi"
+                    placeholder="Kamida 10 ta belgi"
                   />
                 </Field>
                 <Field label="Yangi parolni tasdiqlang">
@@ -175,10 +183,11 @@ export default function AccountSettings() {
                   />
                 </Field>
               </div>
+              <PasswordStrength check={pwCheck} show={newPassword.length > 0} />
               {pwError && <p className="text-sm text-red-600">{pwError}</p>}
             </div>
             <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
-              <Button type="submit" variant="dark" disabled={pwSaving}>
+              <Button type="submit" variant="dark" disabled={pwSaving || !pwCheck.valid || newPassword !== confirmPassword}>
                 {pwSaved ? (
                   <>
                     <LuCheck size={16} /> Yangilandi
@@ -205,7 +214,8 @@ function mapPasswordError(code) {
     case "auth/too-many-requests":
       return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
     case "auth/weak-password":
-      return "Yangi parol juda zaif.";
+    case "auth/password-does-not-meet-requirements":
+      return "Yangi parol xavfsizlik talablariga javob bermaydi.";
     default:
       return "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
   }

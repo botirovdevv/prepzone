@@ -219,8 +219,8 @@ export default function Vocabulary() {
       <PageHeader
         eyebrow="Learn"
         icon={LuBookOpen}
-        title="SAT Vocabulary"
-        subtitle="Study high-frequency SAT words with flashcards. Words you miss come back sooner; words you know come back later."
+        title="Academic Vocabulary"
+        subtitle="High-frequency academic words for SAT and IELTS, with flashcards. Words you miss come back sooner; words you know come back later."
         actions={
           <Button onClick={startDue} disabled={stats.due.length === 0}>
             <LuClock size={16} /> Review due ({stats.due.length})

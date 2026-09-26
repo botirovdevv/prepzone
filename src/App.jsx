@@ -1,32 +1,46 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AdminProvider } from "./context/AdminContext";
+import { ExamProvider, useExam } from "./context/ExamContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import DashboardLayout from "./components/DashboardLayout";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import VerifyEmail from "./pages/VerifyEmail";
-import Dashboard from "./pages/Dashboard";
-import SATTest from "./pages/SATTest";
-import Results from "./pages/Results";
-import History from "./pages/History";
-import TestSelect from "./pages/TestSelect";
-import AccountSettings from "./pages/AccountSettings";
-import JoinSession from "./pages/JoinSession";
-import SessionTest from "./pages/SessionTest";
-import SessionResults from "./pages/SessionResults";
-import PracticeIndex from "./pages/PracticeIndex";
-import Leaderboard from "./pages/Leaderboard";
-import PracticeSet from "./pages/PracticeSet";
-import Vocabulary from "./pages/Vocabulary";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import SessionForm from "./pages/admin/SessionForm";
-import SessionMonitor from "./pages/admin/SessionMonitor";
-import SetsDashboard from "./pages/admin/SetsDashboard";
-import SetForm from "./pages/admin/SetForm";
-import Analytics from "./pages/admin/Analytics";
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import { PageLoader } from "./components/ui";
+import Home from "./pages/Home";
+
+// Code splitting: har bir sahifa alohida chunk bo'lib, faqat ochilganda
+// yuklanadi. Bosh sahifa (Home) tez ochilishi uchun asosiy bundle'da qoladi.
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const SATTest = lazy(() => import("./pages/SATTest"));
+const Results = lazy(() => import("./pages/Results"));
+const History = lazy(() => import("./pages/History"));
+const TestSelect = lazy(() => import("./pages/TestSelect"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const JoinSession = lazy(() => import("./pages/JoinSession"));
+const SessionTest = lazy(() => import("./pages/SessionTest"));
+const SessionResults = lazy(() => import("./pages/SessionResults"));
+const PracticeIndex = lazy(() => import("./pages/PracticeIndex"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const PracticeSet = lazy(() => import("./pages/PracticeSet"));
+const Vocabulary = lazy(() => import("./pages/Vocabulary"));
+const StudyPlan = lazy(() => import("./pages/StudyPlan"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const SessionForm = lazy(() => import("./pages/admin/SessionForm"));
+const SessionMonitor = lazy(() => import("./pages/admin/SessionMonitor"));
+const SetsDashboard = lazy(() => import("./pages/admin/SetsDashboard"));
+const SetForm = lazy(() => import("./pages/admin/SetForm"));
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
+const ChooseExam = lazy(() => import("./pages/ChooseExam"));
+const IeltsDashboard = lazy(() => import("./pages/ielts/IeltsDashboard"));
+const IeltsTests = lazy(() => import("./pages/ielts/IeltsTests"));
+const IeltsTest = lazy(() => import("./pages/ielts/IeltsTest"));
+const IeltsResults = lazy(() => import("./pages/ielts/IeltsResults"));
+const IeltsHistory = lazy(() => import("./pages/ielts/IeltsHistory"));
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -63,11 +77,23 @@ function RootRoute() {
   return <Home />;
 }
 
+// "/dashboard" tanlangan imtihonga qarab SAT yoki IELTS dashboard'ini
+// ko'rsatadi; imtihon hali tanlanmagan bo'lsa — tanlash sahifasiga.
+function ExamDashboard() {
+  const { exam, ready } = useExam();
+  if (!ready) return <PageLoader />;
+  if (!exam) return <Navigate to="/choose-exam" replace />;
+  return exam === "ielts" ? <IeltsDashboard /> : <Dashboard />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
+      <AdminProvider>
+      <ExamProvider>
       <BrowserRouter>
         <AnalyticsTracker />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<RootRoute />} />
           <Route path="/login" element={<Login />} />
@@ -75,10 +101,62 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
 
           <Route
+            path="/choose-exam"
+            element={
+              <ProtectedRoute>
+                <ChooseExam />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <DashboardRoute>
-                <Dashboard />
+                <ExamDashboard />
+              </DashboardRoute>
+            }
+          />
+
+          <Route
+            path="/ielts/tests"
+            element={
+              <DashboardRoute>
+                <IeltsTests />
+              </DashboardRoute>
+            }
+          />
+          {["listening", "reading", "writing"].map((s) => (
+            <Route
+              key={s}
+              path={`/ielts/practice/${s}`}
+              element={
+                <DashboardRoute>
+                  <IeltsTests key={s} initialSection={s} />
+                </DashboardRoute>
+              }
+            />
+          ))}
+          <Route
+            path="/ielts/test/:testId"
+            element={
+              <ProtectedRoute>
+                <IeltsTest />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ielts/results/:id"
+            element={
+              <DashboardRoute>
+                <IeltsResults />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/ielts/history"
+            element={
+              <DashboardRoute>
+                <IeltsHistory />
               </DashboardRoute>
             }
           />
@@ -128,6 +206,14 @@ export default function App() {
             element={
               <DashboardRoute>
                 <History />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/study-plan"
+            element={
+              <DashboardRoute>
+                <StudyPlan />
               </DashboardRoute>
             }
           />
@@ -258,7 +344,10 @@ export default function App() {
             }
           />
         </Routes>
+        </Suspense>
       </BrowserRouter>
+      </ExamProvider>
+      </AdminProvider>
     </AuthProvider>
   );
 }

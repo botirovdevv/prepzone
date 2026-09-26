@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import { getSessionCode, migrateLegacyCodes } from "../../utils/sessionCode";
 import { LuPlus, LuCalendarClock, LuChevronRight, LuShieldCheck, LuGlobe, LuCalendarX } from "react-icons/lu";
 import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
@@ -43,6 +44,26 @@ export default function AdminDashboard() {
     );
     return unsub;
   }, []);
+
+  // Kirish kodlari himoyalangan joyda (secure/admin) — alohida o'qiladi.
+  // Eski formatdagi sessiyalar shu yerda bir martalik ko'chiriladi.
+  const [codes, setCodes] = useState({});
+  useEffect(() => {
+    if (!sessions.length) return;
+    let cancelled = false;
+    migrateLegacyCodes(sessions)
+      .then(() =>
+        Promise.all(
+          sessions
+            .filter((s) => s.accessType !== "open")
+            .map((s) => getSessionCode(s.id, s.code).then((c) => [s.id, c]).catch(() => [s.id, null]))
+        )
+      )
+      .then((pairs) => !cancelled && setCodes(Object.fromEntries(pairs)));
+    return () => {
+      cancelled = true;
+    };
+  }, [sessions]);
 
   return (
     <Page>
@@ -96,7 +117,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span className="hidden rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-[#12213D]/70 sm:inline">
-                    {s.code}
+                    {s.accessType === "open" ? "OPEN" : codes[s.id] || "······"}
                   </span>
                   <LuChevronRight
                     size={18}

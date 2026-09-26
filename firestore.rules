@@ -4,6 +4,15 @@ rules_version = '2';
 // Prepzone — Firestore Security Rules.
 // Firebase Console -> Firestore Database -> Rules ga to'liq nusxalab,
 // "Publish" bosing.
+//
+// Tamoyillar:
+//  - Har kim faqat o'z ma'lumotini yozadi/o'qiydi; admin — hammasini o'qiydi.
+//  - Natija/reyting yozish faqat emaili tasdiqlangan userlarga.
+//  - Yoziladigan hujjatlarda ruxsat etilgan maydonlar va qiymat chegaralari
+//    tekshiriladi (soxta ball, ortiqcha katta ma'lumot yozishni qiyinlashtiradi).
+//    Eslatma: ballar brauzerda hisoblangani uchun bu 100% himoya emas —
+//    to'liq himoya uchun ballni serverda (Cloud Functions) hisoblash kerak.
+//  - Test kirish kodlari faqat aniq kod bilan o'qiladi, ro'yxatini olib bo'lmaydi.
 // ------------------------------------------------------------------
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -16,10 +25,35 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // admins/{uid} hujjati mavjud bo'lsa — admin (src/hooks/useIsAdmin.js).
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    // admins/{uid} hujjati mavjud bo'lsa — admin (src/context/AdminContext.jsx).
     function isAdmin() {
       return signedIn() &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function data() {
+      return request.resource.data;
+    }
+
+    function shortString(v, max) {
+      return v == null || (v is string && v.size() <= max);
+    }
+
+    // IELTS band: 0–9, 0.5 qadam bilan.
+    function validBand(b) {
+      return b is number && b >= 0 && b <= 9 && b * 2 == math.floor(b * 2);
+    }
+
+    function validIeltsSection(d, key, maxRaw) {
+      return !(key in d) || (
+        d[key] is map
+        && validBand(d[key].band)
+        && (!('raw' in d[key]) || (d[key].raw is int && d[key].raw >= 0 && d[key].raw <= maxRaw))
+      );
     }
 
     // ---------------- Adminlar ro'yxati ----------------
@@ -30,25 +64,83 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ---------------- User profillari (analitika) ----------------
+    // ---------------- User profillari ----------------
     match /users/{uid} {
       allow read: if isSelf(uid) || isAdmin();
-      allow create, update: if isSelf(uid);
+      allow create, update: if isSelf(uid)
+        && data().keys().hasOnly([
+          'uid', 'email', 'displayName', 'provider', 'emailVerified', 'createdAt',
+          'lastSeenAt', 'pageViews', 'pages', 'exam', 'studyPlan'
+        ])
+        && (!('uid' in data()) || data().uid == uid)
+        && shortString(data().get('displayName', null), 100)
+        && shortString(data().get('email', null), 200)
+        && (!('exam' in data()) || data().exam in ['sat', 'ielts'])
+        && (!('pages' in data()) || data().pages is map)
+        && (!('studyPlan' in data()) || data().studyPlan is map);
       allow delete: if isAdmin();
     }
 
-    // ---------------- Kunlik analitika ----------------
+    // ---------------- Analitika ----------------
+    // Eski format (bitta kunlik hujjat) — faqat o'qish, yangi yozuvlar shardlarga.
     match /analytics/{day} {
-      allow read: if isAdmin();
-      allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['date', 'views', 'pages', 'activeUsers']);
-      allow delete: if isAdmin();
+      allow read, delete: if isAdmin();
+      allow write: if false;
     }
 
-    // ---------------- Test natijalari (SAT + sessiya nusxalari) ----------------
+    // Kunlik hisoblagich bo'laklari: analyticsShards/{kun}_{0..19}
+    match /analyticsShards/{shardId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if signedIn()
+        && data().keys().hasOnly(['date', 'views', 'pages'])
+        && data().date is string && data().date.size() == 10
+        && shardId.matches(data().date + '_[0-9]{1,2}')
+        && data().views is int
+        && data().pages is map;
+    }
+
+    // Kunlik faol userlar: analyticsVisitors/{kun}_{uid}
+    match /analyticsVisitors/{visitId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if signedIn()
+        && data().keys().hasOnly(['date', 'uid'])
+        && data().uid == request.auth.uid
+        && data().date is string && data().date.size() == 10
+        && visitId == data().date + '_' + request.auth.uid;
+    }
+
+    // ---------------- SAT natijalari (+ sessiya nusxalari) ----------------
     match /results/{resultId} {
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if verified()
+        && data().uid == request.auth.uid
+        && data().keys().hasOnly([
+          'uid', 'email', 'testId', 'results', 'total', 'createdAt',
+          'terminated', 'terminationReason', 'sessionId', 'sessionTitle'
+        ])
+        && data().total is number && data().total >= 0 && data().total <= 1600
+        && data().results is map
+        && data().createdAt == request.time
+        && shortString(data().get('sessionTitle', null), 200);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- IELTS natijalari ----------------
+    match /ieltsResults/{resultId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if verified()
+        && data().uid == request.auth.uid
+        && data().keys().hasOnly([
+          'uid', 'email', 'testId', 'testTitle', 'mode', 'listening', 'reading', 'writing',
+          'overall', 'terminated', 'terminationReason', 'createdAt'
+        ])
+        && data().mode in ['full', 'listening', 'reading', 'writing']
+        && (data().overall == null || validBand(data().overall))
+        && validIeltsSection(data(), 'listening', 40)
+        && validIeltsSection(data(), 'reading', 40)
+        && validIeltsSection(data(), 'writing', 0)
+        && data().createdAt == request.time;
       allow update: if false;
       allow delete: if isAdmin();
     }
@@ -56,16 +148,30 @@ service cloud.firestore {
     // ---------------- Reyting ----------------
     match /leaderboard/{uid} {
       allow read: if signedIn();
-      allow create, update: if isSelf(uid)
-        && request.resource.data.uid == uid
-        && request.resource.data.bestScore is number
-        && request.resource.data.bestScore <= 1600;
+      allow create, update: if isSelf(uid) && verified()
+        && data().keys().hasOnly(['uid', 'name', 'bestScore', 'updatedAt'])
+        && data().uid == uid
+        && data().name is string && data().name.size() <= 60
+        && data().bestScore is int
+        && data().bestScore >= 200 && data().bestScore <= 1600
+        && data().bestScore % 10 == 0
+        && data().updatedAt == request.time
+        // Ball faqat oshishi mumkin.
+        && (resource == null || data().bestScore > resource.data.bestScore);
       allow delete: if isAdmin();
     }
 
     // ---------------- Amaliyot to'plamlari ----------------
     match /questionSets/{setId} {
       allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------------- Test kirish kodlari ----------------
+    // Talaba faqat aniq kodni bilsa o'qiy oladi (`get`); ro'yxat (`list`) yopiq.
+    match /sessionCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
       allow write: if isAdmin();
     }
 
@@ -80,40 +186,53 @@ service cloud.firestore {
           /databases/$(database)/documents/testSessions/$(sessionId)/participants/$(request.auth.uid));
       }
 
-      // Meta-ma'lumot (nom, jadval, bo'limlar nomi). Savollar bu yerda EMAS.
+      // Meta-ma'lumot (nom, jadval, bo'limlar nomi). Savollar va kod bu yerda EMAS.
       allow read: if signedIn();
       allow write: if isAdmin();
 
-      // Savollar va to'g'ri javoblar — faqat admin va qo'shilgan ishtirokchi.
+      // secure/content — savollar va to'g'ri javoblar (admin + qo'shilgan ishtirokchi);
+      // secure/admin — kirish kodi (faqat admin).
       match /secure/{docId} {
-        allow read: if isAdmin() || isParticipant();
+        allow read: if isAdmin() || (docId == 'content' && isParticipant());
         allow write: if isAdmin();
       }
 
       // Ishtirokchi: o'zini faqat to'g'ri kod bilan (yoki ochiq testga) qo'sha oladi.
       match /participants/{uid} {
         allow read: if isAdmin() || isSelf(uid);
-        allow create: if isSelf(uid)
-          && (session().accessType == 'open'
-              || request.resource.data.enteredCode == session().code);
+        allow create: if isSelf(uid) && verified()
+          && shortString(data().get('name', null), 100)
+          && (
+            session().accessType == 'open'
+            || (data().enteredCode is string
+                && get(/databases/$(database)/documents/sessionCodes/$(data().enteredCode)).data.sessionId == sessionId)
+            // Hali ko'chirilmagan eski sessiyalar (kod asosiy hujjatda).
+            || data().enteredCode == session().code
+          );
         // Holatni yangilash mumkin, lekin kiritilgan kodni o'zgartirib bo'lmaydi
         // (admin kodni yangilasa ham, test davom etayotganlar bloklanmaydi).
         allow update: if isSelf(uid)
-          && request.resource.data.enteredCode == resource.data.enteredCode;
+          && data().enteredCode == resource.data.enteredCode;
         allow delete: if isAdmin();
       }
 
       // Proktoring hodisalari (ogohlantirishlar) — admin monitoring uchun.
       match /events/{eventId} {
         allow read: if isAdmin();
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+        allow create: if signedIn() && isParticipant()
+          && data().uid == request.auth.uid
+          && data().type is string && data().type.size() <= 40
+          && data().message is string && data().message.size() <= 300
+          && shortString(data().get('name', null), 100);
         allow update, delete: if isAdmin();
       }
 
       // Sessiya natijasi (asosiy nusxa).
       match /results/{uid} {
         allow read: if isAdmin() || isSelf(uid);
-        allow create, update: if isSelf(uid) && isParticipant();
+        allow create, update: if isSelf(uid) && verified() && isParticipant()
+          && data().uid == uid
+          && data().total is number && data().total >= 0 && data().total <= 1600;
         allow delete: if isAdmin();
       }
     }

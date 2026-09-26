@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc, setDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
-import { generateUniqueCode } from "../../utils/sessionCode";
+import { generateUniqueCode, assignCode } from "../../utils/sessionCode";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
@@ -193,7 +193,6 @@ export default function SessionForm() {
         const ref = await addDoc(collection(db, "testSessions"), {
           title: title.trim(),
           accessType,
-          code,
           scheduledAt,
           sections: metaSections,
           status: "scheduled",
@@ -202,6 +201,8 @@ export default function SessionForm() {
           createdAt: serverTimestamp(),
         });
         sessionId = ref.id;
+        // Kod sessiya hujjatida emas, alohida himoyalangan joyda saqlanadi.
+        await assignCode(sessionId, code);
       }
       await setDoc(doc(db, "testSessions", sessionId, "secure", "content"), { sections });
       navigate(`/admin/sessions/${sessionId}/monitor`);

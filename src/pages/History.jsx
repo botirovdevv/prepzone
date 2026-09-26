@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
-import { getSatTest } from "../data/satTest";
+import { getSatTestTitle } from "../data/testsCatalog";
 import {
   LuCalendar,
   LuChevronRight,
@@ -135,7 +135,7 @@ export default function History() {
                 const isBest = attempts.length > 1 && a.total === bestScore;
                 const isSession = !!a.sessionId;
                 const linkTo = isSession ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`;
-                const label = isSession ? a.sessionTitle || "To'liq mock test (sessiya)" : getSatTest(a.testId).testTitle;
+                const label = isSession ? a.sessionTitle || "To'liq mock test (sessiya)" : getSatTestTitle(a.testId);
                 return (
                   <Link
                     key={a.id}

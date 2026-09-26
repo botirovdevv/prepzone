@@ -135,7 +135,7 @@ const FOOTER_COLUMNS = [
     title: "Imtihonlar",
     links: [
       { label: "SAT", section: "tests" },
-      { label: "IELTS", soon: true },
+      { label: "IELTS Academic", section: "tests" },
       { label: "CEFR Speaking", soon: true },
     ],
   },
@@ -227,7 +227,8 @@ function Footer({ onNavigate }) {
 export default function Home() {
   const navigate = useNavigate();
 
-  const handleSAT = () => navigate("/login");
+  // Login'dan keyin user /choose-exam sahifasida SAT yoki IELTS'ni tanlaydi.
+  const handleStart = () => navigate("/login");
 
   const scrollTo = scrollToSection;
 
@@ -253,16 +254,27 @@ export default function Home() {
             </h1>
 
             <p className="mt-8 max-w-[520px] text-[17px] leading-7 text-[#667085] sm:text-[19px]">
-              SAT, IELTS va CEFR Speaking uchun real imtihon formatiga yaqin
-              mock testlar. Natijangizni ko‘ring va keyingi qadamni aniq biling.
+              SAT va IELTS Academic uchun real imtihon formatidagi mock
+              testlar. Natijangizni ko‘ring va keyingi qadamni aniq biling.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
-                onClick={handleSAT}
+                onClick={handleStart}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#087fd1] px-7 py-3.5 text-[14px] font-bold text-white transition hover:bg-[#066fb8]"
               >
-                SAT mock testni boshlash
+                SAT mock test
+                <LuArrowRight
+                  size={17}
+                  className="transition-transform group-hover:translate-x-1"
+                />
+              </button>
+
+              <button
+                onClick={handleStart}
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#e4002b] px-7 py-3.5 text-[14px] font-bold text-white transition hover:bg-[#c20025]"
+              >
+                IELTS mock test
                 <LuArrowRight
                   size={17}
                   className="transition-transform group-hover:translate-x-1"
@@ -375,7 +387,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-[1280px] divide-y divide-[#111827]/[0.08] px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0">
           {[
             ["SAT", "Full mock practice", "Reading & Writing + Math"],
-            ["IELTS", "Coming soon", "Listening, Reading, Writing & Speaking"],
+            ["IELTS", "Academic mock practice", "Listening, Reading & Writing"],
             ["CEFR", "Coming soon", "Speaking mock practice"],
           ].map(([name, title, text]) => (
             <div key={name} className="flex items-center gap-5 py-6 md:px-8 first:md:pl-0 last:md:pr-0">
@@ -424,7 +436,7 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={handleSAT}
+                onClick={handleStart}
                 className="inline-flex items-center gap-2 self-start text-sm font-bold text-[#087fd1] transition hover:text-[#055f9d] sm:self-center"
               >
                 Boshlash <LuArrowRight size={16} />
@@ -433,21 +445,23 @@ export default function Home() {
 
             <div className="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827]/[0.05] text-[#667085]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e4002b]/10 text-[#e4002b]">
                   <LuHeadphones size={20} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-[#344054]">IELTS</h3>
-                    <span className="rounded-full bg-[#f1f3f5] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#8b95a3]">
-                      Soon
-                    </span>
-                  </div>
-                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#8b95a3]">
-                    Listening, Reading, Writing va Speaking mock testlari.
+                  <h3 className="text-lg font-bold">IELTS Academic Mock Test</h3>
+                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#707b8b]">
+                    IELTS on Computer interfeysida Listening, Reading va Writing.
+                    Band score, savollar tahlili va Writing mezonlari bo‘yicha baho.
                   </p>
                 </div>
               </div>
+              <button
+                onClick={handleStart}
+                className="inline-flex items-center gap-2 self-start text-sm font-bold text-[#e4002b] transition hover:text-[#b00022] sm:self-center"
+              >
+                Boshlash <LuArrowRight size={16} />
+              </button>
             </div>
 
             <div className="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
@@ -519,7 +533,7 @@ export default function Home() {
 
           <div className="border-t border-[#dfe4e8]">
             {[
-              ["01", "Imtihonni tanlang", "SAT mock testdan boshlang yoki keyinchalik IELTS va CEFR Speaking modullarini tanlang."],
+              ["01", "Imtihonni tanlang", "Ro‘yxatdan o‘tgach SAT yoki IELTS Academic'ni tanlang — dashboard va testlar shunga moslashadi. Istalgan payt almashtirish mumkin."],
               ["02", "Testni ishlang", "Savollarni vaqt chegarasida bajaring va o‘zingizni real imtihon sharoitida sinang."],
               ["03", "Natijani ko‘ring", "Urinish yakunida natijangizni ko‘ring va keyingi tayyorgarlik yo‘nalishini belgilang."],
             ].map(([number, title, text]) => (
@@ -551,10 +565,10 @@ export default function Home() {
             </div>
 
             <button
-              onClick={handleSAT}
+              onClick={handleStart}
               className="group inline-flex shrink-0 items-center gap-3 rounded-full bg-white px-7 py-4 text-sm font-bold text-[#111827] transition hover:bg-[#f1f4f6]"
             >
-              SAT mock test
+              Mock testni boshlash
               <LuArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
             </button>
           </div>

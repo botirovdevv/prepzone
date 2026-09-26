@@ -16,3 +16,10 @@ export const testsCatalog = [
     description: "Bluebook formati · adaptiv · 98 savol · 2 soat 14 daqiqa",
   },
 ];
+
+// Faqat nom kerak bo'lgan joylar uchun (Dashboard, History) — og'ir test
+// ma'lumotlarini (data/satTest.js) yuklamaslik uchun. Noma'lum/eski natijalar
+// satTest.getSatTest kabi 1-testga qaytadi.
+export function getSatTestTitle(id) {
+  return (testsCatalog.find((t) => t.id === id) || testsCatalog[0]).title;
+}

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
+import { PageLoader } from "./ui";
 
 export default function DashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(
@@ -25,7 +26,8 @@ export default function DashboardLayout({ children }) {
           collapsed ? "lg:pl-[84px]" : "lg:pl-[260px]"
         }`}
       >
-        {children}
+        {/* Sahifa chunk'i yuklanayotganda sidebar joyida qoladi. */}
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
       </div>
     </div>
   );

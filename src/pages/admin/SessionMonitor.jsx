@@ -19,7 +19,7 @@ import {
   LuActivity,
   LuSearchX,
 } from "react-icons/lu";
-import { generateUniqueCode } from "../../utils/sessionCode";
+import { generateUniqueCode, assignCode, getSessionCode, releaseCode } from "../../utils/sessionCode";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, StatTile, EmptyState, PageLoader } from "../../components/ui";
 
 function formatDateTime(ts) {
@@ -61,6 +61,7 @@ export default function SessionMonitor() {
   const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [code, setCode] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "testSessions", id), (snap) => {
@@ -86,9 +87,20 @@ export default function SessionMonitor() {
     return unsub;
   }, [id]);
 
+  // Kod himoyalangan joydan o'qiladi; eski formatdagi sessiya bo'lsa — ko'chiriladi.
+  const legacyCode = session?.code || null;
+  const sessionExists = !!session;
+  useEffect(() => {
+    if (!sessionExists) return;
+    const load = legacyCode
+      ? assignCode(id, legacyCode).then(() => legacyCode)
+      : getSessionCode(id);
+    load.then(setCode).catch((err) => console.error("Kodni o'qishda xatolik:", err));
+  }, [id, sessionExists, legacyCode]);
+
   const handleCopyCode = () => {
-    if (!session) return;
-    navigator.clipboard?.writeText(session.code);
+    if (!code) return;
+    navigator.clipboard?.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -97,7 +109,8 @@ export default function SessionMonitor() {
     setRegenerating(true);
     try {
       const newCode = await generateUniqueCode();
-      await updateDoc(doc(db, "testSessions", id), { code: newCode });
+      await assignCode(id, newCode, code);
+      setCode(newCode);
     } finally {
       setRegenerating(false);
     }
@@ -126,6 +139,7 @@ export default function SessionMonitor() {
       return;
     setDeleting(true);
     try {
+      await releaseCode(id);
       await deleteDoc(doc(db, "testSessions", id, "secure", "content"));
       await deleteDoc(doc(db, "testSessions", id));
       navigate("/admin");
@@ -186,7 +200,7 @@ export default function SessionMonitor() {
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
               {session.accessType === "open" ? "Kirish kodi (ixtiyoriy — test doimiy ochiq)" : "Kirish kodi"}
             </p>
-            <p className="mt-2 font-mono text-4xl font-black tracking-[0.25em]">{session.code}</p>
+            <p className="mt-2 font-mono text-4xl font-black tracking-[0.25em]">{code || "······"}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="light" size="sm" onClick={handleCopyCode}>

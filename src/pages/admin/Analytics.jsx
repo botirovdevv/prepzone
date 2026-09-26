@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getCountFromServer, getDocs, orderBy, query, where } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import {
   LuChartColumn,
@@ -109,73 +109,117 @@ export default function Analytics() {
   const [chartMetric, setChartMetric] = useState("views");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
+  const [activeCounts, setActiveCounts] = useState({});
+  const [reloadKey, setReloadKey] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     const startKey = lastDays(90)[0]; // eng katta davr — bir marta yuklab, keyin filtrlaymiz
-    const [u, a, r, l] = await Promise.allSettled([
+    const [u, a, r, l, ir, sh] = await Promise.allSettled([
       getDocs(collection(db, "users")),
+      // Eski format (bitta kunlik hujjat) — o'tish davridagi ma'lumotlar uchun.
       getDocs(query(collection(db, "analytics"), where("date", ">=", startKey), orderBy("date"))),
       getDocs(collection(db, "results")),
       getDocs(collection(db, "leaderboard")),
+      getDocs(collection(db, "ieltsResults")),
+      getDocs(query(collection(db, "analyticsShards"), where("date", ">=", startKey))),
     ]);
     const errs = [];
     if (u.status === "fulfilled") setUsers(u.value.docs.map((d) => ({ id: d.id, ...d.data() })));
     else errs.push("users");
-    if (a.status === "fulfilled") setDays(a.value.docs.map((d) => d.data()));
-    else errs.push("analytics");
-    if (r.status === "fulfilled")
-      setResults(r.value.docs.map((d) => ({ uid: d.data().uid, createdAt: d.data().createdAt })));
-    else errs.push("results");
+    // Kun bo'yicha yig'ish: eski hujjatlar + yangi shardlar.
+    const byDay = {};
+    const add = (d) => {
+      const day = (byDay[d.date] ||= { date: d.date, views: 0, pages: {}, legacyActive: 0 });
+      day.views += d.views || 0;
+      for (const [p, c] of Object.entries(d.pages || {})) day.pages[p] = (day.pages[p] || 0) + c;
+      if (d.activeUsers) day.legacyActive = d.activeUsers.length;
+    };
+    if (a.status === "fulfilled") a.value.docs.forEach((d) => add(d.data()));
+    if (sh.status === "fulfilled") sh.value.docs.forEach((d) => add(d.data()));
+    else errs.push("analyticsShards");
+    setDays(Object.values(byDay));
+    // SAT va IELTS natijalari birga sanaladi (testlar soni uchun).
+    const toRow = (d) => ({ uid: d.data().uid, createdAt: d.data().createdAt });
+    if (r.status === "fulfilled" || ir.status === "fulfilled")
+      setResults([
+        ...(r.status === "fulfilled" ? r.value.docs.map(toRow) : []),
+        ...(ir.status === "fulfilled" ? ir.value.docs.map(toRow) : []),
+      ]);
+    if (r.status !== "fulfilled") errs.push("results");
+    if (ir.status !== "fulfilled") errs.push("ieltsResults");
     if (l.status === "fulfilled")
       setBestScores(Object.fromEntries(l.value.docs.map((d) => [d.id, d.data().bestScore])));
     else errs.push("leaderboard");
-    [u, a, r, l].forEach((x) => x.status === "rejected" && console.error(x.reason));
+    [u, a, r, l, ir, sh].forEach((x) => x.status === "rejected" && console.error(x.reason));
     setErrors(errs);
     setLoading(false);
+    setReloadKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  // Kunlik faol userlar — har kun uchun serverda sanash (hujjatlarni yuklamasdan).
+  useEffect(() => {
+    let cancelled = false;
+    const keys = lastDays(range);
+    Promise.all(
+      keys.map((k) =>
+        getCountFromServer(query(collection(db, "analyticsVisitors"), where("date", "==", k)))
+          .then((s) => [k, s.data().count])
+          .catch(() => [k, 0])
+      )
+    ).then((pairs) => !cancelled && setActiveCounts(Object.fromEntries(pairs)));
+    return () => {
+      cancelled = true;
+    };
+  }, [range, reloadKey]);
+
   const data = useMemo(() => {
     const keys = lastDays(range);
     const byDay = Object.fromEntries(days.map((d) => [d.date, d]));
+    const activeOn = (k) => Math.max(activeCounts[k] || 0, byDay[k]?.legacyActive || 0);
     const series = keys.map((k) => ({
       key: k,
       views: byDay[k]?.views || 0,
-      active: byDay[k]?.activeUsers?.length || 0,
+      active: activeOn(k),
     }));
 
-    const activeSet = new Set();
     const pages = {};
     let views = 0;
     for (const k of keys) {
       const d = byDay[k];
       if (!d) continue;
       views += d.views || 0;
-      (d.activeUsers || []).forEach((id) => activeSet.add(id));
       for (const [p, c] of Object.entries(d.pages || {})) pages[p] = (pages[p] || 0) + c;
     }
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
+    const todayStart = new Date(start);
     start.setDate(start.getDate() - (range - 1));
 
     const newUsers = users.filter((x) => (toDate(x.createdAt) || 0) >= start).length;
     const testsInRange = results.filter((x) => (toDate(x.createdAt) || 0) >= start).length;
+    // Davrda faol = oxirgi faolligi davr boshidan keyin bo'lgan userlar.
+    const activeInRange = users.filter((x) => (toDate(x.lastSeenAt) || 0) >= start).length;
+    const activeToday = Math.max(
+      activeOn(dayKey()),
+      users.filter((x) => (toDate(x.lastSeenAt) || 0) >= todayStart).length
+    );
 
     return {
       series,
       views,
-      activeInRange: activeSet.size,
-      activeToday: byDay[dayKey()]?.activeUsers?.length || 0,
+      activeInRange,
+      activeToday,
       pages: sortedPages(pages),
       newUsers,
       testsInRange,
     };
-  }, [days, users, results, range]);
+  }, [days, users, results, range, activeCounts]);
 
   const testsByUser = useMemo(() => {
     const m = {};

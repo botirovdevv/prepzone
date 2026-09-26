@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { LuBold, LuItalic, LuUnderline } from "react-icons/lu";
+import { sanitizeRichText } from "../../utils/sanitizeHtml";
 
 // Contenteditable bo'sh bo'lsa ham brauzer ba'zan "<br>" yoki "<div><br></div>"
 // kabi bo'sh teglar qoldirib ketadi — shularni ham "bo'sh" deb hisoblaymiz.
@@ -24,9 +25,12 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   // `value` faqat tashqaridan (masalan, forma tozalanganda yoki mavjud
   // savol yuklanganda) o'zgarganda DOMga yoziladi — har bir onInput'da
   // qayta yozib, kursor pozitsiyasini buzib qo'ymaslik uchun.
+  // Xavfsizlik: bazadan kelgan HTML ham tozalanadi (bulk import va h.k. orqali
+  // kirgan <img onerror=...> kabi skriptlar admin brauzerida ishlamasin).
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== (value || "")) {
-      editorRef.current.innerHTML = value || "";
+    const safe = sanitizeRichText(value || "");
+    if (editorRef.current && editorRef.current.innerHTML !== safe) {
+      editorRef.current.innerHTML = safe;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

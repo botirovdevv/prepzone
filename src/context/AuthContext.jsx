@@ -14,6 +14,7 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { auth } from "../firebase/config";
+import { flushPageViews } from "../utils/analytics";
 
 const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
@@ -59,7 +60,11 @@ export function AuthProvider({ children }) {
   // yangi foydalanuvchi yaratiladi).
   const googleLogin = () => signInWithPopup(auth, googleProvider);
 
-  const logout = () => signOut(auth);
+  // Chiqishdan oldin yig'ilgan analitikani yuboramiz (keyin ruxsat bo'lmaydi).
+  const logout = async () => {
+    await flushPageViews();
+    return signOut(auth);
+  };
 
   // Tasdiqlash havolasini qayta yuborish (VerifyEmail sahifasidagi
   // "Qayta yuborish" tugmasi uchun).

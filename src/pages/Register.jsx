@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { checkPassword } from "../utils/passwordPolicy";
+import PasswordStrength from "../components/PasswordStrength";
 const logo = "/Logo.png"; // Logo manzilingizni tekshiring
 
 export default function Register() {
@@ -15,9 +17,15 @@ export default function Register() {
   const { register, googleLogin } = useAuth(); // AuthContext'da googleLogin ham bo'lishi kerak
   const navigate = useNavigate();
 
+  const pwCheck = checkPassword(password, { email, name: fullName });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!pwCheck.valid) {
+      setError("Parol xavfsizlik talablariga javob bermaydi — quyidagi ro'yxatni tekshiring.");
+      return;
+    }
     if (password !== confirm) {
       setError("Parollar mos kelmadi.");
       return;
@@ -86,7 +94,7 @@ export default function Register() {
               Ro'yxatdan o'ting
             </h1>
             <p className="mt-2 text-sm text-[#566176]">
-              Yangi hisob yarating va SAT mock testlarida qatnashing.
+              Yangi hisob yarating va SAT yoki IELTS mock testlarida qatnashing.
             </p>
           </div>
 
@@ -134,6 +142,8 @@ export default function Register() {
               <input
                 type="text"
                 required
+                maxLength={60}
+                autoComplete="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-xl border border-[#111827]/15 bg-[#fcfcfa]/60 px-4 py-2.5 text-sm text-[#111827] outline-none transition focus:border-[#087fd1] focus:bg-white focus:ring-2 focus:ring-[#087fd1]/20"
@@ -162,12 +172,13 @@ export default function Register() {
               <input
                 type="password"
                 required
-                minLength={6}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-[#111827]/15 bg-[#fcfcfa]/60 px-4 py-2.5 text-sm text-[#111827] outline-none transition focus:border-[#087fd1] focus:bg-white focus:ring-2 focus:ring-[#087fd1]/20"
-                placeholder="Kamida 6 ta belgi"
+                placeholder="Kamida 10 ta belgi"
               />
+              <PasswordStrength check={pwCheck} show={password.length > 0} />
             </div>
 
             <div>
@@ -177,6 +188,7 @@ export default function Register() {
               <input
                 type="password"
                 required
+                autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 className="w-full rounded-xl border border-[#111827]/15 bg-[#fcfcfa]/60 px-4 py-2.5 text-sm text-[#111827] outline-none transition focus:border-[#087fd1] focus:bg-white focus:ring-2 focus:ring-[#087fd1]/20"
@@ -192,7 +204,7 @@ export default function Register() {
 
             <button
               type="submit"
-              disabled={loading || googleLoading}
+              disabled={loading || googleLoading || !pwCheck.valid || password !== confirm}
               className="w-full rounded-full bg-[#087fd1] py-3 text-sm font-bold text-white shadow-md shadow-[#087fd1]/20 transition hover:bg-[#066fb8] active:scale-[0.99] disabled:opacity-60 mt-2"
             >
               {loading ? "Yaratilmoqda..." : "Ro'yxatdan o'tish"}
@@ -223,7 +235,10 @@ function mapError(code) {
     case "auth/invalid-email":
       return "Email manzili noto'g'ri.";
     case "auth/weak-password":
-      return "Parol juda zaif (kamida 6 ta belgi).";
+    case "auth/password-does-not-meet-requirements":
+      return "Parol xavfsizlik talablariga javob bermaydi.";
+    case "auth/too-many-requests":
+      return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
     case "auth/popup-closed-by-user":
       return "Google orqali kirish oyna yopilgani uchun bekor qilindi.";
     default:

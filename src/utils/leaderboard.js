@@ -14,7 +14,7 @@ export async function maybeUpdateLeaderboard(user, total) {
     if (total <= prevBest) return;
     await setDoc(ref, {
       uid: user.uid,
-      name: user.displayName || user.email?.split("@")[0] || "Foydalanuvchi",
+      name: (user.displayName || user.email?.split("@")[0] || "Foydalanuvchi").slice(0, 60),
       bestScore: total,
       updatedAt: serverTimestamp(),
     });

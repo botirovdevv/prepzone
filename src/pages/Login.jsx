@@ -78,7 +78,7 @@ export default function Login() {
               Hisobingizga kiring
             </h1>
             <p className="mt-2 text-sm text-[#566176]">
-              Bluebook mock testlarida qatnashish va progressni kuzatish uchun platformaga kiring.
+              SAT va IELTS mock testlarida qatnashish va progressni kuzatish uchun platformaga kiring.
             </p>
           </div>
 
@@ -184,11 +184,16 @@ function mapError(code) {
   switch (code) {
     case "auth/invalid-email":
       return "Email manzili noto'g'ri.";
+    // Xavfsizlik: "user topilmadi" va "parol noto'g'ri" ataylab bir xil xabar —
+    // aks holda qaysi email ro'yxatdan o'tganini bilib olish mumkin bo'ladi.
     case "auth/user-not-found":
-      return "Bunday foydalanuvchi topilmadi.";
     case "auth/wrong-password":
     case "auth/invalid-credential":
       return "Email yoki parol noto'g'ri.";
+    case "auth/too-many-requests":
+      return "Juda ko'p urinish. Hisob vaqtincha bloklandi — birozdan keyin qayta urinib ko'ring.";
+    case "auth/user-disabled":
+      return "Bu hisob o'chirilgan. Administrator bilan bog'laning.";
     case "auth/popup-closed-by-user":
       return "Google orqali kirish oyna yopilgani uchun bekor qilindi.";
     default:
