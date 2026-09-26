@@ -9,7 +9,7 @@ import {
   LuMenu,
   LuX,
 } from "react-icons/lu";
-import logo from '../../public/Logo.png'
+const logo = "/Logo.png";
 
 const NAV_LINKS = [
   { id: "tests", label: "Mock tests" },

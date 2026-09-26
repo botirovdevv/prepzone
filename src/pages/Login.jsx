@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import logo from "../../public/Logo.png"; // Logo manzilingizni tekshiring
+const logo = "/Logo.png"; // Logo manzilingizni tekshiring
 
 export default function Login() {
   const [email, setEmail] = useState("");

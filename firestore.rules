@@ -1,0 +1,126 @@
+rules_version = '2';
+
+// ------------------------------------------------------------------
+// Prepzone — Firestore Security Rules.
+// Firebase Console -> Firestore Database -> Rules ga to'liq nusxalab,
+// "Publish" bosing.
+// ------------------------------------------------------------------
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // admins/{uid} hujjati mavjud bo'lsa — admin (src/hooks/useIsAdmin.js).
+    function isAdmin() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ---------------- Adminlar ro'yxati ----------------
+    // Faqat Console orqali qo'shiladi; user faqat o'z hujjatini tekshira oladi.
+    match /admins/{uid} {
+      allow get: if isSelf(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------------- User profillari (analitika) ----------------
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create, update: if isSelf(uid);
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- Kunlik analitika ----------------
+    match /analytics/{day} {
+      allow read: if isAdmin();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['date', 'views', 'pages', 'activeUsers']);
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- Test natijalari (SAT + sessiya nusxalari) ----------------
+    match /results/{resultId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- Reyting ----------------
+    match /leaderboard/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isSelf(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.bestScore is number
+        && request.resource.data.bestScore <= 1600;
+      allow delete: if isAdmin();
+    }
+
+    // ---------------- Amaliyot to'plamlari ----------------
+    match /questionSets/{setId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------------- Mock test sessiyalari ----------------
+    match /testSessions/{sessionId} {
+      function session() {
+        return get(/databases/$(database)/documents/testSessions/$(sessionId)).data;
+      }
+
+      function isParticipant() {
+        return signedIn() && exists(
+          /databases/$(database)/documents/testSessions/$(sessionId)/participants/$(request.auth.uid));
+      }
+
+      // Meta-ma'lumot (nom, jadval, bo'limlar nomi). Savollar bu yerda EMAS.
+      allow read: if signedIn();
+      allow write: if isAdmin();
+
+      // Savollar va to'g'ri javoblar — faqat admin va qo'shilgan ishtirokchi.
+      match /secure/{docId} {
+        allow read: if isAdmin() || isParticipant();
+        allow write: if isAdmin();
+      }
+
+      // Ishtirokchi: o'zini faqat to'g'ri kod bilan (yoki ochiq testga) qo'sha oladi.
+      match /participants/{uid} {
+        allow read: if isAdmin() || isSelf(uid);
+        allow create: if isSelf(uid)
+          && (session().accessType == 'open'
+              || request.resource.data.enteredCode == session().code);
+        // Holatni yangilash mumkin, lekin kiritilgan kodni o'zgartirib bo'lmaydi
+        // (admin kodni yangilasa ham, test davom etayotganlar bloklanmaydi).
+        allow update: if isSelf(uid)
+          && request.resource.data.enteredCode == resource.data.enteredCode;
+        allow delete: if isAdmin();
+      }
+
+      // Proktoring hodisalari (ogohlantirishlar) — admin monitoring uchun.
+      match /events/{eventId} {
+        allow read: if isAdmin();
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if isAdmin();
+      }
+
+      // Sessiya natijasi (asosiy nusxa).
+      match /results/{uid} {
+        allow read: if isAdmin() || isSelf(uid);
+        allow create, update: if isSelf(uid) && isParticipant();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Qolgan hamma narsa yopiq.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

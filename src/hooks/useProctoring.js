@@ -36,6 +36,7 @@ export function useProctoring({
   const activeRef = useRef(active);
   const intentionalExitRef = useRef(false);
   const warnTimeoutRef = useRef(null);
+  const warningCountRef = useRef(0);
 
   useEffect(() => {
     activeRef.current = active;
@@ -75,17 +76,18 @@ export function useProctoring({
   const pushWarning = useCallback(
     (type, message) => {
       if (!activeRef.current) return;
-      setWarningCount((c) => {
-        const next = c + 1;
-        setWarning({ type, message, count: next });
-        onViolationWarning && onViolationWarning(type, next, message);
-        if (warnTimeoutRef.current) clearTimeout(warnTimeoutRef.current);
-        warnTimeoutRef.current = setTimeout(() => setWarning(null), 5000);
-        if (next >= maxWarnings) {
-          onForceTerminate && onForceTerminate("warnings");
-        }
-        return next;
-      });
+      // Sanoq ref'da yuritiladi: side-effectlar setState updater ichida
+      // bo'lsa, StrictMode'da ikki marta chaqirilib qoladi.
+      const next = warningCountRef.current + 1;
+      warningCountRef.current = next;
+      setWarningCount(next);
+      setWarning({ type, message, count: next });
+      onViolationWarning?.(type, next, message);
+      if (warnTimeoutRef.current) clearTimeout(warnTimeoutRef.current);
+      warnTimeoutRef.current = setTimeout(() => setWarning(null), 5000);
+      if (next >= maxWarnings) {
+        onForceTerminate?.("warnings");
+      }
     },
     [onForceTerminate, onViolationWarning, maxWarnings]
   );
@@ -98,7 +100,7 @@ export function useProctoring({
         document.fullscreenElement || document.webkitFullscreenElement
       );
       if (!inFullscreen && activeRef.current && !intentionalExitRef.current) {
-        onForceTerminate && onForceTerminate("fullscreen");
+        onForceTerminate?.("fullscreen");
       }
     };
     document.addEventListener("fullscreenchange", handleChange);
@@ -119,7 +121,7 @@ export function useProctoring({
       const isMacShot = e.metaKey && e.shiftKey && ["3", "4", "5"].includes(e.key); // Cmd+Shift+3/4/5
 
       if (key === "printscreen" || isWinSnip || isMacShot) {
-        e.preventDefault && e.preventDefault();
+        e.preventDefault?.();
         pushWarning(
           "screenshot",
           "Skrinshot olish taqiqlangan! Bu urinish qayd etildi."

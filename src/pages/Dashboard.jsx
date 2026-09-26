@@ -5,7 +5,7 @@ import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 import { getSatTest } from "../data/satTest";
-import HandIcon from "../../public/waving-hand-icon.png";
+const HandIcon = "/waving-hand-icon.png";
 import {
   LuNotebookPen,
   LuKeyRound,

@@ -19,11 +19,14 @@ import SessionResults from "./pages/SessionResults";
 import PracticeIndex from "./pages/PracticeIndex";
 import Leaderboard from "./pages/Leaderboard";
 import PracticeSet from "./pages/PracticeSet";
+import Vocabulary from "./pages/Vocabulary";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SessionForm from "./pages/admin/SessionForm";
 import SessionMonitor from "./pages/admin/SessionMonitor";
 import SetsDashboard from "./pages/admin/SetsDashboard";
 import SetForm from "./pages/admin/SetForm";
+import Analytics from "./pages/admin/Analytics";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -64,6 +67,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AnalyticsTracker />
         <Routes>
           <Route path="/" element={<RootRoute />} />
           <Route path="/login" element={<Login />} />
@@ -124,6 +128,14 @@ export default function App() {
             element={
               <DashboardRoute>
                 <History />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/vocabulary"
+            element={
+              <DashboardRoute>
+                <Vocabulary />
               </DashboardRoute>
             }
           />
@@ -210,6 +222,14 @@ export default function App() {
             element={
               <AdminDashboardRoute>
                 <SessionMonitor />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminDashboardRoute>
+                <Analytics />
               </AdminDashboardRoute>
             }
           />

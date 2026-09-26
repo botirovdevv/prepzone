@@ -44,3 +44,5 @@ out/
 .vite/
 .eslintcache
 .turbo/
+# Arxivlar
+*.zip

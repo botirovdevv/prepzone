@@ -16,12 +16,13 @@ import {
   LuShieldCheck,
   LuLibrary,
   LuKeyRound,
+  LuChartColumn,
 } from "react-icons/lu";
 import { AiFillHome } from "react-icons/ai";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
-import logo from "../../public/Logo.png";
-import LogoMark from "../../public/Logo-sm.png";
+const logo = "/Logo.png";
+const LogoMark = "/Logo-sm.png";
 
 const NAV_GROUPS = [
   {
@@ -41,7 +42,7 @@ const NAV_GROUPS = [
   },
   {
     label: "LEARN",
-    items: [{ label: "Vocabulary", icon: LuBookOpen, soon: true }],
+    items: [{ to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" }],
   },
   {
     label: "PROGRESS",
@@ -55,6 +56,7 @@ const NAV_GROUPS = [
 const ADMIN_ITEMS = [
   { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]" },
   { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary },
+  { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn },
 ];
 
 function initials(nameOrEmail) {
