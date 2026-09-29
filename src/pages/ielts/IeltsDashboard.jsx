@@ -12,6 +12,7 @@ import {
   LuLibrary,
 } from "react-icons/lu";
 import { useAuth } from "../../context/AuthContext";
+import TestCountdown from "../../components/TestCountdown";
 import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton } from "../../components/ui";
 import { fetchIeltsResults, MODE_LABELS, formatResultDate } from "../../utils/ieltsResults";
 import { formatBand } from "../../utils/ieltsScoring";
@@ -72,6 +73,8 @@ export default function IeltsDashboard() {
           </Button>
         }
       />
+
+      <TestCountdown exam="ielts" />
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile icon={LuAward} label="Oxirgi overall" value={formatBand(fulls[0]?.overall)} hint={fulls[0] ? formatResultDate(fulls[0].createdAt) : "Hali full mock yo'q"} />

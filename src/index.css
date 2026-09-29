@@ -235,3 +235,29 @@ h6 {
     animation: pz-fade-in 150ms linear both;
   }
 }
+
+/* Home sahifasi — bo'limlar ko'rinish maydoniga kirganda paydo bo'lishi */
+.home-reveal {
+  opacity: 0;
+  translate: 0 18px;
+  /* opacity/translate — kirish animatsiyasi (kechikish bilan);
+     transform/box-shadow — kartalarning hover effekti (kechikishsiz). */
+  transition:
+    opacity 700ms var(--ease-out) var(--reveal-delay, 0ms),
+    translate 700ms var(--ease-out) var(--reveal-delay, 0ms),
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+.home-reveal.is-visible {
+  opacity: 1;
+  translate: 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-reveal {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms var(--ease-out);
+  }
+}

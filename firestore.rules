@@ -48,6 +48,21 @@ service cloud.firestore {
       return b is number && b >= 0 && b <= 9 && b * 2 == math.floor(b * 2);
     }
 
+    // Ro'yxatdan o'tishdagi so'rovnoma (src/pages/ChooseExam.jsx).
+    function validOnboarding(o) {
+      return o is map
+        && o.keys().hasOnly(['source', 'sourceOther', 'exams', 'targets', 'completedAt'])
+        && o.source in ['instagram', 'telegram', 'friends', 'other']
+        && shortString(o.get('sourceOther', null), 60)
+        && o.exams is list && o.exams.size() >= 1 && o.exams.size() <= 2
+        && o.exams.hasOnly(['sat', 'ielts'])
+        && o.targets is map
+        && o.targets.keys().hasOnly(['sat', 'ielts'])
+        && (!('sat' in o.targets) || (o.targets.sat is int
+            && o.targets.sat >= 400 && o.targets.sat <= 1600 && o.targets.sat % 10 == 0))
+        && (!('ielts' in o.targets) || validBand(o.targets.ielts));
+    }
+
     function validIeltsSection(d, key, maxRaw) {
       return !(key in d) || (
         d[key] is map
@@ -70,14 +85,15 @@ service cloud.firestore {
       allow create, update: if isSelf(uid)
         && data().keys().hasOnly([
           'uid', 'email', 'displayName', 'provider', 'emailVerified', 'createdAt',
-          'lastSeenAt', 'pageViews', 'pages', 'exam', 'studyPlan'
+          'lastSeenAt', 'pageViews', 'pages', 'exam', 'studyPlan', 'onboarding'
         ])
         && (!('uid' in data()) || data().uid == uid)
         && shortString(data().get('displayName', null), 100)
         && shortString(data().get('email', null), 200)
         && (!('exam' in data()) || data().exam in ['sat', 'ielts'])
         && (!('pages' in data()) || data().pages is map)
-        && (!('studyPlan' in data()) || data().studyPlan is map);
+        && (!('studyPlan' in data()) || data().studyPlan is map)
+        && (!('onboarding' in data()) || validOnboarding(data().onboarding));
       allow delete: if isAdmin();
     }
 

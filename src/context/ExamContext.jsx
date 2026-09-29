@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "./AuthContext";
 
@@ -7,6 +7,9 @@ import { useAuth } from "./AuthContext";
 // Tanlangan imtihon: "sat" | "ielts" | null (hali tanlanmagan).
 // Brauzerda (tez ochilishi uchun) va users/{uid}.exam da (boshqa
 // qurilmada ham saqlanishi uchun) yoziladi.
+//
+// Onboarding so'rovnomasi (ChooseExam) javoblari users/{uid}.onboarding da:
+//   { source, sourceOther, exams: ["sat","ielts"], targets: { sat, ielts }, completedAt }
 // ------------------------------------------------------------------
 
 export const EXAMS = {
@@ -16,6 +19,7 @@ export const EXAMS = {
 
 const ExamContext = createContext(null);
 const key = (uid) => `pz_exam::${uid}`;
+const targetsKey = (uid) => `pz_targets::${uid}`;
 
 function readLocal(uid) {
   try {
@@ -26,33 +30,47 @@ function readLocal(uid) {
   }
 }
 
+function readLocalTargets(uid) {
+  try {
+    const v = JSON.parse(localStorage.getItem(targetsKey(uid)) || "null");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLocal(k, v) {
+  try {
+    localStorage.setItem(k, v);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function ExamProvider({ children }) {
   const { user } = useAuth();
   const uid = user?.uid;
-  const [state, setState] = useState({ uid: null, exam: null, ready: false });
+  const [state, setState] = useState({ uid: null, exam: null, targets: {}, ready: false });
 
   useEffect(() => {
     if (!uid) return;
     const local = readLocal(uid);
-    if (local) {
-      setState({ uid, exam: local, ready: true });
-      return;
-    }
+    const localTargets = readLocalTargets(uid);
+    // Keshdagi imtihon bo'lsa darhol ko'rsatamiz, maqsad ballarini esa
+    // fonda Firestore'dan yangilab olamiz (boshqa qurilmada kiritilgan bo'lishi mumkin).
+    if (local) setState({ uid, exam: local, targets: localTargets, ready: true });
     let cancelled = false;
     getDoc(doc(db, "users", uid))
       .then((snap) => {
-        const remote = snap.data()?.exam;
         if (cancelled) return;
-        if (EXAMS[remote]) {
-          try {
-            localStorage.setItem(key(uid), remote);
-          } catch {
-            /* ignore */
-          }
-        }
-        setState({ uid, exam: EXAMS[remote] ? remote : null, ready: true });
+        const d = snap.data() || {};
+        const remote = EXAMS[d.exam] ? d.exam : null;
+        const targets = d.onboarding?.targets || localTargets;
+        if (remote) writeLocal(key(uid), remote);
+        writeLocal(targetsKey(uid), JSON.stringify(targets));
+        setState({ uid, exam: local || remote, targets, ready: true });
       })
-      .catch(() => !cancelled && setState({ uid, exam: null, ready: true }));
+      .catch(() => !cancelled && setState({ uid, exam: local, targets: localTargets, ready: true }));
     return () => {
       cancelled = true;
     };
@@ -61,12 +79,8 @@ export function ExamProvider({ children }) {
   const setExam = useCallback(
     (exam) => {
       if (!uid || !EXAMS[exam]) return;
-      setState({ uid, exam, ready: true });
-      try {
-        localStorage.setItem(key(uid), exam);
-      } catch {
-        /* ignore */
-      }
+      setState((s) => ({ ...s, uid, exam, ready: true }));
+      writeLocal(key(uid), exam);
       setDoc(doc(db, "users", uid), { exam }, { merge: true }).catch((err) =>
         console.error("Imtihon tanlovini saqlashda xatolik:", err)
       );
@@ -74,11 +88,39 @@ export function ExamProvider({ children }) {
     [uid]
   );
 
+  // So'rovnoma javoblarini bitta yozuv bilan saqlaydi.
+  const saveOnboarding = useCallback(
+    async ({ source, sourceOther, exams, targets }) => {
+      if (!uid) return;
+      const exam = exams.includes("sat") ? "sat" : "ielts";
+      await setDoc(
+        doc(db, "users", uid),
+        {
+          exam,
+          onboarding: {
+            source,
+            sourceOther: source === "other" ? sourceOther.trim().slice(0, 60) : "",
+            exams,
+            targets,
+            completedAt: serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+      writeLocal(key(uid), exam);
+      writeLocal(targetsKey(uid), JSON.stringify(targets));
+      setState({ uid, exam, targets, ready: true });
+    },
+    [uid]
+  );
+
   // Boshqa user bilan kirilganda eski holat ko'rinib qolmasligi uchun.
-  const current = state.uid === uid ? state : { exam: null, ready: false };
+  const current = state.uid === uid ? state : { exam: null, targets: {}, ready: false };
 
   return (
-    <ExamContext.Provider value={{ exam: current.exam, ready: !!uid && current.ready, setExam }}>
+    <ExamContext.Provider
+      value={{ exam: current.exam, targets: current.targets, ready: !!uid && current.ready, setExam, saveOnboarding }}
+    >
       {children}
     </ExamContext.Provider>
   );

@@ -19,6 +19,7 @@ import {
   LuClipboardCheck,
   LuClock,
 } from "react-icons/lu";
+import TestCountdown from "../components/TestCountdown";
 import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton } from "../components/ui";
 
 function greeting() {
@@ -99,6 +100,8 @@ export default function Dashboard() {
           </Button>
         }
       />
+
+      <TestCountdown exam="sat" />
 
       {/* Statistika */}
       <section className="grid gap-4 sm:grid-cols-3 mb-6">

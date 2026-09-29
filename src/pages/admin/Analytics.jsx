@@ -28,6 +28,17 @@ import {
 } from "../../components/ui";
 import { dayKey, routeLabel } from "../../utils/analytics";
 
+const SOURCE_LABELS = { instagram: "Instagram", telegram: "Telegram", friends: "Do'stlari", other: "Boshqa" };
+
+// Onboarding maqsadlari: "SAT 1400 · IELTS 8".
+function formatTargets(t) {
+  if (!t) return "—";
+  const parts = [];
+  if (t.sat != null) parts.push(`SAT ${t.sat}`);
+  if (t.ielts != null) parts.push(`IELTS ${t.ielts}`);
+  return parts.join(" · ") || "—";
+}
+
 const RANGES = [7, 30, 90];
 
 function toDate(ts) {
@@ -75,7 +86,7 @@ function sortedPages(pages = {}) {
     .sort((a, b) => b[1] - a[1]);
 }
 
-function PageBars({ entries, total }) {
+function PageBars({ entries, total, label = routeLabel }) {
   return (
     <div className="space-y-3">
       {entries.map(([key, count]) => {
@@ -83,7 +94,7 @@ function PageBars({ entries, total }) {
         return (
           <div key={key}>
             <div className="mb-1 flex items-baseline justify-between gap-3 text-[13px]">
-              <span className="truncate font-semibold text-[#12213D]">{routeLabel(key)}</span>
+              <span className="truncate font-semibold text-[#12213D]">{label(key)}</span>
               <span className="shrink-0 tabular-nums text-[#12213D]/55">
                 {count.toLocaleString()} · {pct}%
               </span>
@@ -239,6 +250,17 @@ export default function Analytics() {
       .sort((a, b) => (toDate(b.lastSeenAt)?.getTime() || 0) - (toDate(a.lastSeenAt)?.getTime() || 0));
   }, [users, search]);
 
+  // "Bizni qayerdan topdingiz?" javoblari taqsimoti.
+  const sources = useMemo(() => {
+    const m = {};
+    for (const u of users) {
+      const s = u.onboarding?.source;
+      if (s) m[s] = (m[s] || 0) + 1;
+    }
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [users]);
+  const sourcesTotal = sources.reduce((n, [, c]) => n + c, 0);
+
   const chartValues = data.series.map((s) => ({
     label: s.key,
     value: chartMetric === "views" ? s.views : s.active,
@@ -362,6 +384,17 @@ export default function Analytics() {
             </Card>
           </div>
 
+          <Card className="mt-6">
+            <CardHeader title="Bizni qayerdan topishdi" subtitle={`${sourcesTotal} ta javob · ro'yxatdan o'tishdagi so'rovnoma`} />
+            <div className="px-5 pb-6 pt-4 sm:px-6">
+              {sourcesTotal === 0 ? (
+                <p className="py-4 text-center text-sm text-[#12213D]/45">Hali javob yo'q</p>
+              ) : (
+                <PageBars entries={sources} total={sourcesTotal} label={(k) => SOURCE_LABELS[k] || k} />
+              )}
+            </div>
+          </Card>
+
           <Card className="mt-6 overflow-hidden">
             <CardHeader
               title="Foydalanuvchilar"
@@ -391,7 +424,7 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left text-[13px]">
+                <table className="w-full min-w-[900px] text-left text-[13px]">
                   <thead>
                     <tr className="border-y border-[#12213D]/[0.06] bg-[#F6F7FB] text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
                       <th className="px-5 py-2.5 sm:px-6">User</th>
@@ -400,6 +433,7 @@ export default function Analytics() {
                       <th className="px-3 py-2.5 text-right">Ko'rishlar</th>
                       <th className="px-3 py-2.5 text-right">Testlar</th>
                       <th className="px-3 py-2.5 text-right">Eng yaxshi ball</th>
+                      <th className="px-3 py-2.5">Maqsad / manba</th>
                       <th className="w-10 px-3 py-2.5" />
                     </tr>
                   </thead>
@@ -452,13 +486,22 @@ function UserRow({ user, open, onToggle, tests, best, pages }) {
         </td>
         <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests}</td>
         <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#087fd1]">{best ?? "—"}</td>
+        <td className="px-3 py-3">
+          <p className="font-semibold text-[#12213D]">{formatTargets(user.onboarding?.targets)}</p>
+          {user.onboarding?.source && (
+            <p className="text-[12px] text-[#12213D]/45">
+              {SOURCE_LABELS[user.onboarding.source] || user.onboarding.source}
+              {user.onboarding.sourceOther ? `: ${user.onboarding.sourceOther}` : ""}
+            </p>
+          )}
+        </td>
         <td className="px-3 py-3 text-[#12213D]/35">
           <LuChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} />
         </td>
       </tr>
       {open && (
         <tr className="bg-[#F6F7FB]/60">
-          <td colSpan={7} className="px-5 py-4 sm:px-6">
+          <td colSpan={8} className="px-5 py-4 sm:px-6">
             {pages.length === 0 ? (
               <p className="text-[13px] text-[#12213D]/45">Bu user uchun sahifa statistikasi hali yo'q.</p>
             ) : (
