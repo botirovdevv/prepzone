@@ -62,8 +62,11 @@ export default defineConfig(({ mode }) => {
             includeDependenciesRecursively: false,
             groups: [
               {
+                // re2js — Firestore'ning bog'liqligi. U shu guruhda bo'lmasa, ilova
+                // kodi bilan umumiy chunk'ga tushadi va chunk'lar orasida aylana
+                // import paydo bo'ladi -> production'da "Service firestore is not available".
                 name: 'firestore',
-                test: /node_modules[\\/](@firebase[\\/](firestore|webchannel-wrapper)|firebase[\\/]firestore)[\\/]/,
+                test: /node_modules[\\/](@firebase[\\/](firestore|webchannel-wrapper)|firebase[\\/]firestore|re2js)[\\/]/,
                 priority: 2,
               },
               { name: 'firebase', test: /node_modules[\\/](@firebase|firebase|idb|tslib)[\\/]/, priority: 1 },
