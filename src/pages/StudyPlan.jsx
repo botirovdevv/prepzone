@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { fetchUserResults } from "../utils/userResults";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -20,7 +21,7 @@ import {
   LuTriangleAlert,
 } from "react-icons/lu";
 import { Page, PageHeader, Card, CardHeader, StatTile, Badge, Button, Field, PageLoader, inputClass } from "../components/ui";
-import { dayKey } from "../utils/analytics";
+import { dayKey } from "../utils/date";
 import { loadVocabProgress, isDue } from "../utils/vocabProgress";
 import { analyzeAttempts, buildWeek, daysUntil, streak, DEFAULT_SETTINGS, addDays } from "../utils/studyPlan";
 
@@ -206,7 +207,7 @@ export default function StudyPlan() {
     if (!user) return;
     Promise.allSettled([
       getDoc(doc(db, "users", user.uid)),
-      getDocs(query(collection(db, "results"), where("uid", "==", user.uid))),
+      fetchUserResults("results", user.uid, { pageSize: 10 }),
     ]).then(([p, r]) => {
       if (p.status === "fulfilled") {
         const sp = p.value.data()?.studyPlan;
@@ -216,9 +217,7 @@ export default function StudyPlan() {
         setError("Rejani yuklab bo'lmadi. Internet yoki Firestore ruxsatlarini tekshiring.");
       }
       if (r.status === "fulfilled") {
-        const all = r.value.docs.map((d) => ({ id: d.id, ...d.data() }));
-        all.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        setAttempts(all);
+        setAttempts(r.value.items);
       }
       setLoading(false);
     });

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { LuCheck, LuX } from "react-icons/lu";
 
 // ------------------------------------------------------------------
@@ -35,7 +36,7 @@ function QNum({ n, current }) {
   );
 }
 
-export default function QuestionGroup({ group, answers, onAnswer, currentQ, onFocus, review }) {
+function QuestionGroup({ group, answers, onAnswer, currentQ, onFocus, review }) {
   const ns = group.questions.map((q) => q.n);
   const from = Math.min(...ns);
   const to = Math.max(...ns);
@@ -224,3 +225,6 @@ export default function QuestionGroup({ group, answers, onAnswer, currentQ, onFo
     </section>
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(QuestionGroup);

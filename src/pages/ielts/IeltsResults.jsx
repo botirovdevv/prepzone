@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
-import { LuHeadphones, LuBookOpen, LuPenLine, LuAward, LuTriangleAlert, LuCheck, LuX, LuChevronDown } from "react-icons/lu";
+import { LuHeadphones, LuBookOpen, LuPenLine, LuAward, LuTriangleAlert, LuCheck, LuX, LuChevronDown, LuSparkles } from "react-icons/lu";
 import { Page, PageHeader, Card, CardHeader, Badge, Button, PageLoader, EmptyState } from "../../components/ui";
 import QuestionGroup from "../../components/ielts/QuestionGroup";
 import WritingChart from "../../components/ielts/WritingChart";
-import { getIeltsTest } from "../../data/ielts";
-import { scoreSection, formatBand } from "../../utils/ieltsScoring";
+import { useIeltsTest } from "../../hooks/useTestContent";
+import { formatBand } from "../../utils/ieltsScoring";
+import { apiFetch } from "../../utils/api";
 import { assessWriting, CRITERIA_LABELS } from "../../utils/ieltsWriting";
 import { MODE_LABELS, formatResultDate } from "../../utils/ieltsResults";
 
@@ -33,21 +34,25 @@ function Collapsible({ title, children }) {
   );
 }
 
-function ObjectiveReview({ sectionKey, test, data }) {
+// `review` — serverdan: { [n]: { correct, expected } }. To'g'ri javoblar
+// brauzer bundle'ida yo'q, faqat natija egasiga shu yerda ochiladi.
+function ObjectiveReview({ sectionKey, test, data, review }) {
   const parts = test[sectionKey].parts;
-  const scored = useMemo(() => scoreSection(parts, data.answers || {}), [parts, data.answers]);
-  const review = Object.fromEntries(scored.items.map((i) => [i.n, { correct: i.correct, expected: i.expected }]));
+  if (!review) {
+    return <Card className="p-6 text-center text-sm text-[#12213D]/55">To'g'ri javoblar yuklanmoqda...</Card>;
+  }
+  const items = (part) => part.groups.flatMap((g) => g.questions.map((q) => review[q.n] || {}));
 
   return (
     <div className="space-y-6">
-      {parts.map((part, pi) => {
-        const items = scored.items.filter((i) => i.partIndex === pi);
-        const right = items.filter((i) => i.correct).length;
+      {parts.map((part) => {
+        const partItems = items(part);
+        const right = partItems.filter((i) => i.correct).length;
         return (
           <Card key={part.id}>
             <CardHeader
               title={sectionKey === "reading" ? `${part.title} · ${part.passageTitle}` : part.title}
-              subtitle={`${right} / ${items.length} to'g'ri`}
+              subtitle={`${right} / ${partItems.length} to'g'ri`}
             />
             <div className="px-5 pb-5 pt-4 sm:px-6">
               {sectionKey === "listening" ? (
@@ -86,7 +91,116 @@ function ObjectiveReview({ sectionKey, test, data }) {
   );
 }
 
+function AiTaskFeedback({ task, taskKey, meta, text }) {
+  return (
+    <div className="grid gap-5 px-5 pb-6 pt-4 sm:px-6 lg:grid-cols-2">
+      <div className="space-y-4">
+        {["ta", "cc", "lr", "gra"].map((c) => {
+          const label = typeof CRITERIA_LABELS[c] === "string" ? CRITERIA_LABELS[c] : CRITERIA_LABELS[c][taskKey];
+          return (
+            <div key={c}>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-[13px] font-bold text-[#12213D]">{label}</p>
+                <span className="font-display text-[17px] font-extrabold tabular-nums text-[#087fd1]">
+                  {formatBand(task.criteria[c])}
+                </span>
+              </div>
+              <p className="mt-1 text-[13px] leading-relaxed text-[#12213D]/70">{task.feedback[c]}</p>
+            </div>
+          );
+        })}
+        {task.strengths.length > 0 && (
+          <div>
+            <p className="text-[13px] font-bold text-[#12213D]">Kuchli tomonlar</p>
+            <ul className="mt-1.5 space-y-1">
+              {task.strengths.map((t, k) => (
+                <li key={k} className="flex gap-2 text-[13px] leading-relaxed text-[#12213D]/70">
+                  <LuCheck size={14} className="mt-0.5 shrink-0 text-emerald-600" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {task.improvements.length > 0 && (
+          <div>
+            <p className="text-[13px] font-bold text-[#12213D]">Balni oshirish uchun</p>
+            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[13px] leading-relaxed text-[#12213D]/70">
+              {task.improvements.map((t, k) => (
+                <li key={k}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="space-y-3">
+        {task.corrections.length > 0 && (
+          <div className="rounded-xl border border-[#12213D]/[0.08] p-4">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">Xatolar va tuzatishlar</p>
+            <ul className="space-y-3">
+              {task.corrections.map((c, k) => (
+                <li key={k} className="text-[13px] leading-relaxed">
+                  <p className="text-red-600 line-through decoration-red-300">{c.original}</p>
+                  <p className="font-semibold text-emerald-700">{c.corrected}</p>
+                  <p className="text-[#12213D]/60">{c.explanation}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <Collapsible title="Topshiriq">
+          <p className="whitespace-pre-line text-[14px] leading-relaxed text-[#12213D]/80">{meta.prompt}</p>
+          {meta.chart && (
+            <div className="mt-3">
+              <WritingChart chart={meta.chart} />
+            </div>
+          )}
+        </Collapsible>
+        <div className="rounded-xl bg-[#F6F7FB] p-4">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">Sizning javobingiz</p>
+          <p className="whitespace-pre-line text-[14px] leading-relaxed text-[#12213D]/85">
+            {text || <span className="italic text-[#12213D]/40">Javob yozilmagan</span>}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiWritingReview({ test, data }) {
+  return (
+    <div className="space-y-6">
+      <Card className="flex items-start gap-3 border-[#087fd1]/20 bg-[#087fd1]/[0.04] p-4 text-[13px] leading-relaxed text-[#12213D]/80">
+        <LuSparkles size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
+        <p>
+          Writing <b>AI examiner</b> tomonidan rasmiy IELTS mezonlari (band descriptors) bo'yicha baholandi. Natija
+          haqiqiy imtihondan taxminan ±0.5 band farq qilishi mumkin.
+        </p>
+      </Card>
+      {["task1", "task2"].map((t, i) => (
+        <Card key={t}>
+          <CardHeader
+            title={`Task ${i + 1}`}
+            subtitle={`${data[t]?.wordCount ?? 0} so'z (kamida ${test.writing[t].minWords})`}
+            action={
+              <span className="font-display text-[26px] font-extrabold tabular-nums text-[#12213D]">
+                {formatBand(data.ai[t].band)}
+              </span>
+            }
+          />
+          <AiTaskFeedback task={data.ai[t]} taskKey={t} meta={test.writing[t]} text={data[`${t}Text`] || ""} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function WritingReview({ test, data }) {
+  if (data.ai) return <AiWritingReview test={test} data={data} />;
+  return <HeuristicWritingReview test={test} data={data} />;
+}
+
+function HeuristicWritingReview({ test, data }) {
   const assessment = useMemo(
     () => assessWriting(test.writing, { task1: data.task1Text || "", task2: data.task2Text || "" }),
     [test, data]
@@ -98,7 +212,9 @@ function WritingReview({ test, data }) {
         <p>
           Writing avtomatik, <b>taxminiy</b> baholangan: tizim so'z soni, tuzilish, bog'lovchilar, lug'at xilma-xilligi va gap
           tuzilishini IELTS mezonlari asosida o'lchaydi, lekin g'oyalar sifatini examiner kabi to'liq tushunmaydi. Haqiqiy
-          natija ±1 band farq qilishi mumkin.
+          natija ±1 band farq qilishi mumkin. AI examiner baholash tez orada qo'shiladi.
+          {data.aiError === "limit" && " Bugungi AI baholash limiti (3 ta) tugagani uchun avtomatik baholash ishlatildi."}
+          {data.aiError === "failed" && " AI examiner vaqtincha ishlamadi, shuning uchun avtomatik baholash ishlatildi."}
         </p>
       </Card>
       {["task1", "task2"].map((t, i) => {
@@ -172,6 +288,21 @@ export default function IeltsResults() {
   const [result, setResult] = useState(location.state?.result || null);
   const [loading, setLoading] = useState(!location.state?.result);
   const [tab, setTab] = useState(null);
+  const [review, setReview] = useState(null);
+  const test = useIeltsTest(result?.testId);
+  const resultId = result?.id;
+  const hasObjective = !!(result?.listening || result?.reading);
+
+  useEffect(() => {
+    if (!resultId || !hasObjective) return;
+    let cancelled = false;
+    apiFetch("review", { method: "GET", query: { kind: "ielts", id: resultId } })
+      .then((d) => !cancelled && setReview(d))
+      .catch((err) => console.error("To'g'ri javoblarni yuklashda xatolik:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [resultId, hasObjective]);
 
   useEffect(() => {
     if (result || id === "local") {
@@ -184,8 +315,7 @@ export default function IeltsResults() {
       .finally(() => setLoading(false));
   }, [id, result]);
 
-  if (loading) return <PageLoader />;
-  const test = result && getIeltsTest(result.testId);
+  if (loading || (result && test === undefined)) return <PageLoader />;
   if (!result || !test) {
     return (
       <Page width="narrow">
@@ -276,7 +406,7 @@ export default function IeltsResults() {
         {active === "writing" ? (
           <WritingReview test={test} data={result.writing} />
         ) : (
-          <ObjectiveReview sectionKey={active} test={test} data={result[active]} />
+          <ObjectiveReview sectionKey={active} test={test} data={result[active]} review={review?.[active]} />
         )}
       </div>
     </Page>

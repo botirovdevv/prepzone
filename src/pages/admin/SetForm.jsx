@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import { writeSetIndex } from "../../utils/questionSetIndex";
 import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
@@ -89,15 +90,29 @@ export default function SetForm() {
           description: description.trim(),
           sections,
         });
+        const snap = await getDoc(doc(db, "questionSets", id));
+        await writeSetIndex(id, {
+          title: title.trim(),
+          description: description.trim(),
+          sections,
+          createdAt: snap.data()?.createdAt ?? Timestamp.now(),
+        });
         navigate("/admin/sets");
       } else {
-        await addDoc(collection(db, "questionSets"), {
+        const ref = doc(collection(db, "questionSets"));
+        await setDoc(ref, {
           title: title.trim(),
           description: description.trim(),
           sections,
           createdBy: user.uid,
           createdByName: user.displayName || user.email,
           createdAt: serverTimestamp(),
+        });
+        await writeSetIndex(ref.id, {
+          title: title.trim(),
+          description: description.trim(),
+          sections,
+          createdAt: Timestamp.now(),
         });
         navigate("/admin/sets");
       }

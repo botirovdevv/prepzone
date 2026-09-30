@@ -19,10 +19,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 //    chaqiriladi.
 // ------------------------------------------------------------------
 
-function isMacPlatform() {
-  const p = navigator.platform || navigator.userAgent || "";
-  return /Mac|iPhone|iPad|iPod/i.test(p);
-}
+const IS_MAC =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || "");
 
 export function useProctoring({
   active,
@@ -36,11 +34,26 @@ export function useProctoring({
   const activeRef = useRef(active);
   const intentionalExitRef = useRef(false);
   const warnTimeoutRef = useRef(null);
+  const exitTimeoutRef = useRef(null);
   const warningCountRef = useRef(0);
+  // Callback'lar ref'da: sahifa har render'da yangi funksiya bersa ham
+  // listener'lar qayta ulanmaydi (effektlar faqat `active`ga bog'liq).
+  const terminateRef = useRef(onForceTerminate);
+  const violationRef = useRef(onViolationWarning);
+  terminateRef.current = onForceTerminate;
+  violationRef.current = onViolationWarning;
 
   useEffect(() => {
     activeRef.current = active;
   }, [active]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(warnTimeoutRef.current);
+      clearTimeout(exitTimeoutRef.current);
+    },
+    []
+  );
 
   const requestFullscreen = useCallback(async () => {
     const el = document.documentElement;
@@ -68,7 +81,8 @@ export function useProctoring({
     } catch (err) {
       /* ignore */
     }
-    setTimeout(() => {
+    clearTimeout(exitTimeoutRef.current);
+    exitTimeoutRef.current = setTimeout(() => {
       intentionalExitRef.current = false;
     }, 800);
   }, []);
@@ -82,14 +96,14 @@ export function useProctoring({
       warningCountRef.current = next;
       setWarningCount(next);
       setWarning({ type, message, count: next });
-      onViolationWarning?.(type, next, message);
+      violationRef.current?.(type, next, message);
       if (warnTimeoutRef.current) clearTimeout(warnTimeoutRef.current);
       warnTimeoutRef.current = setTimeout(() => setWarning(null), 5000);
       if (next >= maxWarnings) {
-        onForceTerminate?.("warnings");
+        terminateRef.current?.("warnings");
       }
     },
-    [onForceTerminate, onViolationWarning, maxWarnings]
+    [maxWarnings]
   );
 
   // 1) Fullscreen'dan chiqish -> darhol test tugaydi
@@ -100,7 +114,7 @@ export function useProctoring({
         document.fullscreenElement || document.webkitFullscreenElement
       );
       if (!inFullscreen && activeRef.current && !intentionalExitRef.current) {
-        onForceTerminate?.("fullscreen");
+        terminateRef.current?.("fullscreen");
       }
     };
     document.addEventListener("fullscreenchange", handleChange);
@@ -109,7 +123,7 @@ export function useProctoring({
       document.removeEventListener("fullscreenchange", handleChange);
       document.removeEventListener("webkitfullscreenchange", handleChange);
     };
-  }, [active, onForceTerminate]);
+  }, [active]);
 
   // 2) Skrinshot va DevTools klaviatura kombinatsiyalari (imkon qadar)
   useEffect(() => {
@@ -213,6 +227,6 @@ export function useProctoring({
     warning,
     warningCount,
     dismissWarning,
-    isMac: isMacPlatform(),
+    isMac: IS_MAC,
   };
 }

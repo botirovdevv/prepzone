@@ -1,8 +1,6 @@
-import { getSatTest, getModuleQuestions } from "../data/satTest";
-import { isAnswerCorrect } from "./irtScoring";
 import { MATH_DOMAINS } from "../data/mathDomains";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
-import { dayKey } from "./analytics";
+import { dayKey } from "./date";
 
 // ------------------------------------------------------------------
 // Study Plan: userning sozlamalari va mock natijalaridan kunlik
@@ -57,27 +55,17 @@ export function analyzeAttempts(attempts = []) {
   const latest = attempts[0] || null;
   const stats = {};
 
-  // Mavzu tahlili faqat statik (bluebook) testlar uchun — ularning savollari kodda bor.
+  // Mavzu tahlili: server har natijaga bo'lim bo'yicha `domains`
+  // ({ domainId: [to'g'ri, jami] }) yozadi — oxirgi 3 ta urinish.
   attempts
-    .filter((a) => !a.sessionId && a.results)
+    .filter((a) => a.results)
     .slice(0, 3)
     .forEach((a) => {
-      const test = getSatTest(a.testId);
-      for (const group of test.groups) {
-        const r = a.results[group.id];
-        if (!r) continue;
-        const modules = [
-          ["module1", r.module1Answers],
-          ["module2", r.module2Answers],
-        ];
-        for (const [stage, answers] of modules) {
-          if (!Array.isArray(answers)) continue;
-          getModuleQuestions(group, stage, r.route).forEach((q, i) => {
-            if (!q.domain) return;
-            if (!stats[q.domain]) stats[q.domain] = { correct: 0, total: 0 };
-            stats[q.domain].total += 1;
-            if (isAnswerCorrect(q, answers[i])) stats[q.domain].correct += 1;
-          });
+      for (const r of Object.values(a.results)) {
+        for (const [domain, [correct, total]] of Object.entries(r?.domains || {})) {
+          if (!stats[domain]) stats[domain] = { correct: 0, total: 0 };
+          stats[domain].correct += correct;
+          stats[domain].total += total;
         }
       }
     });

@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { LuChevronDown, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 
-export default function BottomNav({
+function BottomNav({
   total,
   currentIndex,
   answers,
@@ -69,3 +70,6 @@ export default function BottomNav({
     </div>
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(BottomNav);

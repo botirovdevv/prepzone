@@ -45,7 +45,7 @@ export default function Leaderboard() {
         eyebrow="Reyting"
         icon={LuTrophy}
         title="Eng yaxshi natijalar"
-        subtitle="Har bir foydalanuvchining eng yuqori mock test balli bo'yicha TOP-15."
+        subtitle="Har bir foydalanuvchining eng yuqori to'liq SAT mock balli bo'yicha TOP-15. Adolat uchun har testning faqat birinchi to'liq urinishi hisobga olinadi."
       />
 
       {loading ? (

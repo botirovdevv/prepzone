@@ -1,5 +1,5 @@
 // Practice Test 2 — Reading and Writing, Module 2 (oson / qiyin).
-import { buildModule, STEM, table, notes } from "../helpers";
+import { buildModule, STEM, table, notes } from "../helpers.js";
 
 const CS = "craft-structure";
 const II = "info-ideas";

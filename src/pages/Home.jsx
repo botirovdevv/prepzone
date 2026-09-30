@@ -190,7 +190,7 @@ function SatPreview() {
           <div className="mt-6 flex items-center justify-between border-t border-[#e8edf1] pt-4 text-[11px]">
             <span className="text-[#9aa4b2]">Question 12 of 27</span>
             <span className="flex items-center gap-1 font-semibold text-[#087fd1]">
-              <LuCalculator size={12} /> Desmos
+              <LuCalculator size={12} /> Desmos · tez orada
             </span>
           </div>
         </div>
@@ -420,7 +420,7 @@ function Features() {
               ))}
               <div className="col-span-3 flex items-center justify-center gap-4 rounded-xl border border-dashed border-[#111827]/10 py-2.5 text-[#667085]">
                 <span className="flex items-center gap-1.5">
-                  <LuCalculator size={13} /> Desmos
+                  <LuCalculator size={13} /> Desmos · tez orada
                 </span>
                 <span className="flex items-center gap-1.5">
                   <LuClock size={13} /> Taymer
@@ -632,7 +632,7 @@ function ReportPreview({ onStart }) {
 const FAQ = [
   [
     "Mock testlar haqiqiy imtihonga qanchalik o'xshash?",
-    "SAT — Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, Desmos kalkulyatori va formula varag'i bilan. IELTS — IELTS on Computer interfeysidagi Listening, Reading va Writing, rasmiy vaqt chegaralari bilan.",
+    "SAT — Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, Desmos kalkulyatori (tez orada) va formula varag'i bilan. IELTS — IELTS on Computer interfeysidagi Listening, Reading va Writing, rasmiy vaqt chegaralari bilan.",
   ],
   [
     "Ball qanday hisoblanadi?",
@@ -728,6 +728,14 @@ const FOOTER_COLUMNS = [
       { label: "Ro‘yxatdan o‘tish", route: "/register" },
     ],
   },
+  {
+    title: "Ma'lumot",
+    links: [
+      { label: "Foydalanish shartlari", route: "/terms" },
+      { label: "Maxfiylik siyosati", route: "/privacy" },
+      { label: "Aloqa", route: "/contact" },
+    ],
+  },
 ];
 
 function Footer({ onNavigate }) {
@@ -749,7 +757,7 @@ function Footer({ onNavigate }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
             {FOOTER_COLUMNS.map((col) => (
               <div key={col.title}>
                 <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#98a2b3]">{col.title}</p>
@@ -884,7 +892,7 @@ export default function Home() {
             {
               icon: LuBookOpenCheck,
               name: "Digital SAT",
-              text: "Reading & Writing va Math. Adaptiv modullar, Desmos, 400–1600 ball.",
+              text: "Reading & Writing va Math. Adaptiv modullar, Desmos (tez orada), 400–1600 ball.",
               accent: "text-[#087fd1] bg-[#087fd1]/10",
               link: "text-[#087fd1]",
             },

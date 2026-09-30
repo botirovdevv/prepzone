@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { LuHeadphones, LuBookOpen, LuPenLine, LuVolume2, LuPlay, LuX, LuRadio, LuHourglass, LuCircleCheck } from "react-icons/lu";
-import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import { HighlightsProvider } from "../../context/HighlightsContext";
 import HighlightableText from "../../components/HighlightableText";
@@ -17,9 +15,12 @@ import QuestionGroup from "../../components/ielts/QuestionGroup";
 import WritingChart from "../../components/ielts/WritingChart";
 import { useProctoring } from "../../hooks/useProctoring";
 import { useListeningAudio, playSoundCheck, questionRange, speechSupported } from "../../hooks/useListeningAudio";
-import { getIeltsTest, IELTS_SECTIONS, sectionsFor } from "../../data/ielts";
-import { scoreSection, listeningBand, readingBand, overallBand, wordCount } from "../../utils/ieltsScoring";
-import { assessWriting } from "../../utils/ieltsWriting";
+import { IELTS_SECTIONS, sectionsFor } from "../../data/ielts";
+import { useIeltsTest } from "../../hooks/useTestContent";
+import { useDeadline, secondsUntil } from "../../hooks/useCountdown";
+import { wordCount } from "../../utils/ieltsScoring";
+import { apiFetchRetry } from "../../utils/api";
+import SubmitErrorScreen from "../../components/SubmitErrorScreen";
 import {
   saveLocalProgress,
   loadLocalProgress,
@@ -153,7 +154,9 @@ export default function IeltsTest() {
   const { testId } = useParams();
   const [params] = useSearchParams();
   const mode = MODES.includes(params.get("section")) ? params.get("section") : "full";
-  const test = getIeltsTest(testId);
+  // undefined — yuklanmoqda, null — topilmadi. Kalitsiz nusxa; baholash serverda.
+  const loadedTest = useIeltsTest(testId);
+  const test = loadedTest || null;
   const sections = sectionsFor(mode);
   const PROGRESS_KEY = `ielts-${testId}-${mode}`;
 
@@ -171,7 +174,9 @@ export default function IeltsTest() {
   const [flags, setFlags] = useState({ listening: {}, reading: {} });
   const [partIdx, setPartIdx] = useState(0);
   const [currentQ, setCurrentQ] = useState(1);
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  // Bo'lim tugash vaqti (ms) — taymer faqat header'dagi kichik komponentda yangilanadi.
+  const [endAt, setEndAt] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
   const [timerHidden, setTimerHidden] = useState(false);
   const [volume, setVolume] = useState(0.9);
   const [leftPct, setLeftPct] = useState(50);
@@ -180,13 +185,14 @@ export default function IeltsTest() {
 
   const finishingRef = useRef(false);
   const resumeRef = useRef(null);
+  const attemptIdRef = useRef(crypto.randomUUID());
   const stateRef = useRef({});
 
   const sectionKey = sections[sectionIdx];
   const audio = useListeningAudio({ parts: test?.listening.parts || [], volume });
 
   // Eng so'nggi holat — asinxron callback'lar (taymer, proktoring) uchun.
-  stateRef.current = { answers, sectionIdx, partIdx, secondsLeft, flags };
+  stateRef.current = { answers, sectionIdx, partIdx, endAt, flags };
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -234,52 +240,46 @@ export default function IeltsTest() {
   const isFlagged = useCallback((n) => !!flags[sectionKey]?.[n], [flags, sectionKey]);
 
   // ---------------- Natijani hisoblash va saqlash ----------------
-  const finishTest = useCallback(
-    async (extra = {}) => {
-      const { answers: ans } = stateRef.current;
-      audio.stop();
+  const submitResult = useCallback(
+    async (ans, extra) => {
+      setSubmitError(null);
       setPhase((p) => (p === "terminated" ? p : "saving"));
-      const result = { uid: user.uid, email: user.email || null, testId: test.id, testTitle: test.title, mode };
-      const bands = [];
-      if (sections.includes("listening")) {
-        const s = scoreSection(test.listening.parts, ans.listening);
-        result.listening = { raw: s.raw, band: listeningBand(s.raw), answers: ans.listening };
-        bands.push(result.listening.band);
-      }
-      if (sections.includes("reading")) {
-        const s = scoreSection(test.reading.parts, ans.reading);
-        result.reading = { raw: s.raw, band: readingBand(s.raw), answers: ans.reading };
-        bands.push(result.reading.band);
-      }
-      if (sections.includes("writing")) {
-        const a = assessWriting(test.writing, ans.writing);
-        result.writing = {
-          band: a.band,
-          task1Text: ans.writing.task1,
-          task2Text: ans.writing.task2,
-          task1: { band: a.task1.band, criteria: a.task1.criteria, wordCount: a.task1.wordCount },
-          task2: { band: a.task2.band, criteria: a.task2.criteria, wordCount: a.task2.wordCount },
-        };
-        bands.push(a.band);
-      }
-      result.overall = overallBand(bands);
-      if (extra.terminated) {
-        result.terminated = true;
-        result.terminationReason = extra.reason;
-      }
-
-      clearLocalProgress(user.uid, PROGRESS_KEY);
-      await proctoringRef.current?.exitFullscreenIntentionally();
       try {
-        const ref = await addDoc(collection(db, "ieltsResults"), { ...result, createdAt: serverTimestamp() });
-        navigate(`/ielts/results/${ref.id}`, { state: { result: { id: ref.id, ...result } } });
+        const data = await apiFetchRetry("ielts/submit", {
+          body: {
+            attemptId: attemptIdRef.current,
+            testId: test.id,
+            mode,
+            answers: {
+              ...(sections.includes("listening") ? { listening: ans.listening } : {}),
+              ...(sections.includes("reading") ? { reading: ans.reading } : {}),
+              ...(sections.includes("writing") ? { writing: ans.writing } : {}),
+            },
+            ...(extra.terminated ? { terminated: true, terminationReason: extra.reason } : {}),
+          },
+        });
+        clearLocalProgress(user.uid, PROGRESS_KEY);
+        navigate(`/ielts/results/${data.id}`, { replace: true, state: { result: data.result } });
       } catch (err) {
         console.error("IELTS natijasini saqlashda xatolik:", err);
-        navigate("/ielts/results/local", { state: { result, saveError: true } });
+        setSubmitError({ message: err.message, retry: () => submitResult(ans, extra) });
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, test, mode, PROGRESS_KEY]
+  );
+
+  // ---------------- Natijani yuborish (ball serverda hisoblanadi) ----------------
+  const finishTest = useCallback(
+    async (extra = {}) => {
+      const { answers: ans } = stateRef.current;
+      audio.stop();
+      setEndAt(null);
+      await proctoringRef.current?.exitFullscreenIntentionally();
+      submitResult(ans, extra);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [submitResult]
   );
 
   const handleForceTerminate = (reason) => {
@@ -314,22 +314,13 @@ export default function IeltsTest() {
     finishTest();
   }, [audio, sections.length, finishTest]);
 
-  // Taymer
-  useEffect(() => {
-    if (phase !== "active") return;
-    const id = setInterval(() => setSecondsLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, [phase, sectionIdx]);
-
-  useEffect(() => {
-    if (phase === "active" && secondsLeft === 0) submitSection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
+  // Taymer: vaqt tugasa bo'lim avtomatik topshiriladi.
+  useDeadline(phase === "active" ? endAt : null, submitSection);
 
   // Listening: audio tugagach — 2 daqiqa tekshirish; audio part'i o'zgarsa ekran ham o'tadi.
   useEffect(() => {
     if (sectionKey !== "listening" || phase !== "active") return;
-    if (audio.status === "done") setSecondsLeft((s) => Math.min(s, 120));
+    if (audio.status === "done") setEndAt((e) => Math.min(e ?? Infinity, Date.now() + 120_000));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audio.status]);
 
@@ -359,7 +350,7 @@ export default function IeltsTest() {
     const resume = resumeRef.current;
     resumeRef.current = null;
     const minutes = sectionKey === "listening" ? 40 : IELTS_SECTIONS[sectionKey].minutes;
-    setSecondsLeft(resume?.secondsLeft ?? minutes * 60);
+    setEndAt(Date.now() + (resume?.secondsLeft ?? minutes * 60) * 1000);
     finishingRef.current = false;
     const startPart = resume?.partIdx ?? 0;
     setPartIdx(startPart);
@@ -375,7 +366,7 @@ export default function IeltsTest() {
     saveLocalProgress(
       user.uid,
       PROGRESS_KEY,
-      { sectionIdx: s.sectionIdx, answers: s.answers, flags: s.flags, partIdx: s.partIdx, secondsLeft: s.secondsLeft },
+      { sectionIdx: s.sectionIdx, answers: s.answers, flags: s.flags, partIdx: s.partIdx, secondsLeft: secondsUntil(s.endAt) },
       "paused"
     );
     await proctoring.exitFullscreenIntentionally();
@@ -428,6 +419,9 @@ export default function IeltsTest() {
   };
 
   // ---------------- Render ----------------
+  if (loadedTest === undefined) {
+    return <div className="flex min-h-screen items-center justify-center text-gray-500">Yuklanmoqda...</div>;
+  }
   if (!test) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-[#1d1d1b]/60">
@@ -453,6 +447,7 @@ export default function IeltsTest() {
       />
     );
   }
+  if (submitError) return <SubmitErrorScreen message={submitError.message} onRetry={submitError.retry} />;
   if (phase === "rules") return <RulesGate onStart={handleRulesStart} isResume={!!resumeSnapshot} />;
   if (phase === "terminated") return <TestTerminatedScreen reason={terminationReason} />;
   if (phase === "saving") {
@@ -460,6 +455,9 @@ export default function IeltsTest() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 text-[#1d1d1b]/60">
         <LuCircleCheck size={32} className="text-emerald-600" />
         Javoblaringiz baholanmoqda va saqlanmoqda...
+        {sections.includes("writing") && (
+          <p className="max-w-sm text-center text-[13px]">Javoblaringiz tekshirilmoqda…</p>
+        )}
       </div>
     );
   }
@@ -612,7 +610,7 @@ export default function IeltsTest() {
         <IeltsHeader
           candidate={candidate}
           sectionLabel={sectionLabel}
-          secondsLeft={secondsLeft}
+          endAt={endAt}
           timerHidden={timerHidden}
           onToggleTimer={() => setTimerHidden((h) => !h)}
           onHelp={() => setModal("help")}

@@ -2,7 +2,7 @@
 // Tuzilma Test 1 bilan bir xil: har modulda 22 ta savol, 6 tasi grid-in,
 // savollar osondan qiyinga qarab joylashgan. Barcha javoblar tekshiruv
 // skripti bilan mustaqil hisoblab tasdiqlangan.
-import { buildModule, svgFigure } from "../helpers";
+import { buildModule, svgFigure } from "../helpers.js";
 
 const ALG = "algebra";
 const ADV = "advanced-math";

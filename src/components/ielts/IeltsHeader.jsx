@@ -1,3 +1,5 @@
+import { memo } from "react";
+import { useSecondsLeft } from "../../hooks/useCountdown";
 import { LuClock, LuVolume2, LuCircleHelp, LuEyeOff, LuEye, LuLogOut, LuWifi, LuBell } from "react-icons/lu";
 
 function formatLeft(seconds) {
@@ -8,12 +10,32 @@ function formatLeft(seconds) {
   return `${seconds} seconds left`;
 }
 
+// Faqat taymer har soniyada qayta render bo'ladi, header'ning qolgani emas.
+function Timer({ endAt }) {
+  const secondsLeft = useSecondsLeft(endAt) ?? 0;
+  const warn = secondsLeft <= 600;
+  const critical = secondsLeft <= 300;
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-md px-3 py-1 text-[15px] font-bold tabular-nums ${
+        critical
+          ? "animate-pulse bg-[#e4002b] text-white"
+          : warn
+            ? "bg-[#e4002b]/10 text-[#e4002b]"
+            : "text-[#1d1d1b]"
+      }`}
+    >
+      <LuClock size={17} /> {formatLeft(secondsLeft)}
+    </div>
+  );
+}
+
 // IELTS on Computer'dagi yuqori panelga o'xshash: chapda logo va nomzod,
 // markazda taymer (10 va 5 daqiqada ogohlantiruvchi rang), o'ngda asboblar.
-export default function IeltsHeader({
+function IeltsHeader({
   candidate,
   sectionLabel,
-  secondsLeft,
+  endAt,
   timerHidden,
   onToggleTimer,
   onHelp,
@@ -21,8 +43,6 @@ export default function IeltsHeader({
   volume,
   onVolume,
 }) {
-  const warn = secondsLeft <= 600;
-  const critical = secondsLeft <= 300;
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-[#d7d7d7] bg-white px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
@@ -37,17 +57,7 @@ export default function IeltsHeader({
 
       <div className="flex flex-1 justify-center">
         {!timerHidden ? (
-          <div
-            className={`flex items-center gap-2 rounded-md px-3 py-1 text-[15px] font-bold tabular-nums ${
-              critical
-                ? "animate-pulse bg-[#e4002b] text-white"
-                : warn
-                  ? "bg-[#e4002b]/10 text-[#e4002b]"
-                  : "text-[#1d1d1b]"
-            }`}
-          >
-            <LuClock size={17} /> {formatLeft(secondsLeft)}
-          </div>
+          <Timer endAt={endAt} />
         ) : (
           <span className="text-[13px] text-[#1d1d1b]/40">Timer hidden</span>
         )}
@@ -90,3 +100,5 @@ export default function IeltsHeader({
     </header>
   );
 }
+
+export default memo(IeltsHeader);

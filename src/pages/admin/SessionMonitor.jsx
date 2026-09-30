@@ -62,28 +62,39 @@ export default function SessionMonitor() {
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [code, setCode] = useState(null);
+  const [actionError, setActionError] = useState("");
+  const [listenError, setListenError] = useState(false);
+  const onListenError = (err) => {
+    console.error("Jonli kuzatishda xatolik:", err);
+    setListenError(true);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "testSessions", id), (snap) => {
-      setSession(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      doc(db, "testSessions", id),
+      (snap) => {
+        setSession(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+        setLoading(false);
+      },
+      onListenError
+    );
     return unsub;
   }, [id]);
 
   useEffect(() => {
-    const q = query(collection(db, "testSessions", id, "participants"));
-    const unsub = onSnapshot(q, (snap) => {
-      setParticipants(snap.docs.map((d) => ({ uid: d.id, ...d.data() })));
-    });
+    const q = query(collection(db, "testSessions", id, "participants"), limit(500));
+    const unsub = onSnapshot(
+      q,
+      (snap) => setParticipants(snap.docs.map((d) => ({ uid: d.id, ...d.data() }))),
+      onListenError
+    );
     return unsub;
   }, [id]);
 
   useEffect(() => {
     const q = query(collection(db, "testSessions", id, "events"), orderBy("at", "desc"), limit(50));
-    const unsub = onSnapshot(q, (snap) => {
-      setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(q, (snap) => setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), onListenError);
     return unsub;
   }, [id]);
 
@@ -107,10 +118,14 @@ export default function SessionMonitor() {
 
   const handleRegenerateCode = async () => {
     setRegenerating(true);
+    setActionError("");
     try {
       const newCode = await generateUniqueCode();
       await assignCode(id, newCode, code);
       setCode(newCode);
+    } catch (err) {
+      console.error(err);
+      setActionError("Yangi kod yaratib bo'lmadi. Qaytadan urinib ko'ring.");
     } finally {
       setRegenerating(false);
     }
@@ -119,8 +134,12 @@ export default function SessionMonitor() {
   const handleCloseSession = async () => {
     if (!window.confirm("Testni yakunlashni tasdiqlaysizmi? Bundan keyin hech kim kira olmaydi va faol yechayotganlar ham chetlatiladi.")) return;
     setClosing(true);
+    setActionError("");
     try {
       await updateDoc(doc(db, "testSessions", id), { status: "closed" });
+    } catch (err) {
+      console.error(err);
+      setActionError("Testni yopib bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.");
     } finally {
       setClosing(false);
     }
@@ -141,11 +160,12 @@ export default function SessionMonitor() {
     try {
       await releaseCode(id);
       await deleteDoc(doc(db, "testSessions", id, "secure", "content"));
+      await deleteDoc(doc(db, "testSessions", id, "secure", "answers"));
       await deleteDoc(doc(db, "testSessions", id));
       navigate("/admin");
     } catch (err) {
       console.error("Testni o'chirishda xatolik:", err);
-      window.alert("Testni o'chirib bo'lmadi. Firestore qoidalari admin uchun o'chirishga ruxsat berishini tekshiring.");
+      setActionError("Testni o'chirib bo'lmadi. Firestore qoidalari admin uchun o'chirishga ruxsat berishini tekshiring.");
       setDeleting(false);
     }
   };
@@ -191,6 +211,12 @@ export default function SessionMonitor() {
           </>
         }
       />
+
+      {(actionError || listenError) && (
+        <Card className="mb-6 border-red-200 bg-red-50 p-4 text-[13px] font-semibold text-red-700">
+          {actionError || "Jonli ma'lumotlarni olib bo'lmadi (ruxsat yoki internet muammosi). Sahifani yangilang."}
+        </Card>
+      )}
 
       {/* Kirish kodi */}
       <section className="relative mb-6 overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white sm:p-7">

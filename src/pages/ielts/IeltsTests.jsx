@@ -36,7 +36,7 @@ export default function IeltsTests({ initialSection = null }) {
         eyebrow="IELTS Academic"
         icon={LuFileText}
         title={initialSection ? `${IELTS_SECTIONS[initialSection].label} practice` : "IELTS mock testlar"}
-        subtitle="IELTS on Computer interfeysidagi to'liq mock yoki alohida bo'limlar. Listening va Reading avtomatik tekshiriladi, Writing 4 ta rasmiy mezon bo'yicha taxminiy baholanadi."
+        subtitle="IELTS on Computer interfeysidagi to'liq mock yoki alohida bo'limlar. Listening va Reading avtomatik tekshiriladi, Writing esa 4 ta rasmiy mezon bo'yicha avtomatik (taxminiy) baholanadi. AI examiner baholash tez orada qo'shiladi."
       />
 
       <div className="space-y-6">

@@ -46,3 +46,7 @@ out/
 .turbo/
 # Arxivlar
 *.zip
+
+# Build paytida yaratiladigan kalitsiz test nusxalari (scripts/build-content.mjs)
+src/data/generated/
+.vercel

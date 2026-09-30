@@ -1,9 +1,10 @@
+import { memo } from "react";
 import { LuChevronLeft, LuChevronRight, LuCheck, LuFlag } from "react-icons/lu";
 
 // Pastki navigatsiya paneli (IELTS on Computer kabi): har bir Part —
 // faol bo'lsa savol raqamlari, aks holda "3 of 13" ko'rinishida.
 // Javob berilgan savol tagiga chiziladi, "Review" belgisi — bayroqcha.
-export default function IeltsNavigator({
+function IeltsNavigator({
   parts, // [{ label, questions: [n] }]
   activePart,
   currentQ,
@@ -101,3 +102,6 @@ export default function IeltsNavigator({
     </footer>
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(IeltsNavigator);

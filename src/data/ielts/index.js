@@ -1,10 +1,15 @@
-import test1 from "./test1";
+import catalog from "../generated/catalog.json";
 
-// Yangi IELTS test qo'shish: test1.js formatida fayl yozib, shu ro'yxatga qo'shing.
-export const IELTS_TESTS = [test1];
+// Testlar ro'yxati (faqat id/nom/tavsif). To'liq test — loadIeltsTest() bilan,
+// kalitsiz nusxa; to'g'ri javoblar va ball hisoblash serverda (api/ielts/*).
+// Yangi test qo'shish: content/ielts/ ga yozing.
+export const IELTS_TESTS = catalog.ielts;
 
-export function getIeltsTest(id) {
-  return IELTS_TESTS.find((t) => t.id === id) || null;
+const loaders = import.meta.glob("../generated/ielts/*.json", { import: "default" });
+
+export function loadIeltsTest(id) {
+  const load = loaders[`../generated/ielts/${id}.json`];
+  return load ? load() : Promise.resolve(null);
 }
 
 // Bo'limlar va ularning vaqti (daqiqa). Listening uchun vaqt audio

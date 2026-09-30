@@ -1,4 +1,4 @@
-import { roundBand } from "./ieltsScoring";
+import { roundBand } from "./ieltsScoring.js";
 
 // ------------------------------------------------------------------
 // IELTS Writing — avtomatik TAXMINIY baholash.

@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { LuX, LuMapPin, LuFlag } from "react-icons/lu";
 
-export default function QuestionNav({
+function QuestionNav({
   questions,
   currentIndex,
   answers,
@@ -90,3 +91,6 @@ export default function QuestionNav({
     </div>
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(QuestionNav);

@@ -1,5 +1,6 @@
 import { doc, increment, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
+import { dayKey } from "./date";
 
 // ------------------------------------------------------------------
 // Sayt analitikasi (admin → Analitika sahifasi uchun ma'lumot yig'ish).
@@ -7,17 +8,20 @@ import { db } from "../firebase/config";
 // Faqat login qilgan foydalanuvchilar kuzatiladi. Ko'p user bir vaqtda
 // ishlaganda bitta hujjatga yozish tiqilib qolmasligi (Firestore bitta
 // hujjatga ~1 yozuv/soniya tavsiya qiladi) uchun:
-//   analyticsShards/{kun}_{0..19} — kunlik hisoblagich 20 ta bo'lakka
+//   analyticsShards/{kun}_{0..9}  — kunlik hisoblagich 10 ta bo'lakka
 //                                    bo'lingan (tasodifiy bo'lakka yoziladi)
 //   analyticsVisitors/{kun}_{uid}  — shu kuni faol bo'lgan user (kuniga 1 marta)
 //   users/{uid}                    — user profili + sahifa statistikasi
-// Sahifa ko'rishlar xotirada yig'ilib, 30 soniyada yoki tab
-// yashirilganda bitta yozuv bilan yuboriladi.
+// Firestore bepul tarifi (kuniga 20k yozuv) uchun yozuvlar kam: profil
+// kuniga 1 marta, sahifa ko'rishlar xotirada yig'ilib 5 daqiqada bir
+// (yoki tab yopilganda) yuboriladi — o'rtacha 3–5 yozuv/user/kun.
 // Eski format (analytics/{kun} hujjati) admin sahifasida hali ham o'qiladi.
 // ------------------------------------------------------------------
 
-const SHARDS = 20;
-const FLUSH_MS = 30_000;
+const SHARDS = 10;
+const FLUSH_MS = 5 * 60_000;
+// Tab yashirilganda (boshqa tabga o'tish) — oxirgi yuborishdan shuncha vaqt o'tgan bo'lsa.
+const HIDDEN_FLUSH_MIN_MS = 2 * 60_000;
 
 // Tartib muhim: birinchi mos kelgan pattern olinadi.
 // Kalitlarda "/" bo'lmasligi kerak (Firestore field nomi sifatida ishlatiladi).
@@ -58,16 +62,14 @@ export function routeLabel(key) {
   return LABELS[key] || (key === "other" ? "Boshqa" : key);
 }
 
-// Mahalliy vaqt bo'yicha "YYYY-MM-DD" (hujjat ID sifatida).
-export function dayKey(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+export { dayKey };
 
+// Kuniga bir marta (localStorage belgisi bo'yicha) — har sahifa ochilishida emas.
 export async function upsertUserProfile(user) {
   if (!user) return;
+  const marker = `profile::${dayKey()}_${user.uid}`;
+  if (alreadyVisited(marker)) return;
+  rememberVisit(marker);
   try {
     const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null;
     await setDoc(
@@ -91,12 +93,14 @@ export async function upsertUserProfile(user) {
 // ---------------- Batching ----------------
 let pending = { uid: null, views: 0, pages: {} };
 let flushTimer = null;
+let lastFlushAt = 0;
 const visitedToday = new Set();
 
+// Belgilar localStorage'da (barcha tablar uchun umumiy), kun kaliti bilan.
 function alreadyVisited(marker) {
   if (visitedToday.has(marker)) return true;
   try {
-    if (sessionStorage.getItem(`pz_visit::${marker}`)) {
+    if (localStorage.getItem(`pz_visit::${marker}`)) {
       visitedToday.add(marker);
       return true;
     }
@@ -109,7 +113,13 @@ function alreadyVisited(marker) {
 function rememberVisit(marker) {
   visitedToday.add(marker);
   try {
-    sessionStorage.setItem(`pz_visit::${marker}`, "1");
+    localStorage.setItem(`pz_visit::${marker}`, "1");
+    // Eski kunlarning belgilarini tozalash.
+    const today = dayKey();
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("pz_visit::") && !k.includes(today)) localStorage.removeItem(k);
+    }
   } catch {
     /* ignore */
   }
@@ -124,6 +134,7 @@ export async function flushPageViews() {
   const batch = pending;
   if (!batch.uid || batch.views === 0) return;
   pending = { uid: batch.uid, views: 0, pages: {} };
+  lastFlushAt = Date.now();
 
   const day = dayKey();
   const pages = Object.fromEntries(Object.entries(batch.pages).map(([k, v]) => [k, increment(v)]));
@@ -168,7 +179,7 @@ export function trackPageView(user, pathname) {
 // Tab yopilganda/yashirilganda qolgan ko'rishlarni yuborish.
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flushPageViews();
+    if (document.visibilityState === "hidden" && Date.now() - lastFlushAt >= HIDDEN_FLUSH_MIN_MS) flushPageViews();
   });
   window.addEventListener("pagehide", () => flushPageViews());
 }

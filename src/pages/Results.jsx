@@ -3,8 +3,10 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { LuCheck, LuX, LuMinus, LuSearchX, LuChartColumn, LuRotateCcw, LuChevronDown } from "react-icons/lu";
 import { db } from "../firebase/config";
-import { getSatTest, getModuleQuestions } from "../data/satTest";
+import { getModuleQuestions } from "../data/satTest";
+import { useSatTest } from "../hooks/useTestContent";
 import { isAnswerCorrect } from "../utils/irtScoring";
+import { apiFetch } from "../utils/api";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
@@ -18,8 +20,9 @@ function Rich({ html, className }) {
 }
 
 // Saqlangan javoblardan har bir modul savollarini natija bilan yig'adi.
+// `keys` — serverdan olingan to'g'ri javoblar ({ [questionId]: {...} }).
 // Eski natijalarda (javoblar saqlanmagan) bo'sh ro'yxat qaytadi.
-function collectReviewItems(group, r) {
+function collectReviewItems(group, r, keys) {
   const modules = [
     { stage: "module1", label: "Module 1", answers: r.module1Answers },
     { stage: "module2", label: "Module 2", answers: r.module2Answers },
@@ -28,12 +31,10 @@ function collectReviewItems(group, r) {
     .filter((m) => Array.isArray(m.answers))
     .map((m) => ({
       ...m,
-      items: getModuleQuestions(group, m.stage, r.route).map((q, i) => ({
-        q,
-        number: i + 1,
-        answer: m.answers[i] ?? null,
-        correct: isAnswerCorrect(q, m.answers[i]),
-      })),
+      items: getModuleQuestions(group, m.stage, r.route).map((pub, i) => {
+        const q = { ...pub, ...keys[pub.id] };
+        return { q, number: i + 1, answer: m.answers[i] ?? null, correct: isAnswerCorrect(q, m.answers[i]) };
+      }),
     }));
 }
 
@@ -51,7 +52,7 @@ function domainStats(modules) {
 
 function ReviewQuestion({ item, showPassage }) {
   const { q, number, answer, correct } = item;
-  const correctText = q.type === "spr" ? q.answers.join(" yoki ") : q.correctAnswer;
+  const correctText = q.type === "spr" ? (q.answers || []).join(" yoki ") : q.correctAnswer;
   return (
     <details className="group border border-gray-200 rounded-lg bg-white">
       <summary className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none text-sm list-none">
@@ -114,6 +115,9 @@ export default function Results() {
   const [testId, setTestId] = useState(location.state?.testId || null);
   const [loading, setLoading] = useState(!location.state?.results && !!id);
   const [notFound, setNotFound] = useState(false);
+  const [keys, setKeys] = useState(null);
+  const [keysError, setKeysError] = useState(false);
+  const satTest = useSatTest(testId || "bluebook-1");
 
   useEffect(() => {
     // Agar sahifa /sat/results/:id orqali ochilgan bo'lsa (masalan,
@@ -133,9 +137,26 @@ export default function Results() {
       .finally(() => setLoading(false));
   }, [id, location.state]);
 
-  if (loading) return <PageLoader />;
+  // To'g'ri javoblar faqat serverda — natija egasiga ko'rib chiqish uchun beriladi.
+  const resultId = id || location.state?.resultId;
+  useEffect(() => {
+    if (!resultId || !results) return;
+    let cancelled = false;
+    setKeysError(false);
+    apiFetch("review", { method: "GET", query: { kind: "sat", id: resultId } })
+      .then((d) => !cancelled && setKeys(d.keys))
+      .catch((err) => {
+        console.error("To'g'ri javoblarni yuklashda xatolik:", err);
+        if (!cancelled) setKeysError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [resultId, results]);
 
-  if (notFound || !results) {
+  if (loading || (results && satTest === undefined)) return <PageLoader />;
+
+  if (notFound || !results || !satTest) {
     // Sahifa to'g'ridan-to'g'ri ochilgan bo'lsa (masalan, refresh qilingan)
     // natija ma'lumoti yo'q bo'ladi.
     return (
@@ -154,7 +175,6 @@ export default function Results() {
     );
   }
 
-  const satTest = getSatTest(testId);
   const groupResults = satTest.groups.map((g) => results[g.id]).filter(Boolean);
   const total = groupResults.reduce((sum, r) => sum + (r.scaledScore || 0), 0);
 
@@ -186,8 +206,10 @@ export default function Results() {
           if (!r) return null;
           const totalCorrect = (r.module1Correct || 0) + (r.module2Correct || 0);
           const totalQ = (r.module1Total || 0) + (r.module2Total || 0);
-          const reviewModules = collectReviewItems(g, r);
-          const domains = domainStats(reviewModules);
+          const reviewModules = keys ? collectReviewItems(g, r, keys) : [];
+          const domains = keys
+            ? domainStats(reviewModules)
+            : Object.entries(r.domains || {}).map(([d, [correct, t]]) => [d, { correct, total: t }]);
           const moduleRows = [{ label: "Module 1", value: `${r.module1Correct}/${r.module1Total}` }];
           if (r.module2Total != null) {
             moduleRows.push({
@@ -243,6 +265,13 @@ export default function Results() {
                   </div>
                 )}
 
+                {!keys && (
+                  <p className="rounded-xl bg-[#F6F7FB] px-4 py-3 text-sm text-[#12213D]/55">
+                    {keysError
+                      ? "Savollarni ko'rib chiqish uchun ma'lumotni yuklab bo'lmadi. Sahifani yangilab ko'ring."
+                      : "Savollar va to'g'ri javoblar yuklanmoqda..."}
+                  </p>
+                )}
                 {reviewModules.map((m) => (
                   <details key={m.stage} className="group/review rounded-xl border border-[#12213D]/[0.07]">
                     <summary className="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#12213D]">

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import { writeSetIndex, deleteSetIndex, countSetQuestions } from "../../utils/questionSetIndex";
 import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye, LuBookOpen } from "react-icons/lu";
 import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
@@ -26,11 +27,28 @@ export default function SetsDashboard() {
     e.preventDefault();
     e.stopPropagation();
     if (!window.confirm(`"${title}" to'plamini o'chirishni tasdiqlaysizmi?`)) return;
-    await deleteDoc(doc(db, "questionSets", id));
+    try {
+      await deleteDoc(doc(db, "questionSets", id));
+      await deleteSetIndex(id);
+    } catch (err) {
+      console.error(err);
+      window.alert("To'plamni o'chirib bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.");
+    }
   };
 
-  const countQuestions = (s) =>
-    (s.sections || []).reduce((sum, sec) => sum + (sec.questions?.length || 0), 0);
+  // Eski to'plamlar (index paydo bo'lishidan oldin yaratilgan) uchun
+  // questionSetIndex yozuvlarini bir marta to'ldiradi.
+  useEffect(() => {
+    if (loading || sets.length === 0) return;
+    getDocs(collection(db, "questionSetIndex"))
+      .then((snap) => {
+        const have = new Set(snap.docs.map((d) => d.id));
+        return Promise.all(sets.filter((s) => !have.has(s.id)).map((s) => writeSetIndex(s.id, s)));
+      })
+      .catch((err) => console.error("To'plamlar ro'yxatini yangilashda xatolik:", err));
+  }, [loading, sets]);
+
+  const countQuestions = (s) => countSetQuestions(s.sections);
 
   return (
     <Page>

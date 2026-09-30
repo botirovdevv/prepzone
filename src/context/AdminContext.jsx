@@ -1,11 +1,11 @@
-import { createContext, useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { createContext, useEffect, useMemo, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "./AuthContext";
 
-// Admin holati butun ilova uchun BITTA real-time listener orqali kuzatiladi
-// (avval har bir komponent — Sidebar, Dashboard, AdminRoute — o'z listener'ini
-// ochardi). Qiymat `useIsAdmin()` hook'i orqali o'qiladi.
+// Admin holati butun ilova uchun BIR MARTA (login paytida) tekshiriladi —
+// admins/{uid} kamdan-kam o'zgaradi, doimiy listener shart emas.
+// Qiymat `useIsAdmin()` hook'i orqali o'qiladi. Haqiqiy himoya — firestore.rules.
 export const AdminContext = createContext(null);
 
 export function AdminProvider({ children }) {
@@ -15,19 +15,24 @@ export function AdminProvider({ children }) {
 
   useEffect(() => {
     if (!uid) return;
-    const unsub = onSnapshot(
-      doc(db, "admins", uid),
-      (snap) => setState({ uid, isAdmin: snap.exists(), checked: true }),
-      () => setState({ uid, isAdmin: false, checked: true })
-    );
-    return unsub;
+    let cancelled = false;
+    getDoc(doc(db, "admins", uid))
+      .then((snap) => !cancelled && setState({ uid, isAdmin: snap.exists(), checked: true }))
+      .catch(() => !cancelled && setState({ uid, isAdmin: false, checked: true }));
+    return () => {
+      cancelled = true;
+    };
   }, [uid]);
 
-  const value = !uid
-    ? { isAdmin: false, checked: true }
-    : state.uid === uid
-      ? { isAdmin: state.isAdmin, checked: state.checked }
-      : { isAdmin: false, checked: false };
+  const value = useMemo(
+    () =>
+      !uid
+        ? { isAdmin: false, checked: true }
+        : state.uid === uid
+          ? { isAdmin: state.isAdmin, checked: state.checked }
+          : { isAdmin: false, checked: false },
+    [uid, state]
+  );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }

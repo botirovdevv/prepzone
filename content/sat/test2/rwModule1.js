@@ -1,5 +1,5 @@
 // Practice Test 2 — Reading and Writing, Module 1 (aralash qiyinlik, 27 ta).
-import { buildModule, STEM, table, notes } from "../helpers";
+import { buildModule, STEM, table, notes } from "../helpers.js";
 
 const CS = "craft-structure";
 const II = "info-ideas";

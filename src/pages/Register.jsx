@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { checkPassword } from "../utils/passwordPolicy";
 import PasswordStrength from "../components/PasswordStrength";
-const logo = "/Logo.png"; // Logo manzilingizni tekshiring
+import { AuthFooter } from "../components/AuthLayout";
+const logo = "/Logo.png";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -209,6 +210,17 @@ export default function Register() {
             >
               {loading ? "Yaratilmoqda..." : "Ro'yxatdan o'tish"}
             </button>
+            <p className="text-center text-[11px] leading-relaxed text-[#566176]">
+              Ro'yxatdan o'tish orqali siz{" "}
+              <Link to="/terms" className="font-semibold text-[#087fd1] hover:underline">
+                Foydalanish shartlari
+              </Link>{" "}
+              va{" "}
+              <Link to="/privacy" className="font-semibold text-[#087fd1] hover:underline">
+                Maxfiylik siyosati
+              </Link>
+              ga rozilik bildirasiz.
+            </p>
           </form>
 
           <div className="mt-6 border-t border-[#111827]/[0.08] pt-5 text-center text-sm text-[#566176]">
@@ -220,10 +232,7 @@ export default function Register() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-xs text-[#566176]">
-        &copy; {new Date().getFullYear()} Prepzone. Barcha huquqlar himoyalangan.
-      </footer>
+      <AuthFooter />
     </div>
   );
 }

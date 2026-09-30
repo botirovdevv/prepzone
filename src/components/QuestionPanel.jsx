@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { LuBookmark, LuCheck, LuX } from "react-icons/lu";
 import HighlightableText from "./HighlightableText";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
@@ -33,7 +34,7 @@ function SprDirections() {
   );
 }
 
-export default function QuestionPanel({
+function QuestionPanel({
   question,
   index,
   selected,
@@ -229,3 +230,6 @@ export default function QuestionPanel({
     </div>
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(QuestionPanel);

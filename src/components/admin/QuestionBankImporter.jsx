@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { LuDatabase, LuLoaderCircle, LuCircleCheck, LuCircleAlert } from "react-icons/lu";
+import { apiFetch } from "../../utils/api";
 
-// Har bir fan (subject) uchun statik JSON fayllar /public/question-bank/ ostida
+// Har bir fan (subject) uchun JSON fayllar server/question-bank/ ostida
 // joylashgan: masalan "rw-craft-structure.json", "math-algebra.json".
 // Fayl nomi: `${subject}-${domainId}.json`
 
@@ -26,13 +27,9 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
     );
   };
 
-  const fetchBank = async (domain) => {
-    const res = await fetch(`/question-bank/${subject}-${domain}.json`);
-    if (!res.ok) {
-      throw new Error("not-found");
-    }
-    return res.json();
-  };
+  // Savol banki (to'g'ri javoblar bilan) public'da emas — faqat admin API orqali.
+  const fetchBank = (domain) =>
+    apiFetch("admin/question-bank", { method: "GET", query: { file: `${subject}-${domain}` } });
 
   const handlePreview = async (domain) => {
     setError("");

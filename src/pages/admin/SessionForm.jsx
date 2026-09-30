@@ -20,6 +20,16 @@ function toTimeInputValue(d) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const MODULE_KEYS = ["module1", "module2Easy", "module2Hard", "module2Mixed"];
+const stripQuestion = ({ correctAnswer, answers, explanation, ...q }) => q;
+function stripAnswers(sections) {
+  return sections.map((sec) => {
+    const out = { ...sec };
+    for (const k of MODULE_KEYS) if (Array.isArray(sec[k])) out[k] = sec[k].map(stripQuestion);
+    return out;
+  });
+}
+
 export default function SessionForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -79,8 +89,9 @@ export default function SessionForm() {
     if (!isEdit) return;
     Promise.all([
       getDoc(doc(db, "testSessions", id)),
+      getDoc(doc(db, "testSessions", id, "secure", "answers")),
       getDoc(doc(db, "testSessions", id, "secure", "content")),
-    ]).then(([snap, contentSnap]) => {
+    ]).then(([snap, answersSnap, contentSnap]) => {
       if (!snap.exists()) {
         setError("Test topilmadi.");
         setLoadingExisting(false);
@@ -90,7 +101,11 @@ export default function SessionForm() {
       // Eski testlarda (secure/content ajratilishidan oldin yaratilgan)
       // savollar asosiy hujjatning o'zida turadi — shunda o'shalarni
       // olamiz; qayta saqlanganda ular secure/content'ga ko'chiriladi.
-      const contentSections = contentSnap.exists()
+      // secure/answers — to'liq savollar (kalitlar bilan); eski testlarda
+      // secure/content yoki asosiy hujjat.
+      const contentSections = answersSnap.exists()
+        ? answersSnap.data().sections || []
+        : contentSnap.exists()
         ? contentSnap.data().sections || []
         : s.sections || [];
       setTitle(s.title || "");
@@ -204,7 +219,10 @@ export default function SessionForm() {
         // Kod sessiya hujjatida emas, alohida himoyalangan joyda saqlanadi.
         await assignCode(sessionId, code);
       }
-      await setDoc(doc(db, "testSessions", sessionId, "secure", "content"), { sections });
+      // secure/answers — kalitlar bilan (faqat admin va server o'qiydi);
+      // secure/content — ishtirokchilar uchun, to'g'ri javoblarsiz.
+      await setDoc(doc(db, "testSessions", sessionId, "secure", "answers"), { sections });
+      await setDoc(doc(db, "testSessions", sessionId, "secure", "content"), { sections: stripAnswers(sections) });
       navigate(`/admin/sessions/${sessionId}/monitor`);
     } catch (err) {
       console.error(err);

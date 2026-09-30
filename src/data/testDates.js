@@ -1,4 +1,4 @@
-import { dayKey } from "../utils/analytics";
+import { dayKey } from "../utils/date";
 
 // ------------------------------------------------------------------
 // Rasmiy imtihon kunlari ("YYYY-MM-DD"). Dashboard'dagi countdown
@@ -13,8 +13,6 @@ import { dayKey } from "../utils/analytics";
 
 export const TEST_DATES = {
   sat: [
-    "2026-08-22",
-    "2026-09-12",
     "2026-10-03",
     "2026-11-07",
     "2026-12-05",

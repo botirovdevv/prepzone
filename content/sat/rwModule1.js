@@ -1,7 +1,7 @@
 // Reading and Writing — Module 1 (aralash qiyinlik, 27 ta savol).
 // Tartib real Digital SAT'dagi kabi: Craft & Structure -> Information &
 // Ideas -> Standard English Conventions -> Expression of Ideas.
-import { buildModule, STEM, table, notes } from "./helpers";
+import { buildModule, STEM, table, notes } from "./helpers.js";
 
 const CS = "craft-structure";
 const II = "info-ideas";

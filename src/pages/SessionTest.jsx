@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   doc,
@@ -10,12 +10,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
-import {
-  decideRoute,
-  calcSectionScaledScore,
-  calcSingleModuleScaledScore,
-  countCorrect,
-} from "../utils/scoring";
+import { apiFetchRetry } from "../utils/api";
+import { useDeadline, secondsUntil } from "../hooks/useCountdown";
 import {
   saveLocalProgress,
   loadLocalProgress,
@@ -23,7 +19,6 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
-import { maybeUpdateLeaderboard } from "../utils/leaderboard";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -36,6 +31,7 @@ import TestTerminatedScreen from "../components/TestTerminatedScreen";
 import CheatWarningToast from "../components/CheatWarningToast";
 import ExitTestModal from "../components/ExitTestModal";
 import SessionWaitingScreen from "../components/SessionWaitingScreen";
+import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -109,6 +105,9 @@ export default function SessionTest() {
   // hujjati yaratilgach yuklanadi (pastdagi effekt orqali).
   const [sessionContent, setSessionContent] = useState(null);
   const [contentError, setContentError] = useState(false);
+  const [participantReady, setParticipantReady] = useState(false);
+  const retryTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(retryTimerRef.current), []);
 
   const fetchContent = async (attempt = 0) => {
     try {
@@ -126,7 +125,7 @@ export default function SessionTest() {
       // Xavfsizlik qoidasi ishtirokchi hujjati "ko'rinishi" uchun bir
       // zumlik kechikish bo'lishi mumkin — bir necha marta qayta urinamiz.
       if (attempt < 3) {
-        setTimeout(() => fetchContent(attempt + 1), 700);
+        retryTimerRef.current = setTimeout(() => fetchContent(attempt + 1), 700);
       } else {
         console.error("Savollarni yuklashda xatolik:", err);
         setContentError(true);
@@ -192,25 +191,31 @@ export default function SessionTest() {
   // Module 2 savollarini tanlash:
   //  - Agar "Aralash" (filial qilinmagan) to'plam bo'lsa, barcha talabalar
   //    Module 1 natijasidan qat'iy nazar shu bitta to'plamni oladi.
-  //  - Aks holda, Module 1 natijasiga qarab (decideRoute) Oson yoki Qiyin
+  //  - Aks holda, Module 1 natijasiga qarab (serverda, IRT) Oson yoki Qiyin
   //    to'plamga yo'naltiriladi; agar tanlangan to'plam bo'sh bo'lsa,
   //    mavjud bo'lgan yagona to'plamga tushadi (yarim-adaptiv fallback).
-  const pickModule2Questions = () => {
-    if (section.module2Mixed && section.module2Mixed.length > 0) return section.module2Mixed;
-    const preferred = route === "hard" ? section.module2Hard : section.module2Easy;
+  const pickModule2Questions = (sec, r) => {
+    if (sec.module2Mixed && sec.module2Mixed.length > 0) return sec.module2Mixed;
+    const preferred = r === "hard" ? sec.module2Hard : sec.module2Easy;
     if (preferred && preferred.length > 0) return preferred;
-    if (section.module2Hard && section.module2Hard.length > 0) return section.module2Hard;
-    return section.module2Easy || [];
+    if (sec.module2Hard && sec.module2Hard.length > 0) return sec.module2Hard;
+    return sec.module2Easy || [];
   };
 
-  const questions = stage === "module1" ? section.module1 || [] : pickModule2Questions();
+  const questions = stage === "module1" ? section.module1 || [] : pickModule2Questions(section, route);
   const totalQuestions = questions.length;
 
   const [moduleState, setModuleState] = useState(() => emptyModuleState(totalQuestions));
-  const [secondsLeft, setSecondsLeft] = useState((section.durationMin || 30) * 60);
+  // Modul tugash vaqti (ms); tanaffus va boshqa ekranlarda — null.
+  const [endAt, setEndAt] = useState(null);
 
-  const [results, setResults] = useState({});
-  const [savingResult, setSavingResult] = useState(false);
+  // Topshirilgan javoblar: { [bo'lim]: { module1Answers, route, module2Answers } }.
+  // Ball serverda hisoblanadi (api/session/finish).
+  const [attempts, setAttempts] = useState({});
+  // "routing" | "saving" | null
+  const [busy, setBusy] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const finishingRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -223,30 +228,44 @@ export default function SessionTest() {
   useEffect(() => {
     if (!user || !sessionMeta || participantInitRef.current) return;
     participantInitRef.current = true;
-    setDoc(
-      doc(db, "testSessions", sessionId, "participants", user.uid),
-      {
-        uid: user.uid,
-        name: studentName,
-        email: user.email,
-        status: "not_started",
-        joinedAt: serverTimestamp(),
-        // Xavfsizlik qoidasi shu maydonni sessiyaning haqiqiy kodi bilan
-        // solishtiradi (faqat "code" turidagi testlar uchun) — shuning
-        // uchun kodni bilmagan/o'tmagan foydalanuvchi ishtirokchi
-        // sifatida ro'yxatdan o'ta olmaydi va savol tarkibiga kira
-        // olmaydi, hatto sessiya ID'sini bilsa ham.
-        enteredCode: sessionMeta.accessType === "open" ? null : joinCode,
-      },
-      { merge: true }
-    )
-      .then(() => fetchContent())
+    const participantRef = doc(db, "testSessions", sessionId, "participants", user.uid);
+    // Qayta kirganda (sahifa yangilangan, pauzadan keyin) mavjud hujjat
+    // qayta yozilmaydi — kod va holat saqlanib qoladi.
+    getDoc(participantRef)
+      .then((snap) => {
+        if (snap.exists()) return;
+        return setDoc(participantRef, {
+          uid: user.uid,
+          name: studentName,
+          email: user.email,
+          status: "not_started",
+          joinedAt: serverTimestamp(),
+          // Xavfsizlik qoidasi shu maydonni sessiyaning haqiqiy kodi bilan
+          // solishtiradi (faqat "code" turidagi testlar uchun) — shuning
+          // uchun kodni bilmagan/o'tmagan foydalanuvchi ishtirokchi
+          // sifatida ro'yxatdan o'ta olmaydi va savol tarkibiga kira
+          // olmaydi, hatto sessiya ID'sini bilsa ham.
+          enteredCode: sessionMeta.accessType === "open" ? null : joinCode,
+        });
+      })
+      .then(() => setParticipantReady(true))
       .catch((err) => {
         console.error("Ishtirokchi sifatida ro'yxatdan o'tishda xatolik:", err);
         setContentError(true);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, sessionMeta]);
+
+  // Savollar faqat test boshlanish vaqti kelganda yuklanadi (rules ham
+  // scheduledAt'dan oldin o'qishga ruxsat bermaydi).
+  const contentRequestedRef = useRef(false);
+  useEffect(() => {
+    if (!participantReady || contentRequestedRef.current) return;
+    if (phase !== "rules" && phase !== "locked") return;
+    contentRequestedRef.current = true;
+    fetchContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participantReady, phase]);
 
   const updateParticipant = (data) => {
     if (!user) return;
@@ -334,8 +353,7 @@ export default function SessionTest() {
       terminationReason: reasonCode,
       terminatedAt: serverTimestamp(),
     });
-    const finalResults = buildTerminationResults();
-    saveResultAndNavigate(finalResults, { terminated: true, reason: reasonCode });
+    finishTest(withCurrentModule(attempts, moduleState.answers), { terminated: true, reason: reasonCode });
   };
 
   const proctoring = useProctoring({
@@ -348,53 +366,49 @@ export default function SessionTest() {
     maxWarnings: MAX_WARNINGS,
   });
 
-  useEffect(() => {
-    if (phase !== "active") return;
-    setModuleState(emptyModuleState(totalQuestions));
-    setSecondsLeft((section.durationMin || 30) * 60);
+  // Yangi modul: javoblar, taymer va joriy savol noldan boshlanadi.
+  const startModule = (count, durationMin) => {
+    setModuleState(emptyModuleState(count));
+    setEndAt(Date.now() + (durationMin || 30) * 60_000);
     setCurrentIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupIndex, stage, route]);
-
-  useEffect(() => {
-    if (phase !== "active" || onBreak) return;
-    const interval = setInterval(() => {
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [groupIndex, stage, route, onBreak, phase]);
+    finishingRef.current = false;
+  };
 
   const safeIndex = Math.min(currentIndex, Math.max(totalQuestions - 1, 0));
   const question = questions[safeIndex];
 
-  const updateModule = (updater) => setModuleState((prev) => updater({ ...prev }));
+  const handleSelectAnswer = useCallback(
+    (label) =>
+      setModuleState((s) => {
+        const answers = [...s.answers];
+        answers[safeIndex] = label;
+        return { ...s, answers };
+      }),
+    [safeIndex]
+  );
 
-  const handleSelectAnswer = (label) => {
-    updateModule((s) => {
-      const answers = [...s.answers];
-      answers[safeIndex] = label;
-      return { ...s, answers };
-    });
-  };
+  const handleToggleMark = useCallback(
+    () =>
+      setModuleState((s) => {
+        const marked = [...s.marked];
+        marked[safeIndex] = !marked[safeIndex];
+        return { ...s, marked };
+      }),
+    [safeIndex]
+  );
 
-  const handleToggleMark = () => {
-    updateModule((s) => {
-      const marked = [...s.marked];
-      marked[safeIndex] = !marked[safeIndex];
-      return { ...s, marked };
-    });
-  };
-
-  const handleToggleCrossOut = (label) => {
-    updateModule((s) => {
-      const crossedOut = s.crossedOut.map((arr) => [...arr]);
-      const arr = crossedOut[safeIndex];
-      const idx = arr.indexOf(label);
-      if (idx >= 0) arr.splice(idx, 1);
-      else arr.push(label);
-      return { ...s, crossedOut };
-    });
-  };
+  const handleToggleCrossOut = useCallback(
+    (label) =>
+      setModuleState((s) => {
+        const crossedOut = s.crossedOut.map((arr) => [...arr]);
+        const arr = crossedOut[safeIndex];
+        const idx = arr.indexOf(label);
+        if (idx >= 0) arr.splice(idx, 1);
+        else arr.push(label);
+        return { ...s, crossedOut };
+      }),
+    [safeIndex]
+  );
 
   const goTo = (i) => {
     setCurrentIndex(i);
@@ -407,212 +421,99 @@ export default function SessionTest() {
     if (safeIndex > 0) goTo(safeIndex - 1);
   };
 
-  const proceedAfterSection = () => {
-    if (groupIndex < session.sections.length - 1) {
-      setOnBreak(true);
-    } else {
-      setResults((prev) => {
-        saveResultAndNavigate(prev);
-        return prev;
-      });
-    }
+  // Joriy modul javoblarini `attempts`ga qo'shadi.
+  const withCurrentModule = (prev, answers) => {
+    const current = prev[section.id] || {};
+    return {
+      ...prev,
+      [section.id]: stage === "module1" ? { module1Answers: answers } : { ...current, module2Answers: answers },
+    };
   };
 
   const advanceToNextGroup = () => {
+    const next = session.sections[groupIndex + 1];
     setOnBreak(false);
     setGroupIndex((i) => i + 1);
     setStage("module1");
     setRoute(null);
-    setCurrentIndex(0);
     setCalcOpen(false);
+    startModule((next.module1 || []).length, next.durationMin);
+  };
+
+  // Module 1 tugagach — server javoblarga qarab Module 2'ni tanlaydi.
+  const routeToModule2 = async (nextAttempts) => {
+    setBusy("routing");
+    setSubmitError(null);
+    setEndAt(null);
+    try {
+      const { route: nextRoute } = await apiFetchRetry("session/route", {
+        body: { sessionId, sectionId: section.id, module1Answers: nextAttempts[section.id].module1Answers },
+      });
+      const r = nextRoute === "hard" ? "hard" : nextRoute === "easy" ? "easy" : null;
+      setAttempts((prev) => ({ ...prev, [section.id]: { ...prev[section.id], route: r } }));
+      setRoute(r);
+      setStage("module2");
+      startModule(pickModule2Questions(section, r).length, section.durationMin);
+      setBusy(null);
+    } catch (err) {
+      setSubmitError({ message: err.message, retry: () => routeToModule2(nextAttempts) });
+      setBusy(null);
+    }
   };
 
   const handleFinishModule = () => {
-    const rawCorrect = countCorrect(questions, moduleState.answers);
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    const nextAttempts = withCurrentModule(attempts, moduleState.answers);
+    setAttempts(nextAttempts);
 
     if (stage === "module1" && hasModule2) {
-      const chosenRoute = decideRoute(rawCorrect, totalQuestions);
-      setResults((prev) => ({
-        ...prev,
-        [section.id]: {
-          ...prev[section.id],
-          module1Correct: rawCorrect,
-          module1Total: totalQuestions,
-          route: chosenRoute,
-        },
-      }));
-      setRoute(chosenRoute);
-      setStage("module2");
-      setCurrentIndex(0);
+      routeToModule2(nextAttempts);
       return;
     }
-
-    if (stage === "module1") {
-      const scaled = calcSingleModuleScaledScore({ rawCorrect, maxRaw: totalQuestions });
-      setResults((prev) => ({
-        ...prev,
-        [section.id]: {
-          module1Correct: rawCorrect,
-          module1Total: totalQuestions,
-          scaledScore: scaled,
-          singleModule: true,
-        },
-      }));
+    setEndAt(null);
+    if (groupIndex < session.sections.length - 1) {
+      setOnBreak(true);
     } else {
-      setResults((prev) => {
-        const prevSection = prev[section.id] || {};
-        const maxRaw = (prevSection.module1Total || 0) + totalQuestions;
-        const totalCorrect = (prevSection.module1Correct || 0) + rawCorrect;
-        const scaled = calcSectionScaledScore({
-          route: prevSection.route,
-          rawCorrect: totalCorrect,
-          maxRaw,
-        });
-        return {
-          ...prev,
-          [section.id]: {
-            ...prevSection,
-            module2Correct: rawCorrect,
-            module2Total: totalQuestions,
-            scaledScore: scaled,
-          },
-        };
-      });
+      finishTest(nextAttempts);
     }
-
-    proceedAfterSection();
   };
 
-  const buildTerminationResults = () => {
-    const rawCorrect = countCorrect(questions, moduleState.answers);
-    let finalResults = { ...results };
+  // Vaqt tugasa modul avtomatik topshiriladi.
+  useDeadline(phase === "active" && !onBreak && !busy ? endAt : null, handleFinishModule);
 
-    if (stage === "module1") {
-      if (hasModule2) {
-        const chosenRoute = decideRoute(rawCorrect, totalQuestions);
-        const scaled = calcSectionScaledScore({
-          route: chosenRoute,
-          rawCorrect,
-          maxRaw: totalQuestions,
-        });
-        finalResults = {
-          ...finalResults,
-          [section.id]: {
-            module1Correct: rawCorrect,
-            module1Total: totalQuestions,
-            route: chosenRoute,
-            scaledScore: scaled,
-            incomplete: true,
-          },
-        };
-      } else {
-        const scaled = calcSingleModuleScaledScore({ rawCorrect, maxRaw: totalQuestions });
-        finalResults = {
-          ...finalResults,
-          [section.id]: {
-            module1Correct: rawCorrect,
-            module1Total: totalQuestions,
-            scaledScore: scaled,
-            singleModule: true,
-            incomplete: true,
-          },
-        };
-      }
-    } else {
-      const prevSection = finalResults[section.id] || {};
-      const maxRaw = (prevSection.module1Total || 0) + totalQuestions;
-      const totalCorrect = (prevSection.module1Correct || 0) + rawCorrect;
-      const scaled = calcSectionScaledScore({
-        route: prevSection.route,
-        rawCorrect: totalCorrect,
-        maxRaw,
-      });
-      finalResults = {
-        ...finalResults,
-        [section.id]: {
-          ...prevSection,
-          module2Correct: rawCorrect,
-          module2Total: totalQuestions,
-          scaledScore: scaled,
-          incomplete: true,
-        },
-      };
-    }
-    return finalResults;
-  };
-
-  const saveResultAndNavigate = async (finalResults, extraState = {}) => {
-    await proctoring.exitFullscreenIntentionally();
-    if (user) clearLocalProgress(user.uid, progressKey);
-
-    const total = session.sections.reduce(
-      (sum, s) => sum + (finalResults[s.id]?.scaledScore || 0),
-      0
-    );
-    const sectionsMeta = session.sections.map((s) => ({ id: s.id, title: s.title }));
-
-    setSavingResult(true);
+  const submitAttempts = async (finalAttempts, extraState = {}) => {
+    setBusy("saving");
+    setSubmitError(null);
     try {
-      await setDoc(doc(db, "testSessions", sessionId, "results", user.uid), {
-        uid: user.uid,
-        name: studentName,
-        email: user.email,
-        results: finalResults,
-        total,
-        sessionTitle: session.title,
-        finishedAt: serverTimestamp(),
-        ...(extraState.terminated
-          ? { terminated: true, terminationReason: extraState.reason }
-          : {}),
-      });
-      // "Mening natijalarim" (History) sahifasi hozircha faqat ildiz
-      // darajasidagi "results" kolleksiyasini o'qiydi (collectionGroup
-      // so'rovlari index/rules bo'yicha ishonchsiz chiqdi). Shuning uchun
-      // sessiya natijasini shu yerga ham (kichik nusxa sifatida) yozib
-      // qo'yamiz — shunda u ham tarixda avtomatik ko'rinadi.
-      try {
-        await addDoc(collection(db, "results"), {
-          uid: user.uid,
-          email: user.email,
-          results: finalResults,
-          total,
+      const data = await apiFetchRetry("session/finish", {
+        body: {
           sessionId,
-          sessionTitle: session.title,
-          createdAt: serverTimestamp(),
-          ...(extraState.terminated
-            ? { terminated: true, terminationReason: extraState.reason }
-            : {}),
-        });
-      } catch (mirrorErr) {
-        // Bu ikkinchi (ko'zgu) yozuv muvaffaqiyatsiz bo'lsa ham, asosiy
-        // natija testSessions ostida saqlanib bo'lgani uchun talaba hech
-        // narsani yo'qotmaydi — faqat History ro'yxatida darhol
-        // ko'rinmasligi mumkin. Shu sabab xatoni faqat konsolga chiqaramiz.
-        console.error("Natijani 'results' kolleksiyasiga nusxalashda xatolik:", mirrorErr);
-      }
-      updateParticipant({
-        totalScore: total,
-        ...(extraState.terminated ? {} : { status: "finished", finishedAt: serverTimestamp() }),
+          attempts: finalAttempts,
+          ...(extraState.terminated ? { terminated: true, terminationReason: extraState.reason } : {}),
+        },
       });
-      maybeUpdateLeaderboard(user, total);
+      if (user) clearLocalProgress(user.uid, progressKey);
       navigate(`/session/${sessionId}/results`, {
-        state: { results: finalResults, sections: sectionsMeta, total, sessionTitle: session.title, ...extraState },
-      });
-    } catch (err) {
-      console.error("Natijani saqlashda xatolik:", err);
-      navigate(`/session/${sessionId}/results`, {
+        replace: true,
         state: {
-          results: finalResults,
-          sections: sectionsMeta,
-          total,
+          results: data.results,
+          sections: data.sections,
+          total: data.total,
           sessionTitle: session.title,
-          saveError: true,
           ...extraState,
         },
       });
-    } finally {
-      setSavingResult(false);
+    } catch (err) {
+      console.error("Natijani saqlashda xatolik:", err);
+      setSubmitError({ message: err.message, retry: () => submitAttempts(finalAttempts, extraState) });
+      setBusy(null);
     }
+  };
+
+  const finishTest = async (finalAttempts, extraState = {}) => {
+    await proctoring.exitFullscreenIntentionally();
+    submitAttempts(finalAttempts, extraState);
   };
 
   const handleStart = async () => {
@@ -624,9 +525,13 @@ export default function SessionTest() {
       setStage(resumeSnapshot.stage ?? "module1");
       setRoute(resumeSnapshot.route ?? null);
       setModuleState(resumeSnapshot.moduleState || emptyModuleState(totalQuestions));
-      setSecondsLeft(resumeSnapshot.secondsLeft ?? (section.durationMin || 30) * 60);
-      setResults(resumeSnapshot.results || {});
+      setEndAt(
+        resumeSnapshot.onBreak ? null : Date.now() + (resumeSnapshot.secondsLeft ?? (section.durationMin || 30) * 60) * 1000
+      );
+      setAttempts(resumeSnapshot.attempts || {});
       setOnBreak(!!resumeSnapshot.onBreak);
+    } else {
+      startModule(totalQuestions, section.durationMin);
     }
     setPhase("active");
     updateParticipant({ status: "active", startedAt: serverTimestamp() });
@@ -638,7 +543,7 @@ export default function SessionTest() {
     saveLocalProgress(
       user.uid,
       progressKey,
-      { groupIndex, stage, route, moduleState, secondsLeft, results, onBreak },
+      { groupIndex, stage, route, moduleState, secondsLeft: secondsUntil(endAt), attempts, onBreak },
       "paused"
     );
     updateParticipant({ status: "paused" });
@@ -716,14 +621,18 @@ export default function SessionTest() {
     return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} />;
   }
 
+  if (submitError) {
+    return <SubmitErrorScreen message={submitError.message} onRetry={submitError.retry} />;
+  }
+
   if (phase === "terminated") {
     return <TestTerminatedScreen reason={terminationReason} />;
   }
 
-  if (savingResult) {
+  if (busy === "saving") {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Natijalar saqlanmoqda...
+        Natijalar hisoblanmoqda...
       </div>
     );
   }
@@ -732,7 +641,7 @@ export default function SessionTest() {
     return <BreakScreen onContinue={advanceToNextGroup} />;
   }
 
-  if (!question) {
+  if (busy === "routing" || !question) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Modul yuklanmoqda...
@@ -746,7 +655,7 @@ export default function SessionTest() {
       <TestHeader
         sectionLabel={sectionLabel}
         title={section.title}
-        secondsLeft={secondsLeft}
+        endAt={endAt}
         showCalcButton={!!section.calculator}
         onToggleCalculator={() => setCalcOpen((c) => !c)}
         onExit={() => setShowExitModal(true)}

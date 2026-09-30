@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-const logo = "/Logo.png"; // Logo manzilingizni tekshiring
+import { AuthFooter } from "../components/AuthLayout";
+const logo = "/Logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -137,6 +138,13 @@ export default function Login() {
                 <label className="text-xs font-semibold uppercase tracking-wider text-[#566176]">
                   Parol
                 </label>
+                <Link
+                  to="/forgot-password"
+                  state={{ email }}
+                  className="text-xs font-semibold text-[#087fd1] hover:underline"
+                >
+                  Parolni unutdingizmi?
+                </Link>
               </div>
               <input
                 type="password"
@@ -173,9 +181,7 @@ export default function Login() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-6 text-center text-xs text-[#566176]">
-        &copy; {new Date().getFullYear()} Prepzone. Barcha huquqlar himoyalangan.
-      </footer>
+      <AuthFooter />
     </div>
   );
 }

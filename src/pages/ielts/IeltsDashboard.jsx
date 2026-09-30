@@ -42,7 +42,7 @@ export default function IeltsDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    fetchIeltsResults(user.uid)
+    fetchIeltsResults(user.uid, 20)
       .then(setResults)
       .catch(() => setResults([]));
   }, [user]);

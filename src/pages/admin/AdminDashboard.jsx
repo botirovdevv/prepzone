@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { getSessionCode, migrateLegacyCodes } from "../../utils/sessionCode";
 import { LuPlus, LuCalendarClock, LuChevronRight, LuShieldCheck, LuGlobe, LuCalendarX } from "react-icons/lu";
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "testSessions"), orderBy("scheduledAt", "desc"));
+    const q = query(collection(db, "testSessions"), orderBy("scheduledAt", "desc"), limit(100));
     const unsub = onSnapshot(
       q,
       (snap) => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { LuBookOpen, LuArrowRight, LuLayers, LuSparkles } from "react-icons/lu";
 import { Page, PageHeader, Card, Badge, EmptyState, Skeleton } from "../components/ui";
@@ -10,20 +10,18 @@ export default function PracticeIndex() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "questionSets"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    // Yengil ro'yxat (savollarsiz) — to'liq to'plam faqat ochilganda yuklanadi.
+    let cancelled = false;
+    getDocs(query(collection(db, "questionSetIndex"), orderBy("createdAt", "desc")))
+      .then((snap) => !cancelled && setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+      .catch((err) => console.error("To'plamlarni yuklashda xatolik:", err))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const countQuestions = (s) =>
-    (s.sections || []).reduce((sum, sec) => sum + (sec.questions?.length || 0), 0);
+  const countQuestions = (s) => s.questionCount ?? 0;
 
   return (
     <Page width="narrow">

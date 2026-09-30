@@ -20,8 +20,8 @@ import {
   LuHeadphones,
   LuBookOpenText,
   LuPenLine,
+  LuHouse,
 } from "react-icons/lu";
-import { AiFillHome } from "react-icons/ai";
 import { useAuth } from "../context/AuthContext";
 import { useExam, EXAMS } from "../context/ExamContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
@@ -32,7 +32,7 @@ const SAT_NAV = [
   {
     label: "MAIN",
     items: [
-      { to: "/dashboard", label: "Today", icon: AiFillHome, iconColor: "text-[#0096c7]" },
+      { to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-[#0096c7]" },
       { to: "/study-plan", label: "Study Plan", icon: LuCompass, iconColor: "text-[#7c3aed]" },
     ],
   },
@@ -60,7 +60,7 @@ const SAT_NAV = [
 const IELTS_NAV = [
   {
     label: "MAIN",
-    items: [{ to: "/dashboard", label: "Today", icon: AiFillHome, iconColor: "text-[#0096c7]" }],
+    items: [{ to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-[#0096c7]" }],
   },
   {
     label: "PRACTICE",

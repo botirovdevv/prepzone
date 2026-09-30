@@ -1,0 +1,10 @@
+{
+  "name": "Prepzone — SAT va IELTS mock testlar",
+  "short_name": "Prepzone",
+  "lang": "uz",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fcfcfa",
+  "theme_color": "#087fd1",
+  "icons": [{ "src": "/Logo-sm.png", "sizes": "165x192", "type": "image/png" }]
+}

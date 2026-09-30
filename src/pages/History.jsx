@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { fetchUserResults, countUserResults } from "../utils/userResults";
 import { useAuth } from "../context/AuthContext";
 import { getSatTestTitle } from "../data/testsCatalog";
 import {
@@ -31,12 +30,18 @@ function resultDate(a) {
   return a.createdAt?.toDate ? a.createdAt.toDate() : a.finishedAt?.toDate ? a.finishedAt.toDate() : null;
 }
 
+const PAGE_SIZE = 20;
+
 export default function History() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -50,26 +55,42 @@ export default function History() {
     // "testSessions/{id}/results/{uid}" ostida saqlanadi, shu bilan birga
     // shu yerga ham (sessionId/sessionTitle maydonlari bilan) nusxalab
     // yoziladi — shunda tarix sahifasi oddiy, bitta so'rov bilan ishlayveradi.
-    const unsub = onSnapshot(
-      query(collection(db, "results"), where("uid", "==", user.uid)),
-      (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => {
-          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tb - ta;
-        });
-        setAttempts(list);
-        setFetching(false);
-      },
-      (err) => {
+    // Sahifalab (20 tadan) yuklanadi — o'qishlar sonini cheklash uchun.
+    let cancelled = false;
+    fetchUserResults("results", user.uid, { pageSize: PAGE_SIZE })
+      .then((page) => {
+        if (cancelled) return;
+        setAttempts(page.items);
+        setCursor(page.cursor);
+        setHasMore(page.hasMore);
+      })
+      .catch((err) => {
         console.error("[History] natijalarni yuklashda xatolik:", err);
-        setError("Natijalarni yuklashda xatolik yuz berdi.");
-        setFetching(false);
-      }
-    );
-    return unsub;
+        if (!cancelled) setError("Natijalarni yuklashda xatolik yuz berdi.");
+      })
+      .finally(() => !cancelled && setFetching(false));
+    countUserResults("results", user.uid)
+      .then((n) => !cancelled && setTotalCount(n))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const page = await fetchUserResults("results", user.uid, { pageSize: PAGE_SIZE, after: cursor });
+      setAttempts((prev) => [...prev, ...page.items]);
+      setCursor(page.cursor);
+      setHasMore(page.hasMore);
+    } catch (err) {
+      console.error(err);
+      setError("Qolgan natijalarni yuklab bo'lmadi.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading || fetching) return <PageLoader />;
 
@@ -115,7 +136,7 @@ export default function History() {
           <section className="mb-6 grid gap-4 sm:grid-cols-3">
             <StatTile icon={LuTrophy} tone="amber" label="Eng yaxshi" value={bestScore} />
             <StatTile icon={LuChartLine} label="O'rtacha" value={avgScore} />
-            <StatTile icon={LuClipboardCheck} tone="emerald" label="Urinishlar" value={attempts.length} />
+            <StatTile icon={LuClipboardCheck} tone="emerald" label="Urinishlar" value={totalCount ?? attempts.length} />
           </section>
 
           {trend.length > 1 && (
@@ -128,7 +149,7 @@ export default function History() {
           )}
 
           <Card className="overflow-hidden">
-            <CardHeader title="Barcha urinishlar" subtitle={`${attempts.length} ta natija`} />
+            <CardHeader title="Barcha urinishlar" subtitle={`${totalCount ?? attempts.length} ta natija`} />
             <div className="mt-4 divide-y divide-[#12213D]/[0.06] border-t border-[#12213D]/[0.06]">
               {attempts.map((a) => {
                 const date = resultDate(a);
@@ -176,6 +197,13 @@ export default function History() {
                 );
               })}
             </div>
+            {hasMore && (
+              <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
+                <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
+                </Button>
+              </div>
+            )}
           </Card>
         </>
       )}

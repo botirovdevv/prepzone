@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { collection, getCountFromServer, getDocs, orderBy, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  documentId,
+  endAt,
+  getCountFromServer,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  setDoc,
+  startAfter,
+  startAt,
+  where,
+} from "firebase/firestore";
 import { db } from "../../firebase/config";
 import {
   LuChartColumn,
@@ -27,6 +41,7 @@ import {
   inputClass,
 } from "../../components/ui";
 import { dayKey, routeLabel } from "../../utils/analytics";
+import { countUserResults } from "../../utils/userResults";
 
 const SOURCE_LABELS = { instagram: "Instagram", telegram: "Telegram", friends: "Do'stlari", other: "Boshqa" };
 
@@ -109,156 +124,195 @@ function PageBars({ entries, total, label = routeLabel }) {
   );
 }
 
+const USERS_PAGE = 50;
+
+const countOf = (q) =>
+  getCountFromServer(q)
+    .then((s) => s.data().count)
+    .catch((err) => {
+      console.error(err);
+      return null;
+    });
+
+// O'tgan kunlar uchun yig'ma: analyticsDaily/{kun} = { date, views, pages, active }.
+// Bir marta hisoblanadi (shard'lar + visitor soni), keyin faqat shu hujjat
+// o'qiladi — har ochilishda 90 kunlik barcha shard'larni o'qimaslik uchun.
+async function loadDays(keys) {
+  const today = dayKey();
+  const past = keys.filter((k) => k !== today);
+  const dailySnap = await getDocs(
+    query(collection(db, "analyticsDaily"), where("date", ">=", keys[0]), where("date", "<=", keys.at(-1)))
+  );
+  const byDay = Object.fromEntries(dailySnap.docs.map((d) => [d.id, d.data()]));
+
+  const aggregate = async (k) => {
+    const [shards, legacy, visitors] = await Promise.all([
+      getDocs(query(collection(db, "analyticsShards"), where("date", "==", k))),
+      getDocs(query(collection(db, "analytics"), where("date", "==", k))),
+      countOf(query(collection(db, "analyticsVisitors"), where("date", "==", k))),
+    ]);
+    const day = { date: k, views: 0, pages: {}, active: visitors || 0 };
+    for (const d of [...shards.docs, ...legacy.docs]) {
+      const x = d.data();
+      day.views += x.views || 0;
+      for (const [p, c] of Object.entries(x.pages || {})) day.pages[p] = (day.pages[p] || 0) + c;
+      if (x.activeUsers) day.active = Math.max(day.active, x.activeUsers.length);
+    }
+    return day;
+  };
+
+  // Yig'masi yo'q o'tgan kunlar — hisoblab, saqlab qo'yamiz.
+  const missing = past.filter((k) => !byDay[k]);
+  for (let i = 0; i < missing.length; i += 10) {
+    const chunk = await Promise.all(missing.slice(i, i + 10).map(aggregate));
+    await Promise.all(
+      chunk.map((day) => {
+        byDay[day.date] = day;
+        return setDoc(doc(db, "analyticsDaily", day.date), day).catch((err) => console.error(err));
+      })
+    );
+  }
+  if (keys.includes(today)) byDay[today] = await aggregate(today);
+  return byDay;
+}
+
 export default function Analytics() {
   const [range, setRange] = useState(30);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [days, setDays] = useState([]);
-  const [results, setResults] = useState([]);
-  const [bestScores, setBestScores] = useState({});
+  const [stats, setStats] = useState({});
+  const [days, setDays] = useState({});
   const [chartMetric, setChartMetric] = useState("views");
+  const [sources, setSources] = useState([]);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Foydalanuvchilar jadvali — sahifalab (oxirgi faollik bo'yicha) yoki email bo'yicha qidiruv.
+  const [users, setUsers] = useState([]);
+  const [usersCursor, setUsersCursor] = useState(null);
+  const [usersHasMore, setUsersHasMore] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [bestScores, setBestScores] = useState({});
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
-  const [activeCounts, setActiveCounts] = useState({});
-  const [reloadKey, setReloadKey] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const startKey = lastDays(90)[0]; // eng katta davr — bir marta yuklab, keyin filtrlaymiz
-    const [u, a, r, l, ir, sh] = await Promise.allSettled([
-      getDocs(collection(db, "users")),
-      // Eski format (bitta kunlik hujjat) — o'tish davridagi ma'lumotlar uchun.
-      getDocs(query(collection(db, "analytics"), where("date", ">=", startKey), orderBy("date"))),
-      getDocs(collection(db, "results")),
-      getDocs(collection(db, "leaderboard")),
-      getDocs(collection(db, "ieltsResults")),
-      getDocs(query(collection(db, "analyticsShards"), where("date", ">=", startKey))),
-    ]);
     const errs = [];
-    if (u.status === "fulfilled") setUsers(u.value.docs.map((d) => ({ id: d.id, ...d.data() })));
-    else errs.push("users");
-    // Kun bo'yicha yig'ish: eski hujjatlar + yangi shardlar.
-    const byDay = {};
-    const add = (d) => {
-      const day = (byDay[d.date] ||= { date: d.date, views: 0, pages: {}, legacyActive: 0 });
-      day.views += d.views || 0;
-      for (const [p, c] of Object.entries(d.pages || {})) day.pages[p] = (day.pages[p] || 0) + c;
-      if (d.activeUsers) day.legacyActive = d.activeUsers.length;
-    };
-    if (a.status === "fulfilled") a.value.docs.forEach((d) => add(d.data()));
-    if (sh.status === "fulfilled") sh.value.docs.forEach((d) => add(d.data()));
-    else errs.push("analyticsShards");
-    setDays(Object.values(byDay));
-    // SAT va IELTS natijalari birga sanaladi (testlar soni uchun).
-    const toRow = (d) => ({ uid: d.data().uid, createdAt: d.data().createdAt });
-    if (r.status === "fulfilled" || ir.status === "fulfilled")
-      setResults([
-        ...(r.status === "fulfilled" ? r.value.docs.map(toRow) : []),
-        ...(ir.status === "fulfilled" ? ir.value.docs.map(toRow) : []),
-      ]);
-    if (r.status !== "fulfilled") errs.push("results");
-    if (ir.status !== "fulfilled") errs.push("ieltsResults");
-    if (l.status === "fulfilled")
-      setBestScores(Object.fromEntries(l.value.docs.map((d) => [d.id, d.data().bestScore])));
-    else errs.push("leaderboard");
-    [u, a, r, l, ir, sh].forEach((x) => x.status === "rejected" && console.error(x.reason));
-    setErrors(errs);
-    setLoading(false);
-    setReloadKey((k) => k + 1);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Kunlik faol userlar — har kun uchun serverda sanash (hujjatlarni yuklamasdan).
-  useEffect(() => {
-    let cancelled = false;
     const keys = lastDays(range);
-    Promise.all(
-      keys.map((k) =>
-        getCountFromServer(query(collection(db, "analyticsVisitors"), where("date", "==", k)))
-          .then((s) => [k, s.data().count])
-          .catch(() => [k, 0])
-      )
-    ).then((pairs) => !cancelled && setActiveCounts(Object.fromEntries(pairs)));
-    return () => {
-      cancelled = true;
-    };
-  }, [range, reloadKey]);
-
-  const data = useMemo(() => {
-    const keys = lastDays(range);
-    const byDay = Object.fromEntries(days.map((d) => [d.date, d]));
-    const activeOn = (k) => Math.max(activeCounts[k] || 0, byDay[k]?.legacyActive || 0);
-    const series = keys.map((k) => ({
-      key: k,
-      views: byDay[k]?.views || 0,
-      active: activeOn(k),
-    }));
-
-    const pages = {};
-    let views = 0;
-    for (const k of keys) {
-      const d = byDay[k];
-      if (!d) continue;
-      views += d.views || 0;
-      for (const [p, c] of Object.entries(d.pages || {})) pages[p] = (pages[p] || 0) + c;
-    }
-
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const todayStart = new Date(start);
     start.setDate(start.getDate() - (range - 1));
 
-    const newUsers = users.filter((x) => (toDate(x.createdAt) || 0) >= start).length;
-    const testsInRange = results.filter((x) => (toDate(x.createdAt) || 0) >= start).length;
-    // Davrda faol = oxirgi faolligi davr boshidan keyin bo'lgan userlar.
-    const activeInRange = users.filter((x) => (toDate(x.lastSeenAt) || 0) >= start).length;
-    const activeToday = Math.max(
-      activeOn(dayKey()),
-      users.filter((x) => (toDate(x.lastSeenAt) || 0) >= todayStart).length
+    const usersCol = collection(db, "users");
+    const [totalUsers, newUsers, activeInRange, activeToday, satTests, ieltsTests, ...sourceCounts] = await Promise.all([
+      countOf(usersCol),
+      countOf(query(usersCol, where("createdAt", ">=", start))),
+      countOf(query(usersCol, where("lastSeenAt", ">=", start))),
+      countOf(query(usersCol, where("lastSeenAt", ">=", todayStart))),
+      countOf(query(collection(db, "results"), where("createdAt", ">=", start))),
+      countOf(query(collection(db, "ieltsResults"), where("createdAt", ">=", start))),
+      ...Object.keys(SOURCE_LABELS).map((s) => countOf(query(usersCol, where("onboarding.source", "==", s)))),
+    ]);
+    if (totalUsers == null) errs.push("users");
+    if (satTests == null) errs.push("results");
+    if (ieltsTests == null) errs.push("ieltsResults");
+    setStats({
+      totalUsers,
+      newUsers,
+      activeInRange,
+      activeToday,
+      testsInRange: (satTests || 0) + (ieltsTests || 0),
+    });
+    setSources(
+      Object.keys(SOURCE_LABELS)
+        .map((s, i) => [s, sourceCounts[i] || 0])
+        .filter(([, c]) => c > 0)
+        .sort((a, b) => b[1] - a[1])
     );
+    try {
+      setDays(await loadDays(keys));
+    } catch (err) {
+      console.error(err);
+      errs.push("analyticsShards");
+    }
+    setErrors(errs);
+    setLoading(false);
+  }, [range]);
 
+  useEffect(() => {
+    load();
+  }, [load, reloadKey]);
+
+  // Ko'rsatilayotgan userlarning eng yaxshi SAT ballari (leaderboard'dan, 30 tadan).
+  const loadBestScores = async (list) => {
+    const ids = list.map((u) => u.id);
+    const found = {};
+    for (let i = 0; i < ids.length; i += 30) {
+      const snap = await getDocs(
+        query(collection(db, "leaderboard"), where(documentId(), "in", ids.slice(i, i + 30)))
+      ).catch(() => null);
+      snap?.docs.forEach((d) => (found[d.id] = d.data().bestScore));
+    }
+    setBestScores((prev) => ({ ...prev, ...found }));
+  };
+
+  const loadUsers = useCallback(async (after = null, term = "") => {
+    setUsersLoading(true);
+    try {
+      const q = term
+        ? query(
+            collection(db, "users"),
+            orderBy("email"),
+            startAt(term),
+            endAt(`${term}`),
+            limit(USERS_PAGE)
+          )
+        : query(
+            collection(db, "users"),
+            orderBy("lastSeenAt", "desc"),
+            ...(after ? [startAfter(after)] : []),
+            limit(USERS_PAGE)
+          );
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setUsers((prev) => (after ? [...prev, ...list] : list));
+      setUsersCursor(snap.docs.at(-1) || null);
+      setUsersHasMore(!term && snap.docs.length === USERS_PAGE);
+      loadBestScores(list);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  // Qidiruv: email boshlanishi bo'yicha (kichik harflarda), 400 ms kechikish bilan.
+  useEffect(() => {
+    const term = search.trim().toLowerCase();
+    const t = setTimeout(() => loadUsers(null, term), term ? 400 : 0);
+    return () => clearTimeout(t);
+  }, [search, loadUsers, reloadKey]);
+
+  const data = useMemo(() => {
+    const keys = lastDays(range);
+    const series = keys.map((k) => ({ key: k, views: days[k]?.views || 0, active: days[k]?.active || 0 }));
+    const pages = {};
+    let views = 0;
+    for (const k of keys) {
+      const d = days[k];
+      if (!d) continue;
+      views += d.views || 0;
+      for (const [p, c] of Object.entries(d.pages || {})) pages[p] = (pages[p] || 0) + c;
+    }
     return {
       series,
       views,
-      activeInRange,
-      activeToday,
       pages: sortedPages(pages),
-      newUsers,
-      testsInRange,
+      activeToday: Math.max(stats.activeToday || 0, days[dayKey()]?.active || 0),
     };
-  }, [days, users, results, range, activeCounts]);
+  }, [days, range, stats]);
 
-  const testsByUser = useMemo(() => {
-    const m = {};
-    for (const r of results) if (r.uid) m[r.uid] = (m[r.uid] || 0) + 1;
-    return m;
-  }, [results]);
-
-  const userRows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return users
-      .filter(
-        (u) =>
-          !q ||
-          (u.displayName || "").toLowerCase().includes(q) ||
-          (u.email || "").toLowerCase().includes(q)
-      )
-      .sort((a, b) => (toDate(b.lastSeenAt)?.getTime() || 0) - (toDate(a.lastSeenAt)?.getTime() || 0));
-  }, [users, search]);
-
-  // "Bizni qayerdan topdingiz?" javoblari taqsimoti.
-  const sources = useMemo(() => {
-    const m = {};
-    for (const u of users) {
-      const s = u.onboarding?.source;
-      if (s) m[s] = (m[s] || 0) + 1;
-    }
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  }, [users]);
   const sourcesTotal = sources.reduce((n, [, c]) => n + c, 0);
 
   const chartValues = data.series.map((s) => ({
@@ -289,7 +343,7 @@ export default function Analytics() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
               <LuRefreshCw size={14} className={loading ? "animate-spin" : ""} /> Yangilash
             </Button>
           </>
@@ -320,13 +374,13 @@ export default function Analytics() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <StatTile icon={LuUsers} label="Jami userlar" value={users.length.toLocaleString()} />
+            <StatTile icon={LuUsers} label="Jami userlar" value={stats.totalUsers?.toLocaleString() ?? "—"} />
             <StatTile icon={LuActivity} tone="emerald" label="Bugun faol" value={data.activeToday} />
             <StatTile
               icon={LuActivity}
               tone="ink"
               label={`Faol userlar (${range} kun)`}
-              value={data.activeInRange}
+              value={stats.activeInRange ?? "—"}
             />
             <StatTile
               icon={LuEye}
@@ -334,12 +388,12 @@ export default function Analytics() {
               label={`Sahifa ko'rishlar (${range} kun)`}
               value={data.views.toLocaleString()}
             />
-            <StatTile icon={LuUserPlus} tone="amber" label={`Yangi userlar (${range} kun)`} value={data.newUsers} />
+            <StatTile icon={LuUserPlus} tone="amber" label={`Yangi userlar (${range} kun)`} value={stats.newUsers ?? "—"} />
             <StatTile
               icon={LuFileCheck}
               tone="red"
               label={`Yakunlangan testlar (${range} kun)`}
-              value={data.testsInRange}
+              value={stats.testsInRange}
             />
           </div>
 
@@ -398,7 +452,7 @@ export default function Analytics() {
           <Card className="mt-6 overflow-hidden">
             <CardHeader
               title="Foydalanuvchilar"
-              subtitle={`${userRows.length} ta · oxirgi faollik bo'yicha`}
+              subtitle={search.trim() ? `${users.length} ta topildi · email bo'yicha` : `${stats.totalUsers ?? users.length} ta · oxirgi faollik bo'yicha`}
               action={
                 <div className="relative w-full max-w-[240px]">
                   <LuSearch
@@ -408,13 +462,13 @@ export default function Analytics() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Ism yoki email"
+                    placeholder="Email bo'yicha qidirish"
                     className={`${inputClass} h-9 pl-9 text-[13px]`}
                   />
                 </div>
               }
             />
-            {userRows.length === 0 ? (
+            {users.length === 0 && !usersLoading ? (
               <div className="p-5 sm:p-6">
                 <EmptyState
                   icon={LuUsers}
@@ -438,7 +492,7 @@ export default function Analytics() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#12213D]/[0.06]">
-                    {userRows.map((u) => {
+                    {users.map((u) => {
                       const open = expanded === u.id;
                       const userPages = sortedPages(u.pages);
                       return (
@@ -447,7 +501,6 @@ export default function Analytics() {
                           user={u}
                           open={open}
                           onToggle={() => setExpanded(open ? null : u.id)}
-                          tests={testsByUser[u.id] || 0}
                           best={bestScores[u.id]}
                           pages={userPages}
                         />
@@ -455,6 +508,18 @@ export default function Analytics() {
                     })}
                   </tbody>
                 </table>
+                {(usersHasMore || usersLoading) && (
+                  <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={usersLoading}
+                      onClick={() => loadUsers(usersCursor)}
+                    >
+                      {usersLoading ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </Card>
@@ -464,8 +529,15 @@ export default function Analytics() {
   );
 }
 
-function UserRow({ user, open, onToggle, tests, best, pages }) {
+function UserRow({ user, open, onToggle, best, pages }) {
   const name = user.displayName || user.email?.split("@")[0] || "—";
+  const [tests, setTests] = useState(null);
+  useEffect(() => {
+    if (!open || tests != null) return;
+    Promise.all([countUserResults("results", user.id), countUserResults("ieltsResults", user.id)])
+      .then(([a, b]) => setTests(a + b))
+      .catch(() => setTests("—"));
+  }, [open, tests, user.id]);
   return (
     <>
       <tr onClick={onToggle} className="cursor-pointer transition hover:bg-[#F6F7FB]">
@@ -484,7 +556,7 @@ function UserRow({ user, open, onToggle, tests, best, pages }) {
         <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#12213D]">
           {(user.pageViews || 0).toLocaleString()}
         </td>
-        <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests}</td>
+        <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests ?? (open ? "…" : "·")}</td>
         <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#087fd1]">{best ?? "—"}</td>
         <td className="px-3 py-3">
           <p className="font-semibold text-[#12213D]">{formatTargets(user.onboarding?.targets)}</p>

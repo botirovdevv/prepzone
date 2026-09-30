@@ -1,7 +1,7 @@
 // Reading and Writing — Module 2.
 //   rwModule2Easy — Module 1'da past natija: asosan oson/o'rta savollar
 //   rwModule2Hard — Module 1'da yuqori natija: asosan o'rta/qiyin savollar
-import { buildModule, STEM, table, notes } from "./helpers";
+import { buildModule, STEM, table, notes } from "./helpers.js";
 
 const CS = "craft-structure";
 const II = "info-ideas";

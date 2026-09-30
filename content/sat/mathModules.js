@@ -6,7 +6,7 @@
 //
 // Barcha to'g'ri javoblar scratch tekshiruv skripti bilan mustaqil
 // hisoblab tasdiqlangan.
-import { buildModule, table, svgFigure } from "./helpers";
+import { buildModule, table, svgFigure } from "./helpers.js";
 
 const ALG = "algebra";
 const ADV = "advanced-math";

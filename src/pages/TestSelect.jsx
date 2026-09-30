@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../firebase/config";
 import {
   LuNotebookPen,
@@ -46,7 +46,13 @@ export default function TestSelect() {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    const q = query(collection(db, "testSessions"), where("accessType", "==", "open"));
+    // Yopilgan sessiyalar yuklanmaydi (ro'yxat vaqt o'tishi bilan cheksiz o'smasin).
+    const q = query(
+      collection(db, "testSessions"),
+      where("accessType", "==", "open"),
+      where("status", "in", ["scheduled", "active"]),
+      limit(30)
+    );
     const unsub = onSnapshot(
       q,
       (snap) =>

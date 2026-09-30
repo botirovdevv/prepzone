@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase/config";
-import { getSatTest, getModuleQuestions } from "../data/satTest";
-import { countCorrect } from "../utils/scoring";
-import { buildResponses, decideRouteIrt, scoreSection } from "../utils/irtScoring";
+import { getModuleQuestions } from "../data/satTest";
+import { useSatTest } from "../hooks/useTestContent";
+import { useDeadline, secondsUntil } from "../hooks/useCountdown";
+import { apiFetchRetry } from "../utils/api";
 import {
   saveLocalProgress,
   loadLocalProgress,
@@ -12,7 +11,6 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
-import { maybeUpdateLeaderboard } from "../utils/leaderboard";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -25,6 +23,7 @@ import TestLockedScreen from "../components/TestLockedScreen";
 import TestTerminatedScreen from "../components/TestTerminatedScreen";
 import CheatWarningToast from "../components/CheatWarningToast";
 import ExitTestModal from "../components/ExitTestModal";
+import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -36,42 +35,19 @@ const emptyModuleState = (count) => ({
   crossedOut: Array(count).fill(null).map(() => []),
 });
 
-// Bitta bo'lim (R&W yoki Math) natijasini yangilaydi.
-//  - Module 1 tugaganda: IRT bo'yicha Module 2 yo'nalishi tanlanadi.
-//  - Module 2 tugaganda: ikkala modul javoblari bo'yicha IRT bali.
-//  - `incomplete` (test majburan to'xtatilganda): shu paytgacha bo'lgan
-//    javoblar bo'yicha taxminiy bal.
-function buildGroupResult(group, prev, stage, route, answers, incomplete = false) {
-  const m1Questions = group.module1.questions;
+function Centered({ children }) {
+  return <div className="min-h-screen flex items-center justify-center text-gray-500">{children}</div>;
+}
 
-  if (stage === "module1") {
-    const result = {
-      module1Correct: countCorrect(m1Questions, answers),
-      module1Total: m1Questions.length,
-      module1Answers: answers,
-      route: decideRouteIrt(m1Questions, answers),
-    };
-    if (!incomplete) return result;
-    return {
-      ...result,
-      scaledScore: scoreSection(buildResponses(m1Questions, answers)),
-      incomplete: true,
-    };
+// Eski formatdagi pauza snapshot'i (natijalar clientda hisoblangan) ->
+// yangi `attempts` shakli: { [bo'lim]: { module1Answers, route, module2Answers } }.
+function snapshotAttempts(snapshot) {
+  if (snapshot.attempts) return snapshot.attempts;
+  const out = {};
+  for (const [id, r] of Object.entries(snapshot.results || {})) {
+    if (Array.isArray(r.module1Answers)) out[id] = { module1Answers: r.module1Answers, route: r.route ?? null };
   }
-
-  const m2Questions = getModuleQuestions(group, "module2", route);
-  const responses = [
-    ...buildResponses(m1Questions, prev.module1Answers || []),
-    ...buildResponses(m2Questions, answers),
-  ];
-  return {
-    ...prev,
-    module2Correct: countCorrect(m2Questions, answers),
-    module2Total: m2Questions.length,
-    module2Answers: answers,
-    scaledScore: scoreSection(responses),
-    ...(incomplete ? { incomplete: true } : {}),
-  };
+  return out;
 }
 
 export default function SATTest() {
@@ -79,8 +55,9 @@ export default function SATTest() {
   const navigate = useNavigate();
   const location = useLocation();
   // Qaysi test ochilgani TestSelect sahifasidan state orqali keladi.
-  const satTest = getSatTest(location.state?.testId);
-  const TEST_ID = satTest.id;
+  const requestedId = location.state?.testId || "bluebook-1";
+  const satTest = useSatTest(requestedId);
+  const TEST_ID = satTest?.id || requestedId;
 
   const studentName = user?.displayName || user?.email?.split("@")[0] || "Student";
 
@@ -97,32 +74,36 @@ export default function SATTest() {
   const terminatingRef = useRef(false);
   // Modul ikki marta topshirilmasligi uchun (tugma + taymer bir vaqtda).
   const finishingRef = useRef(false);
+  // Takroriy yuborishda ikkinchi natija yaratilmasligi uchun (server idempotent).
+  const attemptIdRef = useRef(crypto.randomUUID());
 
   // qaysi bo'lim (0 = Reading&Writing, 1 = Math)
   const [groupIndex, setGroupIndex] = useState(0);
   // "module1" | "module2"
   const [stage, setStage] = useState("module1");
-  // module2 uchun tanlangan yo'nalish: "easy" | "hard" | null
+  // module2 uchun server tanlagan yo'nalish: "easy" | "hard" | null
   const [route, setRoute] = useState(null);
-  // bo'limlar orasidagi 10 daqiqalik tanaffus ko'rsatilyaptimi
   const [onBreak, setOnBreak] = useState(false);
-  // modul oxiridagi "Check Your Work" sahifasi ochiqmi
   const [reviewing, setReviewing] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
 
-  const group = satTest.groups[groupIndex];
-  const questions = getModuleQuestions(group, stage, route);
+  const [moduleState, setModuleState] = useState(() => emptyModuleState(0));
+  // Modul tugash vaqti (ms). Tanaffus va boshqa ekranlarda — null.
+  const [endAt, setEndAt] = useState(null);
+
+  // Topshirilgan javoblar: { rw: { module1Answers, route, module2Answers }, math: {...} }
+  const [attempts, setAttempts] = useState({});
+  // "routing" (Module 2 tanlanmoqda) | "saving" | null
+  const [busy, setBusy] = useState(null);
+  // Serverga yuborib bo'lmasa — qayta urinish tugmasi uchun.
+  const [submitError, setSubmitError] = useState(null);
+
+  const group = satTest?.groups[groupIndex];
+  const questions = group ? getModuleQuestions(group, stage, route) : [];
   const totalQuestions = questions.length;
-
-  const [moduleState, setModuleState] = useState(() => emptyModuleState(totalQuestions));
-  const [secondsLeft, setSecondsLeft] = useState(group.durationMin * 60);
-
-  // natijalarni yig'ib boruvchi obyekt: { rw: {...}, math: {...} }
-  const [results, setResults] = useState({});
-  const [savingResult, setSavingResult] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -158,6 +139,51 @@ export default function SATTest() {
   };
 
   // ------------------------------------------------------------
+  // Natijani serverga yuborish (ball serverda hisoblanadi)
+  // ------------------------------------------------------------
+  const submitAttempts = async (finalAttempts, extraState = {}) => {
+    setBusy("saving");
+    setSubmitError(null);
+    try {
+      const data = await apiFetchRetry("sat/finish", {
+        body: {
+          attemptId: attemptIdRef.current,
+          testId: TEST_ID,
+          attempts: finalAttempts,
+          ...(extraState.terminated ? { terminated: true, terminationReason: extraState.reason } : {}),
+        },
+      });
+      if (user) clearLocalProgress(user.uid, TEST_ID);
+      navigate(`/sat/results/${data.resultId}`, {
+        replace: true,
+        state: { results: data.results, resultId: data.resultId, testId: TEST_ID, ...extraState },
+      });
+    } catch (err) {
+      console.error("Natijani saqlashda xatolik:", err);
+      setSubmitError({ message: err.message, retry: () => submitAttempts(finalAttempts, extraState) });
+      setBusy(null);
+    }
+  };
+
+  const finishTest = async (finalAttempts, extraState = {}) => {
+    // Test tugadi (yakunlandi yoki chetlatildi) — fullscreen'dan chiqamiz.
+    await proctoring.exitFullscreenIntentionally();
+    submitAttempts(finalAttempts, extraState);
+  };
+
+  // Joriy modul javoblarini `attempts`ga qo'shadi.
+  const withCurrentModule = (prev, answers) => {
+    const current = prev[group.id] || {};
+    return {
+      ...prev,
+      [group.id]:
+        stage === "module1"
+          ? { module1Answers: answers }
+          : { ...current, module2Answers: answers },
+    };
+  };
+
+  // ------------------------------------------------------------
   // Proktoring (xavfsizlik nazorati)
   // ------------------------------------------------------------
   const handleForceTerminate = (reasonCode) => {
@@ -165,11 +191,7 @@ export default function SATTest() {
     terminatingRef.current = true;
     setTerminationReason(reasonCode);
     setPhase("terminated");
-    const finalResults = {
-      ...results,
-      [group.id]: buildGroupResult(group, results[group.id] || {}, stage, route, moduleState.answers, true),
-    };
-    saveResultAndNavigate(finalResults, { terminated: true, reason: reasonCode });
+    finishTest(withCurrentModule(attempts, moduleState.answers), { terminated: true, reason: reasonCode });
   };
 
   const proctoring = useProctoring({
@@ -181,59 +203,54 @@ export default function SATTest() {
   // Yangi modulga o'tganda javoblar, taymer va joriy savol noldan boshlanadi.
   const startModule = (count, durationMin) => {
     setModuleState(emptyModuleState(count));
-    setSecondsLeft(durationMin * 60);
+    setEndAt(Date.now() + durationMin * 60_000);
     setCurrentIndex(0);
     setReviewing(false);
     setNavOpen(false);
     finishingRef.current = false;
   };
 
-  // Taymer — tanaffus paytida to'xtab turadi.
-  useEffect(() => {
-    if (phase !== "active" || onBreak) return;
-    const interval = setInterval(() => {
-      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [groupIndex, stage, route, onBreak, phase]);
-
-  const safeIndex = Math.min(currentIndex, totalQuestions - 1);
+  const safeIndex = Math.min(currentIndex, Math.max(totalQuestions - 1, 0));
   const question = questions[safeIndex];
 
-  const updateModule = (updater) => setModuleState((prev) => updater({ ...prev }));
+  const handleSelectAnswer = useCallback(
+    (value) =>
+      setModuleState((s) => {
+        const answers = [...s.answers];
+        answers[safeIndex] = value;
+        return { ...s, answers };
+      }),
+    [safeIndex]
+  );
 
-  const handleSelectAnswer = (value) => {
-    updateModule((s) => {
-      const answers = [...s.answers];
-      answers[safeIndex] = value;
-      return { ...s, answers };
-    });
-  };
+  const handleToggleMark = useCallback(
+    () =>
+      setModuleState((s) => {
+        const marked = [...s.marked];
+        marked[safeIndex] = !marked[safeIndex];
+        return { ...s, marked };
+      }),
+    [safeIndex]
+  );
 
-  const handleToggleMark = () => {
-    updateModule((s) => {
-      const marked = [...s.marked];
-      marked[safeIndex] = !marked[safeIndex];
-      return { ...s, marked };
-    });
-  };
+  const handleToggleCrossOut = useCallback(
+    (label) =>
+      setModuleState((s) => {
+        const crossedOut = s.crossedOut.map((arr) => [...arr]);
+        const arr = crossedOut[safeIndex];
+        const idx = arr.indexOf(label);
+        if (idx >= 0) arr.splice(idx, 1);
+        else arr.push(label);
+        return { ...s, crossedOut };
+      }),
+    [safeIndex]
+  );
 
-  const handleToggleCrossOut = (label) => {
-    updateModule((s) => {
-      const crossedOut = s.crossedOut.map((arr) => [...arr]);
-      const arr = crossedOut[safeIndex];
-      const idx = arr.indexOf(label);
-      if (idx >= 0) arr.splice(idx, 1);
-      else arr.push(label);
-      return { ...s, crossedOut };
-    });
-  };
-
-  const goTo = (i) => {
+  const goTo = useCallback((i) => {
     setCurrentIndex(i);
     setNavOpen(false);
     setReviewing(false);
-  };
+  }, []);
 
   const handleNext = () => {
     if (safeIndex < totalQuestions - 1) goTo(safeIndex + 1);
@@ -242,10 +259,10 @@ export default function SATTest() {
     if (safeIndex > 0) goTo(safeIndex - 1);
   };
 
-  const openReview = () => {
+  const openReview = useCallback(() => {
     setNavOpen(false);
     setReviewing(true);
-  };
+  }, []);
 
   // Keyingi bo'limga o'tish (tanaffusdan keyin yoki darhol)
   const advanceToNextGroup = () => {
@@ -258,78 +275,53 @@ export default function SATTest() {
     startModule(nextGroup.module1.questions.length, nextGroup.durationMin);
   };
 
-  // Modulni yakunlash: marshrutlash, bal hisoblash yoki keyingi bo'lim.
+  // Module 1 tugagach — server javoblarga qarab Module 2'ni (oson/qiyin) tanlaydi.
+  const routeToModule2 = async (nextAttempts) => {
+    setBusy("routing");
+    setSubmitError(null);
+    setEndAt(null);
+    try {
+      const { route: nextRoute } = await apiFetchRetry("sat/route", {
+        body: { testId: TEST_ID, sectionId: group.id, module1Answers: nextAttempts[group.id].module1Answers },
+      });
+      const r = nextRoute === "hard" ? "hard" : "easy";
+      setAttempts((prev) => ({ ...prev, [group.id]: { ...prev[group.id], route: r } }));
+      setRoute(r);
+      setStage("module2");
+      startModule(getModuleQuestions(group, "module2", r).length, group.durationMin);
+      setBusy(null);
+    } catch (err) {
+      setSubmitError({ message: err.message, retry: () => routeToModule2(nextAttempts) });
+      setBusy(null);
+    }
+  };
+
+  // Modulni yakunlash: marshrutlash, keyingi bo'lim yoki natija.
   const handleFinishModule = () => {
     if (finishingRef.current) return;
     finishingRef.current = true;
 
-    const groupResult = buildGroupResult(group, results[group.id] || {}, stage, route, moduleState.answers);
-    const nextResults = { ...results, [group.id]: groupResult };
-    setResults(nextResults);
+    const nextAttempts = withCurrentModule(attempts, moduleState.answers);
+    setAttempts(nextAttempts);
 
     if (stage === "module1") {
-      // Module 1 natijasiga qarab Module 2 (oson/qiyin) tanlanadi
-      setRoute(groupResult.route);
-      setStage("module2");
-      startModule(getModuleQuestions(group, "module2", groupResult.route).length, group.durationMin);
+      routeToModule2(nextAttempts);
       return;
     }
 
     if (groupIndex < satTest.groups.length - 1) {
       // Reading&Writing tugagach — 10 daqiqalik tanaffus
+      setEndAt(null);
       if (group.type === "rw") setOnBreak(true);
       else advanceToNextGroup();
       return;
     }
-    // barcha bo'limlar tugadi -> saqlab, natijalar sahifasiga o'tamiz
-    saveResultAndNavigate(nextResults);
+    setEndAt(null);
+    finishTest(nextAttempts);
   };
 
   // Vaqt tugasa, Bluebook'dagi kabi modul avtomatik topshiriladi.
-  useEffect(() => {
-    if (phase === "active" && !onBreak && !savingResult && secondsLeft === 0) {
-      handleFinishModule();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
-
-  const saveResultAndNavigate = async (finalResults, extraState = {}) => {
-    // Test tugadi (yakunlandi yoki chetlatildi) — fullscreen'dan chiqamiz
-    // va saqlangan pauza holatini tozalaymiz.
-    await proctoring.exitFullscreenIntentionally();
-    if (user) clearLocalProgress(user.uid, TEST_ID);
-
-    const total = satTest.groups.reduce(
-      (sum, g) => sum + (finalResults[g.id]?.scaledScore || 0),
-      0
-    );
-    setSavingResult(true);
-    try {
-      const docRef = await addDoc(collection(db, "results"), {
-        uid: user.uid,
-        email: user.email,
-        testId: TEST_ID,
-        results: finalResults,
-        total,
-        createdAt: serverTimestamp(),
-        ...(extraState.terminated
-          ? { terminated: true, terminationReason: extraState.reason }
-          : {}),
-      });
-      maybeUpdateLeaderboard(user, total);
-      navigate("/sat/results", {
-        state: { results: finalResults, resultId: docRef.id, testId: TEST_ID, ...extraState },
-      });
-    } catch (err) {
-      // Firestore'ga saqlanmasa ham, natijani ko'rsatishda davom etamiz
-      console.error("Natijani saqlashda xatolik:", err);
-      navigate("/sat/results", {
-        state: { results: finalResults, saveError: true, testId: TEST_ID, ...extraState },
-      });
-    } finally {
-      setSavingResult(false);
-    }
-  };
+  useDeadline(phase === "active" && !onBreak && !busy ? endAt : null, handleFinishModule);
 
   // ------------------------------------------------------------
   // Testni boshlash / davom ettirish (RulesGate tugmasi bosilganda)
@@ -339,17 +331,21 @@ export default function SATTest() {
     if (!ok) return false;
 
     if (resumeSnapshot) {
-      const g = satTest.groups[resumeSnapshot.groupIndex ?? 0];
+      const gi = resumeSnapshot.groupIndex ?? 0;
+      const g = satTest.groups[gi];
       const st = resumeSnapshot.stage ?? "module1";
-      const count = getModuleQuestions(g, st, resumeSnapshot.route ?? null).length;
-      setGroupIndex(resumeSnapshot.groupIndex ?? 0);
+      const r = resumeSnapshot.route ?? null;
+      const count = getModuleQuestions(g, st, r).length;
+      setGroupIndex(gi);
       setStage(st);
-      setRoute(resumeSnapshot.route ?? null);
+      setRoute(r);
       setModuleState(resumeSnapshot.moduleState || emptyModuleState(count));
-      setSecondsLeft(resumeSnapshot.secondsLeft ?? g.durationMin * 60);
+      setEndAt(resumeSnapshot.onBreak ? null : Date.now() + (resumeSnapshot.secondsLeft ?? g.durationMin * 60) * 1000);
       setCurrentIndex(resumeSnapshot.currentIndex ?? 0);
-      setResults(resumeSnapshot.results || {});
+      setAttempts(snapshotAttempts(resumeSnapshot));
       setOnBreak(!!resumeSnapshot.onBreak);
+    } else {
+      startModule(satTest.groups[0].module1.questions.length, satTest.groups[0].durationMin);
     }
     setPhase("active");
     return true;
@@ -364,22 +360,32 @@ export default function SATTest() {
     saveLocalProgress(
       user.uid,
       TEST_ID,
-      { groupIndex, stage, route, moduleState, secondsLeft, currentIndex: safeIndex, results, onBreak },
+      {
+        groupIndex,
+        stage,
+        route,
+        moduleState,
+        secondsLeft: secondsUntil(endAt) ?? group.durationMin * 60,
+        currentIndex: safeIndex,
+        attempts,
+        onBreak,
+      },
       "paused"
     );
     await proctoring.exitFullscreenIntentionally();
     navigate("/sat/select");
   };
 
-  const sectionLabel = `Section ${group.sectionNumber}, Module ${stage === "module1" ? "1" : "2"}`;
-  const showPassage = group.type === "rw";
+  if (loading || !user || phase === null || satTest === undefined) {
+    return <Centered>Yuklanmoqda...</Centered>;
+  }
 
-  if (loading || !user || phase === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
+  if (satTest === null) {
+    return <Centered>Testni yuklab bo'lmadi. Sahifani yangilab ko'ring.</Centered>;
+  }
+
+  if (submitError) {
+    return <SubmitErrorScreen message={submitError.message} onRetry={submitError.retry} />;
   }
 
   if (phase === "locked") {
@@ -394,25 +400,20 @@ export default function SATTest() {
     return <TestTerminatedScreen reason={terminationReason} />;
   }
 
-  if (savingResult) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Natijalar saqlanmoqda...
-      </div>
-    );
+  if (busy === "saving") {
+    return <Centered>Natijalar hisoblanmoqda...</Centered>;
   }
 
   if (onBreak) {
     return <BreakScreen onContinue={advanceToNextGroup} />;
   }
 
-  if (!question) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Modul yuklanmoqda...
-      </div>
-    );
+  if (busy === "routing" || !question) {
+    return <Centered>Modul yuklanmoqda...</Centered>;
   }
+
+  const sectionLabel = `Section ${group.sectionNumber}, Module ${stage === "module1" ? "1" : "2"}`;
+  const showPassage = group.type === "rw";
 
   return (
     <HighlightsProvider>
@@ -420,7 +421,7 @@ export default function SATTest() {
       <TestHeader
         sectionLabel={sectionLabel}
         title={group.title}
-        secondsLeft={secondsLeft}
+        endAt={endAt}
         showCalcButton={group.type === "math"}
         onToggleCalculator={() => setCalcOpen((c) => !c)}
         onExit={() => setShowExitModal(true)}

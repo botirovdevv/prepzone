@@ -1,78 +1,44 @@
 import { useEffect, useRef, useState } from "react";
 import { LuX, LuMinus, LuCalculator } from "react-icons/lu";
 
-// Desmos-ning ochiq "demo" API kaliti - rasmiy hujjatlarida
-// (https://www.desmos.com/api/v1.9/docs/index.html) sinov/demo
-// maqsadlarida ishlatish uchun keltirilgan umumiy kalit.
-const DESMOS_API_KEY = "dcb31709b452b1cf9dc26972add0fda6";
-const DESMOS_SCRIPT_SRC = `https://www.desmos.com/api/v1.9/calculator.js?apiKey=${DESMOS_API_KEY}`;
-
-let scriptPromise = null;
-function loadDesmosScript() {
-  if (window.Desmos) return Promise.resolve();
-  if (scriptPromise) return scriptPromise;
-  scriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = DESMOS_SCRIPT_SRC;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
+// Desmos kalkulyator hozircha o'chiq — tez orada qo'shiladi. Oyna (sudrash,
+// kichraytirish, yopish) saqlangan, ichida faqat "tez orada" xabari.
 
 export default function DesmosCalculator({ onClose }) {
-  const mountRef = useRef(null);
-  const calcRef = useRef(null);
-  const [ready, setReady] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [pos, setPos] = useState({ x: 60, y: 90 });
   const dragState = useRef(null);
+  const frameRef = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    loadDesmosScript()
-      .then(() => {
-        if (cancelled || !mountRef.current) return;
-        calcRef.current = window.Desmos.GraphingCalculator(mountRef.current, {
-          keypad: true,
-          expressions: true,
-          settingsMenu: false,
-          zoomButtons: true,
-          border: false,
-        });
-        setReady(true);
-      })
-      .catch(() => setReady(false));
-    return () => {
-      cancelled = true;
-      if (calcRef.current) {
-        calcRef.current.destroy();
-        calcRef.current = null;
-      }
-    };
-  }, []);
+  useEffect(() => () => onDragEnd(), []);
+
+  // Listener'lar dragState'da saqlanadi — render'lar orasida o'sha funksiyalar
+  // olib tashlanadi (aks holda window'da osilib qoladi).
+  function onDragEnd() {
+    cancelAnimationFrame(frameRef.current);
+    const d = dragState.current;
+    dragState.current = null;
+    if (!d) return;
+    window.removeEventListener("mousemove", d.move);
+    window.removeEventListener("mouseup", d.end);
+  }
 
   const onDragStart = (e) => {
-    dragState.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: pos.x,
-      origY: pos.y,
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origX = pos.x;
+    const origY = pos.y;
+    const move = (ev) => {
+      const x = origX + ev.clientX - startX;
+      const y = origY + ev.clientY - startY;
+      // Kadrga bir marta yangilash (har mousemove'da render qilmaslik uchun).
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = requestAnimationFrame(() => setPos({ x, y }));
     };
-    window.addEventListener("mousemove", onDragMove);
-    window.addEventListener("mouseup", onDragEnd);
-  };
-  const onDragMove = (e) => {
-    if (!dragState.current) return;
-    const dx = e.clientX - dragState.current.startX;
-    const dy = e.clientY - dragState.current.startY;
-    setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
-  };
-  const onDragEnd = () => {
-    dragState.current = null;
-    window.removeEventListener("mousemove", onDragMove);
-    window.removeEventListener("mouseup", onDragEnd);
+    const end = () => onDragEnd();
+    dragState.current = { move, end };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", end);
   };
 
   return (
@@ -82,7 +48,7 @@ export default function DesmosCalculator({ onClose }) {
         left: pos.x,
         top: pos.y,
         width: 480,
-        height: minimized ? 44 : 420,
+        height: minimized ? 44 : 220,
         transition: "height 0.15s ease",
       }}
     >
@@ -111,16 +77,13 @@ export default function DesmosCalculator({ onClose }) {
           </button>
         </div>
       </div>
-      {!minimized && (
-        <div className="flex-1 relative">
-          {!ready && (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
-              Kalkulyator yuklanmoqda...
-            </div>
-          )}
-          <div ref={mountRef} className="w-full h-full" />
+      <div className={`flex-1 relative ${minimized ? "hidden" : ""}`}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+          <LuCalculator size={28} className="text-[#0B2265]/40" />
+          <p className="text-sm font-semibold text-gray-700">Desmos kalkulyator tez orada qo'shiladi</p>
+          <p className="text-xs text-gray-400">Hozircha formula varag'i va qog'oz-qalamdan foydalaning.</p>
         </div>
-      )}
+      </div>
     </div>
   );
 }

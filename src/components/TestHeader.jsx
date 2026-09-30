@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   LuChevronDown,
   LuHighlighter,
@@ -8,6 +8,7 @@ import {
 } from "react-icons/lu";
 import HighlightsPanel from "./HighlightsPanel";
 import MathReferenceSheet from "./MathReferenceSheet";
+import { useSecondsLeft } from "../hooks/useCountdown";
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -15,10 +16,16 @@ function formatTime(totalSeconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function TestHeader({
+// Faqat shu kichik komponent har soniyada qayta render bo'ladi.
+function TimerText({ endAt }) {
+  const secondsLeft = useSecondsLeft(endAt);
+  return secondsLeft == null ? null : formatTime(secondsLeft);
+}
+
+function TestHeader({
   sectionLabel,
   title,
-  secondsLeft,
+  endAt,
   showCalcButton,
   onToggleCalculator,
   onExit,
@@ -48,7 +55,7 @@ export default function TestHeader({
           ) : (
             <>
               <div className="text-lg font-bold text-gray-900 tabular-nums">
-                {hidden ? "" : formatTime(secondsLeft)}
+                {hidden ? "" : <TimerText endAt={endAt} />}
               </div>
               <button
                 onClick={() => setHidden((h) => !h)}
@@ -125,3 +132,5 @@ export default function TestHeader({
     </div>
   );
 }
+
+export default memo(TestHeader);

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 import { getSatTestTitle } from "../data/testsCatalog";
+import { fetchUserResults, countUserResults } from "../utils/userResults";
 const HandIcon = "/waving-hand-icon.png";
 import {
   LuNotebookPen,
@@ -50,19 +51,20 @@ export default function Dashboard() {
   // null — yuklanmoqda, [] — natija yo'q
   const [attempts, setAttempts] = useState(null);
   const [bestScore, setBestScore] = useState(null);
+  const [totalCount, setTotalCount] = useState(null);
   const [code, setCode] = useState("");
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
 
   useEffect(() => {
     if (!user) return;
-    getDocs(query(collection(db, "results"), where("uid", "==", user.uid)))
-      .then((snap) => {
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        all.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        setAttempts(all);
-      })
+    // Faqat oxirgi 12 ta natija (trend va ro'yxat uchun) + jami soni.
+    fetchUserResults("results", user.uid, { pageSize: 12 })
+      .then(({ items }) => setAttempts(items))
       .catch(() => setAttempts([]));
+    countUserResults("results", user.uid)
+      .then(setTotalCount)
+      .catch(() => setTotalCount(null));
 
     getDoc(doc(db, "leaderboard", user.uid))
       .then((snap) => setBestScore(snap.exists() ? snap.data().bestScore : null))
@@ -107,7 +109,7 @@ export default function Dashboard() {
       <section className="grid gap-4 sm:grid-cols-3 mb-6">
         <StatTile icon={LuChartLine} label="Oxirgi ball" value={recent?.total} hint={recent ? formatDate(recent.createdAt) : "Hali test yo'q"} />
         <StatTile icon={LuTrophy} tone="amber" label="Eng yaxshi" value={best} hint="400–1600 shkala" />
-        <StatTile icon={LuClipboardCheck} tone="emerald" label="Topshirilgan" value={attempts ? attempts.length : null} hint="to'liq mock test" />
+        <StatTile icon={LuClipboardCheck} tone="emerald" label="Topshirilgan" value={totalCount ?? (attempts ? attempts.length : null)} hint="to'liq mock test" />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">

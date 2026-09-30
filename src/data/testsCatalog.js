@@ -19,7 +19,7 @@ export const testsCatalog = [
 
 // Faqat nom kerak bo'lgan joylar uchun (Dashboard, History) — og'ir test
 // ma'lumotlarini (data/satTest.js) yuklamaslik uchun. Noma'lum/eski natijalar
-// satTest.getSatTest kabi 1-testga qaytadi.
+// 1-testga qaytadi (data/satTest.loadSatTest kabi).
 export function getSatTestTitle(id) {
   return (testsCatalog.find((t) => t.id === id) || testsCatalog[0]).title;
 }

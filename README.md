@@ -1,78 +1,86 @@
-# Universal Mock Platform — SAT (Bluebook uslubida)
+# Prepzone — SAT va IELTS mock test platformasi
 
-React + Vite + Tailwind CSS asosida qurilgan, Bluebook (real SAT) interfeysiga
-o'xshatilgan mock test platformasi. Hozirgi versiyada faqat **SAT** ishlaydi,
-**IELTS** bo'limi "Tez orada" holatida turibdi.
+Digital SAT (adaptiv, Bluebook formati) va IELTS Academic (Listening, Reading, Writing) uchun
+online mock testlar, reyting, o'quv reja, lug'at va admin panel (kodli mock sessiyalar,
+amaliyot to'plamlari, analitika).
 
-## Ishga tushirish
+## Arxitektura
+
+| Qism | Texnologiya |
+|---|---|
+| Frontend | React 19 + Vite + Tailwind (SPA), Vercel'da |
+| Auth, ma'lumotlar | Firebase Authentication + Firestore (Spark tarifi) |
+| Server | Vercel Functions (`api/`) + `firebase-admin` |
+| AI | Claude API (IELTS Writing baholash) |
+
+**Ishonchli mantiq serverda.** Ball hisoblash, SAT routing (oson/qiyin Module 2), natija va
+reyting yozish faqat `api/` orqali. Firestore rules bu kolleksiyalarga client yozuvini yopadi.
+To'g'ri javoblar brauzer bundle'iga tushmaydi:
+
+- `content/` — testlarning to'liq manbasi (kalitlar bilan), faqat server va build skripti o'qiydi.
+- `scripts/build-content.mjs` — `npm run dev`/`build` dan oldin avtomatik ishlaydi va
+  `src/data/generated/` ga kalitsiz nusxa yozadi (git'ga kirmaydi).
+- Admin sessiyalari: `testSessions/{id}/secure/answers` (kalitlar, faqat admin/server) va
+  `secure/content` (ishtirokchilar uchun, kalitsiz; faqat test vaqti kelganda o'qiladi).
+- Admin savol banki: `server/question-bank/` (faqat `/api/admin/question-bank` orqali).
+
+### API endpointlar (`api/`)
+
+| Endpoint | Vazifa |
+|---|---|
+| `POST /api/sat/route` | Module 1 javoblaridan Module 2 yo'nalishi |
+| `POST /api/sat/finish` | SAT natijasini baholash va saqlash, reyting |
+| `POST /api/session/route`, `/api/session/finish` | Admin sessiyalari uchun xuddi shu |
+| `POST /api/ielts/submit` | IELTS baholash (+ AI Writing, kuniga 3 ta) |
+| `GET /api/review` | Natija egasiga to'g'ri javoblar (ko'rib chiqish uchun) |
+| `GET /api/admin/question-bank` | Admin savol banki |
+
+Hamma endpoint `Authorization: Bearer <Firebase ID token>` talab qiladi (`src/utils/api.js`).
+Natija yuboruvchi endpointlar idempotent (`attemptId`) — tarmoq xatosida qayta yuborish
+ikkinchi natija yaratmaydi.
+
+## Lokal ishga tushirish
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env   # qiymatlarni to'ldiring (pastga qarang)
+npm run dev            # http://localhost:5173 — /api ham shu serverda ishlaydi
 ```
 
-Brauzerda `http://localhost:5173` manzilini oching.
+`.env` kalitlari (`.env.example` da izohlar bilan):
 
-## Firebase sozlash (MUHIM)
+- `VITE_FIREBASE_*` — Firebase Console → Project settings → Your apps → Web app.
+- `VITE_DESMOS_API_KEY` — https://www.desmos.com/my-api (bo'sh bo'lsa demo kalit).
+- `FIREBASE_SERVICE_ACCOUNT` — Project settings → Service accounts → *Generate new private key*,
+  JSON mazmuni bitta qatorda. **Maxfiy** — faqat `.env` va Vercel env'da.
+- `ANTHROPIC_API_KEY` — https://console.anthropic.com. Bo'sh bo'lsa Writing avtomatik (taxminiy)
+  baholanadi. `AI_WRITING_MODEL` — `claude-sonnet-5` (standart) yoki arzonroq `claude-haiku-4-5`.
 
-Login/Register ishlashi uchun o'z Firebase loyihangizni ulashingiz kerak:
+## Deploy
 
-1. https://console.firebase.google.com dan yangi loyiha yarating.
-2. **Build → Authentication → Sign-in method** bo'limida **Email/Password**
-   provayderini yoqing.
-3. **Project settings → General → Your apps → Web app (</>)** orqali yangi
-   web-app qo'shing va sizga beriladigan konfiguratsiya obyektini oling.
-4. `src/firebase/config.js` faylidagi `firebaseConfig` obyektidagi
-   qiymatlarni o'zingiznikiga almashtiring.
+1. **Vercel env**: yuqoridagi barcha kalitlarni Project → Settings → Environment Variables ga
+   kiriting (Production va Preview).
+2. **Firestore rules va indekslar**: `npm run deploy:rules` (firebase-tools orqali), yoki
+   `firestore.rules` ni Console → Firestore → Rules ga qo'yib Publish qiling va
+   `firestore.indexes.json` dagi indekslarni yarating (`results` va `ieltsResults`:
+   `uid` ASC + `createdAt` DESC).
+3. **Eski natijalar** (bir marta): `node --env-file=.env scripts/backfill-results.mjs --write`.
+4. **Admin qo'shish**: Firestore'da `admins/{uid}` hujjatini qo'lda yarating.
+5. Git push → Vercel avtomatik build qiladi.
 
-Shundan so'ng ro'yxatdan o'tish/kirish to'liq ishlaydi.
+## Firestore bepul tarifi (Spark) bo'yicha eslatmalar
 
-## Loyiha tuzilishi
+Kunlik limit: 50k o'qish, 20k yozish. Shu uchun:
 
-```
-src/
-  firebase/config.js       -> Firebase init (o'zingiznikini kiriting)
-  context/AuthContext.jsx  -> Login/Register/Logout logikasi
-  data/satTest.js          -> Namunaviy SAT savollari (Reading&Writing + Math)
-  components/
-    TestHeader.jsx         -> Yuqori panel (taymer, "Hide", "Directions" va h.k.)
-    QuestionPanel.jsx      -> Matn (passage) + savol + ABCD javoblar
-    BottomNav.jsx          -> Pastki panel, "Question X of Y", Back/Next
-    QuestionNav.jsx        -> "Question X of Y" bosilganda chiqadigan panel
-    DesmosCalculator.jsx   -> Math modulida ochiladigan Desmos kalkulyatori
-    ProtectedRoute.jsx     -> Login qilinmagan foydalanuvchini yo'naltiradi
-  pages/
-    Home.jsx               -> Hero sahifa, SAT/IELTS tanlash
-    Login.jsx / Register.jsx -> Firebase autentifikatsiya sahifalari
-    SATTest.jsx             -> Asosiy test interfeysi (Bluebook sahifasi)
-```
+- ro'yxatlar sahifalab yuklanadi (`src/utils/userResults.js`), sonlar `count()` bilan;
+- analitika kuniga ~3–5 yozuv/user (`src/utils/analytics.js`), admin analitikasi o'tgan kunlarni
+  `analyticsDaily` ga yig'ib qo'yadi;
+- amaliyot to'plamlari ro'yxati yengil `questionSetIndex` dan o'qiladi.
 
-## Hozirgi imkoniyatlar
+Kuniga ~1000+ faol user yoki pullik funksiyalar paydo bo'lsa — Blaze tarifiga o'ting (budget alert bilan).
 
-- Email/parol bilan ro'yxatdan o'tish va kirish (Firebase Auth)
-- Hero sahifa: SAT / IELTS tanlash (IELTS hozircha yopiq)
-- Bluebook uslubidagi test interfeysi:
-  - Savollar orasida navigatsiya (Next / Back)
-  - "Question X of Y" panelidan istalgan savolga o'tish
-  - Javobni belgilash — tanlangan javob ko'k rang bilan ajratiladi
-  - "Mark for Review" — savolni keyinroq qaytib ko'rish uchun belgilash
-  - "ABC" tugmasi — noto'g'ri variantlarni chizib tashlash (eliminator)
-  - Har bir modul uchun sanoqli taymer
-  - Math modulida Desmos grafik kalkulyatori (ochish/yopish/surish mumkin)
-- Bir nechta modul (Section 1 Module 1/2 — Reading&Writing,
-  Section 2 Module 1/2 — Math) ketma-ket ishlaydi
+## Yangi test qo'shish
 
-## Keyingi bosqichlar (hali qilinmagan)
-
-- Natijalarni hisoblash va ball chiqarish funksiyasi
-- IELTS mock moduli
-- Savollarni admin panel orqali qo'shish/tahrirlash (hozircha `src/data/satTest.js` faylida qo'lda tahrirlanadi)
-- Foydalanuvchi natijalarini Firestore'ga saqlash
-
-## Build
-
-```bash
-npm run build
-```
-
-`dist/` papkasida tayyor production build hosil bo'ladi.
+- SAT: `content/sat/` da modul fayllarini yozing va `content/sat/index.js` dagi `SAT_TESTS` ga,
+  `src/data/testsCatalog.js` ga qo'shing.
+- IELTS: `content/ielts/test1.js` formatida fayl yozib, `content/ielts/index.js` ga qo'shing.

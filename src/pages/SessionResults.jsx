@@ -97,8 +97,8 @@ export default function SessionResults() {
                 {
                   label: "Module 2",
                   tag: (
-                    <Badge tone={r.route === "hard" ? "red" : "emerald"}>
-                      {r.route === "hard" ? "Qiyin" : "Oson"}
+                    <Badge tone={r.route === "hard" ? "red" : r.route === "mixed" ? "ink" : "emerald"}>
+                      {r.route === "hard" ? "Qiyin" : r.route === "mixed" ? "Aralash" : "Oson"}
                     </Badge>
                   ),
                   value: `${r.module2Correct}/${r.module2Total}`,

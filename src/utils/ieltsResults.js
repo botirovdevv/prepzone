@@ -1,12 +1,8 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { fetchUserResults } from "./userResults";
 
-// Userning IELTS natijalari, yangidan eskiga.
-export async function fetchIeltsResults(uid) {
-  const snap = await getDocs(query(collection(db, "ieltsResults"), where("uid", "==", uid)));
-  const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  list.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-  return list;
+// Userning oxirgi IELTS natijalari, yangidan eskiga (o'qishlarni cheklash uchun limit bilan).
+export async function fetchIeltsResults(uid, pageSize = 50) {
+  return (await fetchUserResults("ieltsResults", uid, { pageSize })).items;
 }
 
 export const MODE_LABELS = {

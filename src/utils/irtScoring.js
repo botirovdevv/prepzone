@@ -15,7 +15,8 @@
 // oson Module 2 yo'nalishida bal ~580 atrofida cheklanadi).
 // ------------------------------------------------------------------
 
-const DIFFICULTY_B = { E: -1.4, M: 0, H: 1.4 };
+// E/M/H — statik testlar; easy/medium/hard — admin savol bankidan.
+const DIFFICULTY_B = { E: -1.4, M: 0, H: 1.4, easy: -1.4, medium: 0, hard: 1.4 };
 const DISCRIMINATION = 1.1;
 const D = 1.7;
 // 4 variantli savolda tasodifiy taxmin ehtimoli; SPR (javobni yozish)

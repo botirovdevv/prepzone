@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo, useMemo } from "react";
 import { useHighlights } from "../context/HighlightsContext";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 
@@ -26,7 +26,7 @@ function escapeHtml(str) {
  * shunda savoldan-savolga o'tib qaytilganda ham belgilashlar saqlanib
  * qoladi, va "Highlights & Notes" paneli ularni ko'rsata oladi.
  */
-export default function HighlightableText({
+function HighlightableText({
   text,
   className,
   rich = false,
@@ -36,7 +36,7 @@ export default function HighlightableText({
 }) {
   const containerRef = useRef(null);
   const highlights = useHighlights();
-  const baseHtml = rich ? sanitizeRichText(text || "") : escapeHtml(text || "");
+  const baseHtml = useMemo(() => (rich ? sanitizeRichText(text || "") : escapeHtml(text || "")), [rich, text]);
   const persisted = highlightKey ? highlights?.getHtml(highlightKey) : null;
   const [html, setHtml] = useState(persisted ?? baseHtml);
 
@@ -101,3 +101,6 @@ export default function HighlightableText({
     />
   );
 }
+
+// memo: taymer yoki boshqa holat o'zgarganda props o'zgarmasa qayta render qilinmaydi.
+export default memo(HighlightableText);
