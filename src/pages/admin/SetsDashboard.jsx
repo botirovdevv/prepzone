@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { writeSetIndex, deleteSetIndex, countSetQuestions } from "../../utils/questionSetIndex";
+import { deleteSetImages } from "../../utils/setImages";
 import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye, LuBookOpen } from "react-icons/lu";
 import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
@@ -28,6 +29,7 @@ export default function SetsDashboard() {
     e.stopPropagation();
     if (!window.confirm(`"${title}" to'plamini o'chirishni tasdiqlaysizmi?`)) return;
     try {
+      await deleteSetImages(id).catch((err) => console.error("Rasmlarni o'chirib bo'lmadi:", err));
       await deleteDoc(doc(db, "questionSets", id));
       await deleteSetIndex(id);
     } catch (err) {

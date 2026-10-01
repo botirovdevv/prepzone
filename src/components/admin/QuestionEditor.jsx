@@ -15,6 +15,7 @@ import {
 import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { parseBulkQuestions } from "../../utils/parseBulkQuestions";
 import { sanitizeRichText } from "../../utils/sanitizeHtml";
+import { newQuestionId } from "../../utils/questionId";
 import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
 import QuestionBankImporter from "./QuestionBankImporter";
 
@@ -78,12 +79,10 @@ export default function QuestionEditor({
     }
   };
 
-  const nextId = () => (questions[questions.length - 1]?.id || 0) + 1;
-
   const addQuestion = () => {
     if (!form.prompt.trim() || form.choices.some((c) => !c.trim())) return;
     const q = {
-      id: nextId(),
+      id: newQuestionId(),
       passage: showPassage && !isRichTextEmpty(form.passage) ? sanitizeRichText(form.passage) : "",
       prompt: form.prompt.trim(),
       choices: form.choices.map((text, i) => ({ label: "ABCD"[i], text: text.trim() })),
@@ -106,10 +105,9 @@ export default function QuestionEditor({
       setBulkAdded(0);
       return;
     }
-    let idCounter = nextId();
     const withMeta = items.map((it) => ({
       ...it,
-      id: idCounter++,
+      id: newQuestionId(),
       image: null,
       domain: form.domain || "",
     }));

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LuDatabase, LuLoaderCircle, LuCircleCheck, LuCircleAlert } from "react-icons/lu";
 import { apiFetch } from "../../utils/api";
+import { newQuestionId } from "../../utils/questionId";
 
 // Har bir fan (subject) uchun JSON fayllar server/question-bank/ ostida
 // joylashgan: masalan "rw-craft-structure.json", "math-algebra.json".
@@ -71,9 +72,8 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
         setLoading(false);
         return;
       }
-      let idCounter = (existingQuestions?.[existingQuestions.length - 1]?.id || 0) + 1;
       const mapped = picked.map((q) => ({
-        id: idCounter++,
+        id: newQuestionId(),
         passage: q.passage || "",
         prompt: q.prompt,
         choices: q.choices,
@@ -86,7 +86,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
       setLastImported(mapped.length);
       handlePreview(domainId);
     } catch (err) {
-      setError("Bank faylini yuklab bo'lmadi. /public/question-bank/ papkasi joylashganini tekshiring.");
+      setError(`Savol bankini yuklab bo'lmadi: ${err.message || "noma'lum xatolik"}`);
     } finally {
       setLoading(false);
     }

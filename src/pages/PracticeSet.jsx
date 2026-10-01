@@ -9,6 +9,7 @@ import QuestionNav from "../components/QuestionNav";
 import DesmosCalculator from "../components/DesmosCalculator";
 import { useAuth } from "../context/AuthContext";
 import { analyzeTopics, buildTopicAdvice } from "../utils/topicAnalysis";
+import { loadSetImages } from "../utils/setImages";
 import { LuCircleCheck, LuTriangleAlert, LuSparkles, LuCircleAlert } from "react-icons/lu";
 import { HighlightsProvider } from "../context/HighlightsContext";
 
@@ -35,12 +36,18 @@ export default function PracticeSet() {
 
   useEffect(() => {
     getDoc(doc(db, "questionSets", id))
-      .then((snap) => {
+      .then(async (snap) => {
         if (!snap.exists()) {
           setSetMissing(true);
           return;
         }
-        setSet({ id: snap.id, ...snap.data() });
+        const data = snap.data();
+        // Rasm yuklanmasa ham savollar ochilsin (rasmsiz).
+        const sections = await loadSetImages(snap.id, data.sections).catch((err) => {
+          console.error("Rasmlarni yuklab bo'lmadi:", err);
+          return data.sections;
+        });
+        setSet({ id: snap.id, ...data, sections });
       })
       .catch(() => setSetMissing(true))
       .finally(() => setSetLoading(false));

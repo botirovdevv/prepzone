@@ -170,6 +170,13 @@ service cloud.firestore {
     match /questionSets/{setId} {
       allow read: if verified();
       allow write: if isAdmin();
+
+      // Savollardagi rasmlar (src/utils/setImages.js) — asosiy hujjat
+      // 1 MiB limitdan oshmasligi uchun alohida saqlanadi.
+      match /images/{imageId} {
+        allow read: if verified();
+        allow write: if isAdmin();
+      }
     }
 
     // Yengil ro'yxat (nom, tavsif, savollar soni) — PracticeIndex uchun.
