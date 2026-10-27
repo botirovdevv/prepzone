@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LuKeyRound, LuArrowRight } from "react-icons/lu";
-import { findSessionByCode } from "../utils/sessionCode";
+import { api } from "../api/client";
 
 export default function JoinSession() {
   const location = useLocation();
@@ -19,7 +19,10 @@ export default function JoinSession() {
     }
     setLoading(true);
     try {
-      const session = await findSessionByCode(code.trim());
+      const session = await api.post("/sessions/lookup", { code: code.trim() }).catch((err) => {
+        if (err.status === 404) return null;
+        throw err;
+      });
       if (!session) {
         setError("Bunday kod bilan test topilmadi.");
         return;

@@ -1,78 +1,55 @@
-# Universal Mock Platform — SAT (Bluebook uslubida)
+# Prepzone — Digital SAT mock test platformasi
 
-React + Vite + Tailwind CSS asosida qurilgan, Bluebook (real SAT) interfeysiga
-o'xshatilgan mock test platformasi. Hozirgi versiyada faqat **SAT** ishlaydi,
-**IELTS** bo'limi "Tez orada" holatida turibdi.
+Bluebook (real SAT) interfeysiga o'xshatilgan mock test platformasi: to'liq adaptiv SAT testlari, mavzu bo'yicha mashq to'plamlari, Desmos darsliklari, reyting va admin tashkil qiladigan kodli testlar (jonli proktoring monitoringi bilan).
 
-## Ishga tushirish
+## Arxitektura
+
+```
+prepzone/
+  src/                  React 19 + Vite + Tailwind (frontend)
+    api/client.js       Backend bilan ishlash (fetch, cookie sessiya)
+    api/socket.js       Socket.IO — sessiya testlarining jonli yangilanishlari
+    context/AuthContext Login / ro'yxatdan o'tish / Google / OTP
+    components/auth/    Login & Register sahifalarining umumiy komponentlari
+  server/               Node.js + Express + PostgreSQL (backend)
+    src/routes/         auth, results, sessions, question-sets, desmos
+    src/db/migrations/  SQL sxema (server ishga tushganda avtomatik qo'llanadi)
+    scripts/            local-db, make-admin, migrate-from-firestore
+  docker-compose.yml    Production: postgres + api + caddy (HTTPS)
+  DEPLOY.md             Oracle Cloud'ga joylash qo'llanmasi
+```
+
+- **Autentifikatsiya:** email/parol (bcrypt) va Google; sessiya httpOnly cookie'dagi JWT. Email 6 xonali kod bilan tasdiqlanadi (Resend). Google foydalanuvchilar avtomatik tasdiqlangan.
+- **Xavfsizlik:** test savollari va to'g'ri javoblar faqat admin va kod bilan qo'shilgan ishtirokchiga beriladi; sessiya kodi oddiy foydalanuvchiga ko'rsatilmaydi; login/OTP endpointlarida rate limit.
+
+## Lokal ishga tushirish
+
+Talab: Node.js 20+. Docker shart emas — lokal baza uchun PGlite (WASM Postgres) ishlatiladi.
 
 ```bash
 npm install
-npm run dev
+cd server && npm install && cp .env.example .env && cd ..
 ```
 
-Brauzerda `http://localhost:5173` manzilini oching.
+Uchta terminalda:
 
-## Firebase sozlash (MUHIM)
-
-Login/Register ishlashi uchun o'z Firebase loyihangizni ulashingiz kerak:
-
-1. https://console.firebase.google.com dan yangi loyiha yarating.
-2. **Build → Authentication → Sign-in method** bo'limida **Email/Password**
-   provayderini yoqing.
-3. **Project settings → General → Your apps → Web app (</>)** orqali yangi
-   web-app qo'shing va sizga beriladigan konfiguratsiya obyektini oling.
-4. `src/firebase/config.js` faylidagi `firebaseConfig` obyektidagi
-   qiymatlarni o'zingiznikiga almashtiring.
-
-Shundan so'ng ro'yxatdan o'tish/kirish to'liq ishlaydi.
-
-## Loyiha tuzilishi
-
-```
-src/
-  firebase/config.js       -> Firebase init (o'zingiznikini kiriting)
-  context/AuthContext.jsx  -> Login/Register/Logout logikasi
-  data/satTest.js          -> Namunaviy SAT savollari (Reading&Writing + Math)
-  components/
-    TestHeader.jsx         -> Yuqori panel (taymer, "Hide", "Directions" va h.k.)
-    QuestionPanel.jsx      -> Matn (passage) + savol + ABCD javoblar
-    BottomNav.jsx          -> Pastki panel, "Question X of Y", Back/Next
-    QuestionNav.jsx        -> "Question X of Y" bosilganda chiqadigan panel
-    DesmosCalculator.jsx   -> Math modulida ochiladigan Desmos kalkulyatori
-    ProtectedRoute.jsx     -> Login qilinmagan foydalanuvchini yo'naltiradi
-  pages/
-    Home.jsx               -> Hero sahifa, SAT/IELTS tanlash
-    Login.jsx / Register.jsx -> Firebase autentifikatsiya sahifalari
-    SATTest.jsx             -> Asosiy test interfeysi (Bluebook sahifasi)
+```bash
+cd server && npm run db:local   # 1) lokal PostgreSQL (127.0.0.1:5432)
+cd server && npm run dev        # 2) API — http://localhost:4000
+npm run dev                     # 3) frontend — http://localhost:5173
 ```
 
-## Hozirgi imkoniyatlar
+- `RESEND_API_KEY` bo'sh bo'lsa, tasdiqlash kodlari API terminaliga chiqadi.
+- Google orqali kirishni sinash uchun root `.env`ga `VITE_GOOGLE_CLIENT_ID`, `server/.env`ga `GOOGLE_CLIENT_ID` yozing (Google Console'da `http://localhost:5173` origin qo'shilgan bo'lsin).
+- Admin qilish: `cd server && npm run make-admin -- email@example.com`
 
-- Email/parol bilan ro'yxatdan o'tish va kirish (Firebase Auth)
-- Hero sahifa: SAT / IELTS tanlash (IELTS hozircha yopiq)
-- Bluebook uslubidagi test interfeysi:
-  - Savollar orasida navigatsiya (Next / Back)
-  - "Question X of Y" panelidan istalgan savolga o'tish
-  - Javobni belgilash — tanlangan javob ko'k rang bilan ajratiladi
-  - "Mark for Review" — savolni keyinroq qaytib ko'rish uchun belgilash
-  - "ABC" tugmasi — noto'g'ri variantlarni chizib tashlash (eliminator)
-  - Har bir modul uchun sanoqli taymer
-  - Math modulida Desmos grafik kalkulyatori (ochish/yopish/surish mumkin)
-- Bir nechta modul (Section 1 Module 1/2 — Reading&Writing,
-  Section 2 Module 1/2 — Math) ketma-ket ishlaydi
+## Production
 
-## Keyingi bosqichlar (hali qilinmagan)
-
-- Natijalarni hisoblash va ball chiqarish funksiyasi
-- IELTS mock moduli
-- Savollarni admin panel orqali qo'shish/tahrirlash (hozircha `src/data/satTest.js` faylida qo'lda tahrirlanadi)
-- Foydalanuvchi natijalarini Firestore'ga saqlash
+[DEPLOY.md](./DEPLOY.md) — Oracle Cloud Always Free serveriga Docker bilan joylash, domen, HTTPS, Google OAuth, backup va Firebase'dan ma'lumot ko'chirish.
 
 ## Build
 
 ```bash
-npm run build
+npm run build   # dist/
+npm run lint
 ```
-
-`dist/` papkasida tayyor production build hosil bo'ladi.

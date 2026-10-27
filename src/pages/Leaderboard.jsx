@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query, limit } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { LuTrophy } from "react-icons/lu";
 import PageHero from "../components/PageHero";
@@ -17,16 +16,11 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "leaderboard"), orderBy("bestScore", "desc"), limit(15));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    api
+      .get("/leaderboard?limit=15")
+      .then(setRows)
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const myRank = rows.findIndex((r) => r.uid === user?.uid);

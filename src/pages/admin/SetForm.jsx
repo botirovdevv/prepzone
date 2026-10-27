@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { useAuth } from "../../context/AuthContext";
+import { api } from "../../api/client";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
@@ -10,7 +8,6 @@ import { LuArrowLeft, LuInfo } from "react-icons/lu";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
 export default function SetForm() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -42,13 +39,12 @@ export default function SetForm() {
 
   useEffect(() => {
     if (!isEdit) return;
-    getDoc(doc(db, "questionSets", id)).then((snap) => {
-      if (!snap.exists()) {
+    api.get(`/question-sets/${id}`).catch(() => null).then((s) => {
+      if (!s) {
         setError("To'plam topilmadi.");
         setLoadingExisting(false);
         return;
       }
-      const s = snap.data();
       setTitle(s.title || "");
       setDescription(s.description || "");
       const rw = (s.sections || []).find((sec) => sec.id === "rw");
@@ -83,26 +79,23 @@ export default function SetForm() {
     setSaving(true);
     try {
       if (isEdit) {
-        await updateDoc(doc(db, "questionSets", id), {
+        await api.put(`/question-sets/${id}`, {
           title: title.trim(),
           description: description.trim(),
           sections,
         });
         navigate("/admin/sets");
       } else {
-        await addDoc(collection(db, "questionSets"), {
+        await api.post("/question-sets", {
           title: title.trim(),
           description: description.trim(),
           sections,
-          createdBy: user.uid,
-          createdByName: user.displayName || user.email,
-          createdAt: serverTimestamp(),
         });
         navigate("/admin/sets");
       }
     } catch (err) {
       console.error(err);
-      setError("Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      setError(err.message || "Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { doc, onSnapshot, collection, query, orderBy, limit, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { api } from "../../api/client";
+import { useSessionLive } from "../../api/socket";
 import {
   LuArrowLeft,
   LuCopy,
@@ -13,8 +13,8 @@ import {
   LuLock,
   LuPencil,
   LuPause,
+  LuTrash2,
 } from "react-icons/lu";
-import { generateUniqueCode } from "../../utils/sessionCode";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
@@ -53,31 +53,39 @@ export default function SessionMonitor() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, "testSessions", id), (snap) => {
-      setSession(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-      setLoading(false);
-    });
-    return unsub;
-  }, [id]);
+  const loadAll = () => {
+    api
+      .get(`/sessions/${id}`)
+      .then(setSession)
+      .catch(() => setSession(null))
+      .finally(() => setLoading(false));
+    api.get(`/sessions/${id}/participants`).then(setParticipants).catch(() => {});
+    api.get(`/sessions/${id}/events?limit=50`).then(setEvents).catch(() => {});
+  };
 
-  useEffect(() => {
-    const q = query(collection(db, "testSessions", id, "participants"));
-    const unsub = onSnapshot(q, (snap) => {
-      setParticipants(snap.docs.map((d) => ({ uid: d.id, ...d.data() })));
-    });
-    return unsub;
-  }, [id]);
+  useEffect(loadAll, [id]);
 
-  useEffect(() => {
-    const q = query(collection(db, "testSessions", id, "events"), orderBy("at", "desc"), limit(50));
-    const unsub = onSnapshot(q, (snap) => {
-      setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
-    return unsub;
-  }, [id]);
+  // Jonli yangilanishlar: ishtirokchilar holati, proktoring hodisalari va
+  // sessiya meta'si (kod, holat) serverdan Socket.IO orqali keladi.
+  useSessionLive(
+    id,
+    {
+      "session:update": setSession,
+      "participant:update": (p) =>
+        setParticipants((list) => {
+          const i = list.findIndex((x) => x.uid === p.uid);
+          if (i === -1) return [...list, p];
+          const next = [...list];
+          next[i] = p;
+          return next;
+        }),
+      "event:new": (e) => setEvents((list) => [e, ...list].slice(0, 50)),
+    },
+    loadAll
+  );
 
   const handleCopyCode = () => {
     if (!session) return;
@@ -89,8 +97,9 @@ export default function SessionMonitor() {
   const handleRegenerateCode = async () => {
     setRegenerating(true);
     try {
-      const newCode = await generateUniqueCode();
-      await updateDoc(doc(db, "testSessions", id), { code: newCode });
+      setSession(await api.post(`/sessions/${id}/regenerate-code`));
+    } catch (err) {
+      window.alert(err.message);
     } finally {
       setRegenerating(false);
     }
@@ -100,9 +109,28 @@ export default function SessionMonitor() {
     if (!window.confirm("Testni yakunlashni tasdiqlaysizmi? Bundan keyin hech kim kira olmaydi va faol yechayotganlar ham chetlatiladi.")) return;
     setClosing(true);
     try {
-      await updateDoc(doc(db, "testSessions", id), { status: "closed" });
+      setSession(await api.patch(`/sessions/${id}/status`, { status: "closed" }));
+    } catch (err) {
+      window.alert(err.message);
     } finally {
       setClosing(false);
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    if (
+      !window.confirm(
+        `"${session.title}" testini butunlay o'chirishni tasdiqlaysizmi? Savollar, ishtirokchilar ro'yxati va xavfsizlik hodisalari o'chiriladi (talabalarning "Mening natijalarim"idagi ballari qoladi). Buni qaytarib bo'lmaydi.`
+      )
+    )
+      return;
+    setDeleting(true);
+    try {
+      await api.delete(`/sessions/${id}`);
+      navigate("/admin", { replace: true });
+    } catch (err) {
+      window.alert(err.message);
+      setDeleting(false);
     }
   };
 
@@ -138,6 +166,14 @@ export default function SessionMonitor() {
             className="flex items-center gap-1.5 border border-red-200 text-red-600 text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-red-50 disabled:opacity-50"
           >
             <LuLock size={15} /> {session.status === "closed" ? "Yakunlangan" : "Testni yopish"}
+          </button>
+          <button
+            onClick={handleDeleteSession}
+            disabled={deleting}
+            title="Testni o'chirish"
+            className="flex items-center gap-1.5 border border-red-200 text-red-600 text-sm font-semibold px-3.5 py-2 rounded-full hover:bg-red-50 disabled:opacity-50"
+          >
+            <LuTrash2 size={15} /> {deleting ? "O'chirilmoqda..." : "O'chirish"}
           </button>
         </div>
       </div>

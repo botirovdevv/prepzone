@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
+import { toDate } from "../utils/dates";
 import { useAuth } from "../context/AuthContext";
 import { LuCalendar, LuChevronRight, LuTrophy, LuClock, LuChartLine, LuGlobe } from "react-icons/lu";
 import PageHero from "../components/PageHero";
@@ -20,30 +20,16 @@ export default function History() {
   useEffect(() => {
     if (!user) return;
     // Barcha natijalar (statik SAT testlar HAM admin qo'shgan sessiya
-    // testlari) shu bitta ildiz "results" kolleksiyasida saqlanadi.
-    // Sessiya orqali tugatilgan testlar uchun asosiy nusxa
-    // "testSessions/{id}/results/{uid}" ostida saqlanadi, shu bilan birga
-    // shu yerga ham (sessionId/sessionTitle maydonlari bilan) nusxalab
-    // yoziladi — shunda tarix sahifasi oddiy, bitta so'rov bilan ishlayveradi.
-    const unsub = onSnapshot(
-      query(collection(db, "results"), where("uid", "==", user.uid)),
-      (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => {
-          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tb - ta;
-        });
-        setAttempts(list);
-        setFetching(false);
-      },
-      (err) => {
+    // testlari, sessionId/sessionTitle maydonlari bilan) — server yangisini
+    // birinchi qilib qaytaradi.
+    api
+      .get("/results")
+      .then(setAttempts)
+      .catch((err) => {
         console.error("[History] natijalarni yuklashda xatolik:", err);
         setError("Natijalarni yuklashda xatolik yuz berdi.");
-        setFetching(false);
-      }
-    );
-    return unsub;
+      })
+      .finally(() => setFetching(false));
   }, [user]);
 
   if (loading || fetching) {
@@ -96,7 +82,7 @@ export default function History() {
       ) : (
         <div className="grid gap-3">
           {attempts.map((a) => {
-            const date = a.createdAt?.toDate ? a.createdAt.toDate() : a.finishedAt?.toDate ? a.finishedAt.toDate() : null;
+            const date = toDate(a.createdAt) || toDate(a.finishedAt);
             const isBest = attempts.length > 1 && a.total === bestScore;
             const isSession = !!a.sessionId;
             const linkTo = isSession ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`;
@@ -107,6 +93,13 @@ export default function History() {
               <Link
                 key={a.id}
                 to={linkTo}
+                // Sessiya natijasining nusxasi shu yerda bor — admin testni
+                // o'chirib yuborgan bo'lsa ham natija ochilaveradi.
+                state={
+                  isSession && a.results
+                    ? { results: a.results, total: a.total, sessionTitle: a.sessionTitle, terminated: a.terminated }
+                    : undefined
+                }
                 className="group flex items-center gap-4 bg-white rounded-[20px] border border-[#12213D]/7 p-4 sm:p-5 hover:border-[#087fd1]/30 hover:shadow-[0_8px_24px_-8px_rgba(8,127,209,0.18)] transition-all duration-200"
               >
                 <div className="w-12 h-12 rounded-2xl bg-[#087fd1]/10 flex items-center justify-center text-[#087fd1] shrink-0">

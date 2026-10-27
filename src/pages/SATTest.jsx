@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { satTest } from "../data/satTest";
 import { decideRoute, calcSectionScaledScore, countCorrect } from "../utils/scoring";
 import {
@@ -11,7 +10,7 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
-import { maybeUpdateLeaderboard } from "../utils/leaderboard";
+import { useTimeUp } from "../hooks/useTimeUp";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -140,8 +139,16 @@ export default function SATTest() {
 
   // module o'zgarganda taймерni va javoblarni qayta o'rnatish
   // (agar resume snapshot bo'lsa, birinchi marta shu bilan boshlanadi)
+  // Pauzadan davom ettirilganda (handleStart snapshot'ni tiklaydi) bir
+  // marta o'tkazib yuboriladi — aks holda saqlangan javoblar va qolgan
+  // vaqt o'chib ketardi.
+  const skipModuleResetRef = useRef(false);
   useEffect(() => {
     if (phase !== "active") return;
+    if (skipModuleResetRef.current) {
+      skipModuleResetRef.current = false;
+      return;
+    }
     setModuleState(emptyModuleState(totalQuestions));
     setSecondsLeft(group.durationMin * 60);
     setCurrentIndex(0);
@@ -270,6 +277,14 @@ export default function SATTest() {
     }
   };
 
+  // Vaqt tugadi — modul avtomatik yakunlanadi (bergan javoblari bilan).
+  useTimeUp({
+    active: phase === "active" && !onBreak && !savingResult,
+    secondsLeft,
+    moduleKey: `${groupIndex}:${stage}:${route}`,
+    onTimeUp: handleFinishModule,
+  });
+
   // Qoida buzilishi tufayli test to'xtatilganda, hozirgacha bo'lgan
   // javoblar asosida taxminiy (yakunlanmagan) natijani yig'ib beradi.
   const buildTerminationResults = () => {
@@ -328,22 +343,19 @@ export default function SATTest() {
     );
     setSavingResult(true);
     try {
-      const docRef = await addDoc(collection(db, "results"), {
-        uid: user.uid,
-        email: user.email,
+      // Server natijani saqlaydi va reytingni (eng yaxshi ball) o'zi yangilaydi.
+      const docRef = await api.post("/results", {
         results: finalResults,
         total,
-        createdAt: serverTimestamp(),
         ...(extraState.terminated
           ? { terminated: true, terminationReason: extraState.reason }
           : {}),
       });
-      maybeUpdateLeaderboard(user, total);
       navigate("/sat/results", {
         state: { results: finalResults, resultId: docRef.id, ...extraState },
       });
     } catch (err) {
-      // Firestore'ga saqlanmasa ham, natijani ko'rsatishda davom etamiz
+      // Serverga saqlanmasa ham, natijani ko'rsatishda davom etamiz
       console.error("Natijani saqlashda xatolik:", err);
       navigate("/sat/results", {
         state: { results: finalResults, saveError: true, ...extraState },
@@ -361,6 +373,10 @@ export default function SATTest() {
     if (!ok) return false;
 
     if (resumeSnapshot) {
+      const g = resumeSnapshot.groupIndex ?? 0;
+      const st = resumeSnapshot.stage ?? "module1";
+      const r = resumeSnapshot.route ?? null;
+      skipModuleResetRef.current = g !== groupIndex || st !== stage || r !== route;
       setGroupIndex(resumeSnapshot.groupIndex ?? 0);
       setStage(resumeSnapshot.stage ?? "module1");
       setRoute(resumeSnapshot.route ?? null);

@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------
+    // Admin ro'yxati: faqat o'qish uchun (yozish Firebase Console
+    // orqali qo'lda amalga oshiriladi — ADMIN_SETUP.md ga qarang).
+    //
+    // "list" taqiqlangan — aks holda istalgan login qilgan
+    // foydalanuvchi barcha adminlarning UID'larini sanab chiqib,
+    // ularni nishonlab hujum (masalan fishing) qilishi mumkin edi.
+    // Faqat "get" (o'zining UID'i bo'yicha) ruxsat etiladi — bu
+    // ilovadagi isAdmin() tekshiruvi uchun yetarli.
+    // ------------------------------------------------------------
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // 6 xonali email tasdiqlash kodi (backend'siz OTP).
+    //
+    // "otpCodes" va "otpStatus" — endi 6 xonali kod tekshiruvi SERVERDA
+    // (Cloud Functions, functions/index.js) bajariladi. Cloud Function
+    // Admin SDK orqali ishlaydi va bu qoidalarni chetlab o'tib to'g'ridan-
+    // to'g'ri yoza oladi — shuning uchun bu yerda client uchun hammasi
+    // yopiq: hech kim (hatto egasi ham) bevosita yoza olmaydi, faqat
+    // o'zining tasdiqlanganlik holatini o'qiy oladi.
+    match /otpCodes/{uid} {
+      allow read, write: if false;
+    }
+    match /otpStatus/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ------------------------------------------------------------
+    // Statik mock testlar natijalari.
+    // ------------------------------------------------------------
+    match /results/{resultId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------
+    // Reyting — har bir foydalanuvchining ENG YAXSHI balli.
+    // ------------------------------------------------------------
+    match /leaderboard/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------
+    // Admin tashkil qilgan testlar (kod bilan yoki doimiy ochiq).
+    //
+    // XAVFSIZLIK MODELI: asosiy "testSessions/{id}" hujjati faqat
+    // META-MA'LUMOT (nom, kod, jadval, holat) saqlaydi — savollarning
+    // o'zi va to'g'ri javoblar UNDA YO'Q. Shu sababli uni istalgan
+    // login qilgan foydalanuvchi o'qiy oladi (chunki kod bo'yicha
+    // qidirish va "doimiy ochiq" testlarni ro'yxatlash uchun bu
+    // hujjatni oldindan o'qish shart) — lekin bu orqali savol
+    // matnlariga yoki to'g'ri javoblarga umuman kirib bo'lmaydi.
+    //
+    // Haqiqiy savollar "testSessions/{id}/secure/content" ichida —
+    // uni FAQAT admin va sessiyaga rasman qo'shilgan (participants
+    // hujjati bor) foydalanuvchi o'qiy oladi.
+    // ------------------------------------------------------------
+    match /testSessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+
+      // Savollar va to'g'ri javoblar — faqat qo'shilgan ishtirokchiga.
+      match /secure/{doc} {
+        allow read: if isAdmin() || (
+          request.auth != null &&
+          exists(/databases/$(database)/documents/testSessions/$(sessionId)/participants/$(request.auth.uid))
+        );
+        allow write: if isAdmin();
+      }
+
+      // Ishtirokchi bo'lish — "code" turidagi testlar uchun to'g'ri
+      // kod kiritilgan bo'lishi SHART (aks holda sessiya ID'sini
+      // bilib, kodni aylanib o'tib bo'lmaydi).
+      match /participants/{uid} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow create: if request.auth != null && request.auth.uid == uid && (
+          get(/databases/$(database)/documents/testSessions/$(sessionId)).data.accessType == "open" ||
+          request.resource.data.enteredCode ==
+            get(/databases/$(database)/documents/testSessions/$(sessionId)).data.code
+        );
+        allow update: if request.auth != null && request.auth.uid == uid;
+      }
+
+      match /events/{eventId} {
+        allow read: if isAdmin();
+        allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /results/{uid} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ------------------------------------------------------------
+    // Vaqt cheklanmagan amaliyot to'plamlari — ataylab hammaga ochiq
+    // (kod yoki qo'shilish talab qilinmaydi, bu — ochiq kutubxona).
+    // ------------------------------------------------------------
+    match /questionSets/{setId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------
+    // Desmos darsliklari — hammaga ochiq o'quv kontenti.
+    // ------------------------------------------------------------
+    match /desmosTutorials/{tutorialId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

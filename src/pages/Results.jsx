@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { satTest } from "../data/satTest";
 
 export default function Results() {
@@ -10,23 +9,19 @@ export default function Results() {
   const { id } = useParams();
 
   const terminated = location.state?.terminated;
+  const saveError = location.state?.saveError;
   const [results, setResults] = useState(location.state?.results || null);
   const [loading, setLoading] = useState(!location.state?.results && !!id);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     // Agar sahifa /sat/results/:id orqali ochilgan bo'lsa (masalan,
-    // "Mening natijalarim" ro'yxatidan), natijani Firestore'dan olib kelamiz.
+    // "Mening natijalarim" ro'yxatidan), natijani serverdan olib kelamiz.
     if (location.state?.results || !id) return;
     setLoading(true);
-    getDoc(doc(db, "results", id))
-      .then((snap) => {
-        if (snap.exists()) {
-          setResults(snap.data().results);
-        } else {
-          setNotFound(true);
-        }
-      })
+    api
+      .get(`/results/${id}`)
+      .then((data) => setResults(data.results))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id, location.state]);
@@ -75,6 +70,14 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {saveError && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 mb-6 text-sm">
+            <p className="font-semibold mb-0.5">Natija serverga saqlanmadi.</p>
+            <p className="text-amber-700/80">
+              Internet aloqasini tekshiring. Bu natija "Mening natijalarim" va reytingda ko'rinmasligi mumkin.
+            </p>
+          </div>
+        )}
         {terminated && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
             <p className="font-semibold mb-0.5">

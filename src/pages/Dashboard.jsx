@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 import HandIcon from '../../public/waving-hand-icon.png'
@@ -35,20 +34,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    getDocs(query(collection(db, "results"), where("uid", "==", user.uid)))
-      .then((snap) => {
-        if (snap.empty) {
-          setRecent(false);
-          return;
-        }
-        const all = snap.docs.map((d) => d.data());
-        all.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        setRecent(all[0]);
-      })
+    api
+      .get("/results")
+      .then((all) => setRecent(all[0] || false))
       .catch(() => setRecent(false));
 
-    getDoc(doc(db, "leaderboard", user.uid))
-      .then((snap) => setMyRank(snap.exists() ? snap.data().bestScore : null))
+    api
+      .get("/leaderboard/me")
+      .then((entry) => setMyRank(entry ? entry.bestScore : null))
       .catch(() => setMyRank(null));
   }, [user]);
 

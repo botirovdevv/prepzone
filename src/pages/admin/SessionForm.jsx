@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, setDoc, addDoc, updateDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { useAuth } from "../../context/AuthContext";
-import { generateUniqueCode } from "../../utils/sessionCode";
+import { api } from "../../api/client";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
@@ -20,7 +17,6 @@ function toTimeInputValue(d) {
 }
 
 export default function SessionForm() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -77,19 +73,18 @@ export default function SessionForm() {
   useEffect(() => {
     if (!isEdit) return;
     Promise.all([
-      getDoc(doc(db, "testSessions", id)),
-      getDoc(doc(db, "testSessions", id, "secure", "content")),
-    ]).then(([snap, contentSnap]) => {
-      if (!snap.exists()) {
+      api.get(`/sessions/${id}`),
+      api.get(`/sessions/${id}/content`),
+    ]).catch(() => [null, null]).then(([s, content]) => {
+      if (!s) {
         setError("Test topilmadi.");
         setLoadingExisting(false);
         return;
       }
-      const s = snap.data();
-      const contentSections = contentSnap.exists() ? contentSnap.data().sections || [] : [];
+      const contentSections = content?.sections || [];
       setTitle(s.title || "");
       setAccessType(s.accessType === "open" ? "open" : "code");
-      const scheduled = s.scheduledAt?.toDate ? s.scheduledAt.toDate() : new Date(s.scheduledAt || Date.now());
+      const scheduled = s.scheduledAt ? new Date(s.scheduledAt) : new Date();
       setDateStr(toDateInputValue(scheduled));
       setTimeStr(toTimeInputValue(scheduled));
       const rw = contentSections.find((sec) => sec.id === "rw");
@@ -160,48 +155,29 @@ export default function SessionForm() {
       });
     }
 
-    // XAVFSIZLIK UCHUN MUHIM: savollarning o'zi (module1/2 massivlari,
-    // to'g'ri javoblar bilan) "testSessions" hujjatining ICHIDA
-    // SAQLANMAYDI — chunki o'sha hujjatni har qanday login qilgan
-    // foydalanuvchi (kod bo'yicha qidirish uchun) o'qiy oladi. Buning
-    // o'rniga faqat meta-ma'lumot (nom, kod, jadval) asosiy hujjatda
-    // qoladi, savollarning o'zi esa alohida "secure/content"
-    // pastki hujjatida — uni faqat admin va sessiyaga QO'SHILGAN
-    // ishtirokchilar o'qiy oladi (firestore.rules'ga qarang).
-    const metaSections = sections.map(
-      ({ module1, module2Easy, module2Hard, module2Mixed, ...meta }) => meta
-    );
+    // XAVFSIZLIK: server savollarni (module1/2 massivlari, to'g'ri javoblar
+    // bilan) meta'dan ajratib alohida saqlaydi — ularni faqat admin va
+    // sessiyaga QO'SHILGAN ishtirokchilar oladi. Unikal kodni ham server yaratadi.
+    const payload = {
+      title: title.trim(),
+      accessType,
+      scheduledAt: scheduledAt ? scheduledAt.toISOString() : null,
+      sections,
+    };
 
     setSaving(true);
     try {
       let sessionId = id;
       if (isEdit) {
-        await updateDoc(doc(db, "testSessions", id), {
-          title: title.trim(),
-          accessType,
-          scheduledAt,
-          sections: metaSections,
-        });
+        await api.put(`/sessions/${id}`, payload);
       } else {
-        const code = await generateUniqueCode();
-        const ref = await addDoc(collection(db, "testSessions"), {
-          title: title.trim(),
-          accessType,
-          code,
-          scheduledAt,
-          sections: metaSections,
-          status: "scheduled",
-          createdBy: user.uid,
-          createdByName: user.displayName || user.email,
-          createdAt: serverTimestamp(),
-        });
-        sessionId = ref.id;
+        const created = await api.post("/sessions", payload);
+        sessionId = created.id;
       }
-      await setDoc(doc(db, "testSessions", sessionId, "secure", "content"), { sections });
       navigate(`/admin/sessions/${sessionId}/monitor`);
     } catch (err) {
       console.error(err);
-      setError("Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      setError(err.message || "Saqlashda xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } finally {
       setSaving(false);
     }

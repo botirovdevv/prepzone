@@ -1,0 +1,79 @@
+import http from "node:http";
+import express from "express";
+import helmet from "helmet";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { config } from "./config.js";
+import { pool } from "./db/index.js";
+import { migrate } from "./db/migrate.js";
+import { HttpError } from "./lib/errors.js";
+import { initRealtime } from "./lib/realtime.js";
+import { loadUser, requireVerified } from "./middleware/auth.js";
+import authRouter from "./routes/auth.js";
+import sessionsRouter from "./routes/sessions.js";
+import { resultsRouter, leaderboardRouter } from "./routes/results.js";
+import { questionSetsRouter, desmosRouter } from "./routes/content.js";
+
+const app = express();
+
+// Caddy (reverse proxy) ortida ishlaydi — haqiqiy IP rate limit uchun kerak.
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
+app.use(helmet());
+if (config.clientOrigin) {
+  app.use(cors({ origin: config.clientOrigin, credentials: true }));
+}
+// Savollarda siqilgan rasmlar (base64) bo'lishi mumkin — limit katta.
+app.use(express.json({ limit: "25mb" }));
+app.use(cookieParser());
+app.use(loadUser);
+
+app.get("/api/health", async (_req, res) => {
+  await pool.query("SELECT 1");
+  res.json({ ok: true });
+});
+
+app.use("/api/auth", authRouter);
+app.use("/api/results", requireVerified, resultsRouter);
+app.use("/api/leaderboard", requireVerified, leaderboardRouter);
+app.use("/api/sessions", requireVerified, sessionsRouter);
+app.use("/api/question-sets", requireVerified, questionSetsRouter);
+app.use("/api/desmos", requireVerified, desmosRouter);
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ code: "not-found", message: "Bunday API manzili yo'q." });
+});
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  if (err instanceof HttpError) {
+    return res.status(err.status).json({ code: err.code, message: err.message });
+  }
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ code: "too-large", message: "Ma'lumot hajmi juda katta." });
+  }
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).json({ code: "invalid-argument", message: "JSON noto'g'ri." });
+  }
+  // Postgres unique_violation — masalan, bir vaqtda ikki marta ro'yxatdan o'tish.
+  if (err.code === "23505") {
+    return res.status(409).json({ code: "already-exists", message: "Bu ma'lumot allaqachon mavjud." });
+  }
+  console.error(err);
+  res.status(500).json({ code: "internal", message: "Serverda xatolik yuz berdi." });
+});
+
+const server = http.createServer(app);
+initRealtime(server);
+
+await migrate();
+server.listen(config.port, () => {
+  console.log(`[prepzone] API http://localhost:${config.port} da ishlayapti`);
+});
+
+const shutdown = () => {
+  server.close(() => pool.end().then(() => process.exit(0)));
+};
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

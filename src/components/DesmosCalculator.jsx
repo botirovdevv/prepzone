@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { LuX, LuMinus, LuCalculator } from "react-icons/lu";
 
-// Desmos-ning ochiq "demo" API kaliti - rasmiy hujjatlarida
-// (https://www.desmos.com/api/v1.9/docs/index.html) sinov/demo
-// maqsadlarida ishlatish uchun keltirilgan umumiy kalit.
-const DESMOS_API_KEY = "dcb31709b452b1cf9dc26972add0fda6";
+// Production uchun o'z kalitingiz: .env -> VITE_DESMOS_API_KEY
+// (https://www.desmos.com/my-api). Berilmagan bo'lsa — Desmos rasmiy
+// hujjatlaridagi (https://www.desmos.com/api/v1.9/docs/index.html)
+// sinov/demo uchun umumiy kalit ishlatiladi.
+const DESMOS_API_KEY = import.meta.env.VITE_DESMOS_API_KEY || "dcb31709b452b1cf9dc26972add0fda6";
 const DESMOS_SCRIPT_SRC = `https://www.desmos.com/api/v1.9/calculator.js?apiKey=${DESMOS_API_KEY}`;
 
 let scriptPromise = null;

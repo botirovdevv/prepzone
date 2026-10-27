@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { api } from "../../api/client";
 import { LuPlus, LuCalendarClock, LuChevronRight } from "react-icons/lu";
 
 function formatDateTime(ts) {
@@ -32,16 +31,11 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const q = query(collection(db, "testSessions"), orderBy("scheduledAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSessions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    api
+      .get("/sessions")
+      .then(setSessions)
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false));
   }, []);
 
   return (

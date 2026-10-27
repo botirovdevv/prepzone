@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 export default function SessionResults() {
@@ -11,6 +10,7 @@ export default function SessionResults() {
   const { id: sessionId } = useParams();
 
   const terminated = location.state?.terminated;
+  const saveError = location.state?.saveError;
   const [results, setResults] = useState(location.state?.results || null);
   const [sections, setSections] = useState(location.state?.sections || null);
   const [total, setTotal] = useState(location.state?.total ?? null);
@@ -21,23 +21,12 @@ export default function SessionResults() {
   useEffect(() => {
     if (location.state?.results || !user) return;
     setLoading(true);
-    getDoc(doc(db, "testSessions", sessionId, "results", user.uid))
-      .then((snap) => {
-        if (!snap.exists()) {
-          setNotFound(true);
-          return;
-        }
-        const data = snap.data();
+    Promise.all([api.get(`/sessions/${sessionId}/results/me`), api.get(`/sessions/${sessionId}`)])
+      .then(([data, s]) => {
         setResults(data.results);
         setTotal(data.total);
-        return getDoc(doc(db, "testSessions", sessionId));
-      })
-      .then((sessSnap) => {
-        if (sessSnap?.exists()) {
-          const s = sessSnap.data();
-          setSessionTitle(s.title);
-          setSections((s.sections || []).map((sec) => ({ id: sec.id, title: sec.title })));
-        }
+        setSessionTitle(s.title);
+        setSections((s.sections || []).map((sec) => ({ id: sec.id, title: sec.title })));
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -62,7 +51,9 @@ export default function SessionResults() {
     );
   }
 
-  const sectionsMeta = sections || Object.keys(results).map((id) => ({ id, title: id }));
+  const SECTION_TITLES = { rw: "Reading and Writing", math: "Math" };
+  const sectionsMeta =
+    sections || Object.keys(results).map((id) => ({ id, title: SECTION_TITLES[id] || id }));
   const groupResults = sectionsMeta.map((s) => ({ meta: s, r: results[s.id] })).filter((x) => x.r);
   const computedTotal =
     total ?? groupResults.reduce((sum, { r }) => sum + (r.scaledScore || 0), 0);
@@ -70,6 +61,14 @@ export default function SessionResults() {
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {saveError && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 mb-6 text-sm">
+            <p className="font-semibold mb-0.5">Natija serverga saqlanmadi.</p>
+            <p className="text-amber-700/80">
+              Internet aloqasini tekshiring. Bu natija "Mening natijalarim" va reytingda ko'rinmasligi mumkin.
+            </p>
+          </div>
+        )}
         {terminated && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 text-sm">
             <p className="font-semibold mb-0.5">

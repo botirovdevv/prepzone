@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { api } from "../../api/client";
 import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye } from "react-icons/lu";
 
 export default function SetsDashboard() {
@@ -10,27 +9,27 @@ export default function SetsDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const q = query(collection(db, "questionSets"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    api
+      .get("/question-sets")
+      .then(setSets)
+      .catch(() => setSets([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (e, id, title) => {
     e.preventDefault();
     e.stopPropagation();
     if (!window.confirm(`"${title}" to'plamini o'chirishni tasdiqlaysizmi?`)) return;
-    await deleteDoc(doc(db, "questionSets", id));
+    try {
+      await api.delete(`/question-sets/${id}`);
+      setSets((list) => list.filter((item) => item.id !== id));
+    } catch (err) {
+      window.alert(err.message);
+    }
   };
 
   const countQuestions = (s) =>
-    (s.sections || []).reduce((sum, sec) => sum + (sec.questions?.length || 0), 0);
+    (s.sections || []).reduce((sum, sec) => sum + (sec.questionCount ?? sec.questions?.length ?? 0), 0);
 
   return (
     <div className="p-6 lg:p-10 max-w-4xl mx-auto">

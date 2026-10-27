@@ -59,8 +59,8 @@ export default function AccountSettings() {
     e.preventDefault();
     setPwError("");
     setPwSaved(false);
-    if (newPassword.length < 6) {
-      setPwError("Yangi parol kamida 6 ta belgidan iborat bo'lishi kerak.");
+    if (newPassword.length < 8) {
+      setPwError("Yangi parol kamida 8 ta belgidan iborat bo'lishi kerak.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -76,7 +76,7 @@ export default function AccountSettings() {
       setConfirmPassword("");
       setTimeout(() => setPwSaved(false), 2500);
     } catch (err) {
-      setPwError(mapPasswordError(err.code));
+      setPwError(mapPasswordError(err));
     } finally {
       setPwSaving(false);
     }
@@ -153,31 +153,43 @@ export default function AccountSettings() {
             <div className="w-9 h-9 rounded-lg bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center">
               <LuLockKeyhole size={17} />
             </div>
-            <h2 className="font-bold text-[#12213D]">Parolni almashtirish</h2>
+            <h2 className="font-bold text-[#12213D]">
+              {user.hasPassword ? "Parolni almashtirish" : "Parol o'rnatish"}
+            </h2>
           </div>
 
+          {!user.hasPassword && (
+            <p className="text-sm text-[#12213D]/55 -mt-2 mb-4">
+              Siz Google orqali kirgansiz. Parol o'rnatsangiz, email va parol bilan ham kira olasiz.
+            </p>
+          )}
+
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-[#12213D]/70">Joriy parol</label>
-              <input
-                type="password"
-                required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-                placeholder="••••••••"
-              />
-            </div>
+            {user.hasPassword && (
+              <div>
+                <label className="text-sm font-medium text-[#12213D]/70">Joriy parol</label>
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-[#12213D]/70">Yangi parol</label>
               <input
                 type="password"
                 required
-                minLength={6}
+                minLength={8}
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="mt-1 w-full border border-[#12213D]/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087fd1]/40"
-                placeholder="Kamida 6 ta belgi"
+                placeholder="Kamida 8 ta belgi"
               />
             </div>
             <div>
@@ -218,16 +230,8 @@ export default function AccountSettings() {
   );
 }
 
-function mapPasswordError(code) {
-  switch (code) {
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      return "Joriy parol noto'g'ri.";
-    case "auth/too-many-requests":
-      return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
-    case "auth/weak-password":
-      return "Yangi parol juda zaif.";
-    default:
-      return "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
-  }
+// Server xabarlari allaqachon o'zbekcha — faqat tarmoq/kutilmagan xatolar uchun umumiy matn.
+function mapPasswordError(err) {
+  if (err?.code === "auth/wrong-password") return "Joriy parol noto'g'ri.";
+  return err?.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
 }

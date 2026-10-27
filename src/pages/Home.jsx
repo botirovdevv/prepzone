@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 import {
   LuArrowRight,
   LuBookOpenCheck,
-  LuHeadphones,
-  LuMapPin,
+  LuCalculator,
+  LuListChecks,
 } from "react-icons/lu";
 import logo from '../../public/Logo.png'
 
@@ -75,8 +75,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-8 max-w-[520px] text-[17px] leading-7 text-[#667085] sm:text-[19px]">
-              SAT, IELTS va CEFR Speaking uchun real imtihon formatiga yaqin
-              mock testlar. Natijangizni ko‘ring va keyingi qadamni aniq biling.
+              Digital SAT uchun real imtihon formatiga yaqin mock testlar. Natijangizni ko‘ring va keyingi qadamni aniq biling.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -196,9 +195,9 @@ export default function Home() {
       <section className="border-y border-[#111827]/[0.08] bg-white">
         <div className="mx-auto grid max-w-[1280px] divide-y divide-[#111827]/[0.08] px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0">
           {[
-            ["SAT", "Full mock practice", "Reading & Writing + Math"],
-            ["IELTS", "Coming soon", "Listening, Reading, Writing & Speaking"],
-            ["CEFR", "Coming soon", "Speaking mock practice"],
+            ["R&W", "Reading & Writing", "2 modul · adaptiv format"],
+            ["Math", "Matematika", "2 modul · Desmos kalkulyator"],
+            ["1600", "Score scale", "400–1600 ball tizimi"],
           ].map(([name, title, text]) => (
             <div key={name} className="flex items-center gap-5 py-6 md:px-8 first:md:pl-0 last:md:pr-0">
               <span className="font-['Inter_Tight'] text-2xl font-bold tracking-tight text-[#111827]">
@@ -221,13 +220,13 @@ export default function Home() {
               Practice engine
             </p>
             <h2 className="mt-4 max-w-[430px] font-['Inter_Tight'] text-4xl font-semibold leading-[1] tracking-[-0.04em] sm:text-5xl">
-              Bitta platforma.
+              Bitta imtihon.
               <br />
-              Bir nechta imtihon.
+              To‘liq tayyorgarlik.
             </h2>
             <p className="mt-5 max-w-[390px] text-[15px] leading-6 text-[#6b7280]">
-              Qaysi imtihonga tayyorlanayotgan bo‘lsangiz, kerakli formatda
-              mashq qiling.
+              Mock testlar, mavzulashtirilgan mashqlar va Desmos darsliklari —
+              SAT uchun kerakli hamma narsa bir joyda.
             </p>
           </div>
 
@@ -255,40 +254,42 @@ export default function Home() {
 
             <div className="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827]/[0.05] text-[#667085]">
-                  <LuHeadphones size={20} />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0788d5]/10 text-[#0788d5]">
+                  <LuListChecks size={20} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-[#344054]">IELTS</h3>
-                    <span className="rounded-full bg-[#f1f3f5] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#8b95a3]">
-                      Soon
-                    </span>
-                  </div>
-                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#8b95a3]">
-                    Listening, Reading, Writing va Speaking mock testlari.
+                  <h3 className="text-lg font-bold">Practice sets</h3>
+                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#707b8b]">
+                    Mavzular bo‘yicha vaqt cheklanmagan mashqlar — har bir javobdan keyin darhol izoh.
                   </p>
                 </div>
               </div>
+              <button
+                onClick={handleSAT}
+                className="inline-flex items-center gap-2 self-start text-sm font-bold text-[#087fd1] transition hover:text-[#055f9d] sm:self-center"
+              >
+                Boshlash <LuArrowRight size={16} />
+              </button>
             </div>
 
             <div className="flex flex-col gap-5 py-7 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827]/[0.05] text-[#667085]">
-                  <LuMapPin size={20} />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0788d5]/10 text-[#0788d5]">
+                  <LuCalculator size={20} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-[#344054]">CEFR Speaking</h3>
-                    <span className="rounded-full bg-[#f1f3f5] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#8b95a3]">
-                      Soon
-                    </span>
-                  </div>
-                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#8b95a3]">
-                    Speaking topshiriqlarini imtihon sharoitiga yaqin formatda mashq qiling.
+                  <h3 className="text-lg font-bold">Desmos darsliklari</h3>
+                  <p className="mt-1 max-w-[480px] text-sm leading-6 text-[#707b8b]">
+                    Math bo‘limida Desmos kalkulyatoridan samarali foydalanishni o‘rganing.
                   </p>
                 </div>
               </div>
+              <button
+                onClick={handleSAT}
+                className="inline-flex items-center gap-2 self-start text-sm font-bold text-[#087fd1] transition hover:text-[#055f9d] sm:self-center"
+              >
+                Boshlash <LuArrowRight size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -341,7 +342,7 @@ export default function Home() {
 
           <div className="border-t border-[#dfe4e8]">
             {[
-              ["01", "Imtihonni tanlang", "SAT mock testdan boshlang yoki keyinchalik IELTS va CEFR Speaking modullarini tanlang."],
+              ["01", "Testni tanlang", "To‘liq SAT mock test yoki mavzu bo‘yicha mashq to‘plamini tanlang."],
               ["02", "Testni ishlang", "Savollarni vaqt chegarasida bajaring va o‘zingizni real imtihon sharoitida sinang."],
               ["03", "Natijani ko‘ring", "Urinish yakunida natijangizni ko‘ring va keyingi tayyorgarlik yo‘nalishini belgilang."],
             ].map(([number, title, text]) => (

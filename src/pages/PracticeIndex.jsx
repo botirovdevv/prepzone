@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { LuBookOpen, LuArrowRight, LuLayers, LuSparkles } from "react-icons/lu";
 import PageHero from "../components/PageHero";
 
@@ -10,20 +9,15 @@ export default function PracticeIndex() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "questionSets"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    api
+      .get("/question-sets")
+      .then(setSets)
+      .catch(() => setSets([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const countQuestions = (s) =>
-    (s.sections || []).reduce((sum, sec) => sum + (sec.questions?.length || 0), 0);
+    (s.sections || []).reduce((sum, sec) => sum + (sec.questionCount ?? sec.questions?.length ?? 0), 0);
 
   return (
     <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">

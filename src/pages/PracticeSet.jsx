@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -34,14 +33,9 @@ export default function PracticeSet() {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    getDoc(doc(db, "questionSets", id))
-      .then((snap) => {
-        if (!snap.exists()) {
-          setSetMissing(true);
-          return;
-        }
-        setSet({ id: snap.id, ...snap.data() });
-      })
+    api
+      .get(`/question-sets/${id}`)
+      .then(setSet)
       .catch(() => setSetMissing(true))
       .finally(() => setSetLoading(false));
   }, [id]);

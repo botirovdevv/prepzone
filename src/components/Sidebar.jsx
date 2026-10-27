@@ -16,6 +16,7 @@ import {
   LuShieldCheck,
   LuLibrary,
   LuKeyRound,
+  LuCalculator,
 } from "react-icons/lu";
 import { AiFillHome } from "react-icons/ai";
 import { useAuth } from "../context/AuthContext";
@@ -42,6 +43,7 @@ const NAV_GROUPS = [
   {
     label: "LEARN",
     items: [
+      { to: "/desmos", label: "Desmos tutorials", icon: LuCalculator, iconColor: "text-[#0096c7]" },
       { label: "Vocabulary", icon: LuBookOpen, soon: true, badge: "Soon", badgeType: "soon", iconColor: "text-[#0096c7]" },
     ],
   },
@@ -196,6 +198,23 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
               >
                 <LuLibrary size={18} className="shrink-0 text-[#12213D]/65" />
                 {!collapsed && <span className="flex-1 truncate">To'plamlar (admin)</span>}
+              </NavLink>
+              <NavLink
+                to="/admin/desmos"
+                onClick={onCloseMobile}
+                title={collapsed ? "Desmos darsliklari" : undefined}
+                className={({ isActive }) =>
+                  `w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                    collapsed ? "justify-center" : ""
+                  } ${
+                    isActive
+                      ? "bg-[#087fd1]/10 text-[#087fd1]"
+                      : "text-[#12213D]/65 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+                  }`
+                }
+              >
+                <LuCalculator size={18} className="shrink-0 text-[#12213D]/65" />
+                {!collapsed && <span className="flex-1 truncate">Desmos (admin)</span>}
               </NavLink>
             </div>
           </div>

@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  setDoc,
-  addDoc,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
+import { useSessionLive } from "../api/socket";
 import {
   decideRoute,
   calcSectionScaledScore,
@@ -23,7 +15,7 @@ import {
   getCooldownRemainingMs,
 } from "../utils/testProgress";
 import { useProctoring } from "../hooks/useProctoring";
-import { maybeUpdateLeaderboard } from "../utils/leaderboard";
+import { useTimeUp } from "../hooks/useTimeUp";
 import TestHeader from "../components/TestHeader";
 import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
@@ -85,50 +77,27 @@ export default function SessionTest() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionMissing, setSessionMissing] = useState(false);
 
+  const loadMeta = () =>
+    api
+      .get(`/sessions/${sessionId}`)
+      .then((s) => setSessionMeta(s))
+      .catch(() => setSessionMissing(true))
+      .finally(() => setSessionLoading(false));
+
   useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "testSessions", sessionId),
-      (snap) => {
-        if (!snap.exists()) {
-          setSessionMissing(true);
-          setSessionLoading(false);
-          return;
-        }
-        setSessionMeta({ id: snap.id, ...snap.data() });
-        setSessionLoading(false);
-      },
-      () => {
-        setSessionMissing(true);
-        setSessionLoading(false);
-      }
-    );
-    return unsub;
+    loadMeta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Savollarning o'zi (to'g'ri javoblar bilan) — faqat ishtirokchi
-  // hujjati yaratilgach yuklanadi (pastdagi effekt orqali).
+  // Admin testni yopsa — server Socket.IO orqali darhol xabar beradi.
+  useSessionLive(sessionId, { "session:update": setSessionMeta }, loadMeta);
+
+  // Savollarning o'zi (to'g'ri javoblar bilan) — faqat sessiyaga qo'shilgach
+  // (server kodni tekshirgandan keyin) qaytariladi.
   const [sessionContent, setSessionContent] = useState(null);
   const [contentError, setContentError] = useState(false);
-
-  const fetchContent = async (attempt = 0) => {
-    try {
-      const snap = await getDoc(doc(db, "testSessions", sessionId, "secure", "content"));
-      if (snap.exists()) {
-        setSessionContent(snap.data());
-      } else {
-        setContentError(true);
-      }
-    } catch (err) {
-      // Xavfsizlik qoidasi ishtirokchi hujjati "ko'rinishi" uchun bir
-      // zumlik kechikish bo'lishi mumkin — bir necha marta qayta urinamiz.
-      if (attempt < 3) {
-        setTimeout(() => fetchContent(attempt + 1), 700);
-      } else {
-        console.error("Savollarni yuklashda xatolik:", err);
-        setContentError(true);
-      }
-    }
-  };
+  const [joined, setJoined] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   // Meta va tarkibni birlashtirib, qolgan kod uchun bir xil "session"
   // shaklini beramiz (quyidagi barcha kod shu birlashtirilgan
@@ -219,47 +188,68 @@ export default function SessionTest() {
   useEffect(() => {
     if (!user || !sessionMeta || participantInitRef.current) return;
     participantInitRef.current = true;
-    setDoc(
-      doc(db, "testSessions", sessionId, "participants", user.uid),
-      {
-        uid: user.uid,
-        name: studentName,
-        email: user.email,
-        status: "not_started",
-        joinedAt: serverTimestamp(),
-        // Xavfsizlik qoidasi shu maydonni sessiyaning haqiqiy kodi bilan
-        // solishtiradi (faqat "code" turidagi testlar uchun) — shuning
-        // uchun kodni bilmagan/o'tmagan foydalanuvchi ishtirokchi
-        // sifatida ro'yxatdan o'ta olmaydi va savol tarkibiga kira
-        // olmaydi, hatto sessiya ID'sini bilsa ham.
-        enteredCode: sessionMeta.accessType === "open" ? null : joinCode,
-      },
-      { merge: true }
-    )
-      .then(() => fetchContent())
+    // Server kodni sessiyaning haqiqiy kodi bilan solishtiradi (faqat "code"
+    // turidagi testlar uchun) — kodni bilmagan foydalanuvchi ishtirokchi
+    // bo'la olmaydi va savollarni ololmaydi, hatto sessiya ID'sini bilsa ham.
+    api
+      .post(`/sessions/${sessionId}/join`, {
+        code: sessionMeta.accessType === "open" ? null : joinCode,
+      })
+      // Vaqti kelmagan kodli testda server savollarni bermaydi (content: null) —
+      // ular test boshlanganda alohida olinadi (pastdagi effekt).
+      .then(({ content }) => {
+        if (content) setSessionContent(content);
+        setJoined(true);
+      })
       .catch((err) => {
+        if (err.code === "already-finished") {
+          navigate(`/session/${sessionId}/results`, { replace: true });
+          return;
+        }
         console.error("Ishtirokchi sifatida ro'yxatdan o'tishda xatolik:", err);
+        if (err.code === "failed-precondition") {
+          setPhase("closed");
+          return;
+        }
+        setJoinError(err.code === "permission-denied" ? err.message : "");
         setContentError(true);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, sessionMeta]);
 
+  // Qo'shilgandan keyin savollar hali yo'q bo'lsa (test vaqti endi keldi) —
+  // serverdan olamiz. Qurilma soati biroz oldinda bo'lsa server "hali
+  // boshlanmagan" deydi — shunda bir necha soniyadan keyin qayta urinamiz.
+  useEffect(() => {
+    if (phase !== "rules" || !joined || sessionContent || contentError) return;
+    let cancelled = false;
+    let timer = null;
+    const load = () =>
+      api
+        .get(`/sessions/${sessionId}/content`)
+        .then((content) => !cancelled && setSessionContent(content))
+        .catch((err) => {
+          if (cancelled) return;
+          if (err.code === "not-started") timer = setTimeout(load, 3000);
+          else if (err.code === "failed-precondition") setPhase("closed");
+          else setContentError(true);
+        });
+    load();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phase, joined, sessionContent, contentError, sessionId]);
+
+  // Vaqt belgilari (startedAt, terminatedAt, ...) serverda qo'yiladi.
   const updateParticipant = (data) => {
     if (!user) return;
-    setDoc(doc(db, "testSessions", sessionId, "participants", user.uid), data, {
-      merge: true,
-    }).catch(() => {});
+    api.patch(`/sessions/${sessionId}/participants/me`, data).catch(() => {});
   };
 
   const logEvent = (type, message) => {
     if (!user) return;
-    addDoc(collection(db, "testSessions", sessionId, "events"), {
-      uid: user.uid,
-      name: studentName,
-      type,
-      message,
-      at: serverTimestamp(),
-    }).catch(() => {});
+    api.post(`/sessions/${sessionId}/events`, { type, message }).catch(() => {});
   };
 
   // ------------------------------------------------------------
@@ -328,7 +318,6 @@ export default function SessionTest() {
     updateParticipant({
       status: "terminated",
       terminationReason: reasonCode,
-      terminatedAt: serverTimestamp(),
     });
     const finalResults = buildTerminationResults();
     saveResultAndNavigate(finalResults, { terminated: true, reason: reasonCode });
@@ -344,8 +333,17 @@ export default function SessionTest() {
     maxWarnings: MAX_WARNINGS,
   });
 
+  // Modul almashganda javoblar va taymer yangilanadi. Pauzadan davom
+  // ettirilganda esa (handleStart snapshot'ni tiklaydi) bir marta
+  // o'tkazib yuboriladi — aks holda saqlangan javoblar va qolgan vaqt
+  // o'chib ketardi.
+  const skipModuleResetRef = useRef(false);
   useEffect(() => {
     if (phase !== "active") return;
+    if (skipModuleResetRef.current) {
+      skipModuleResetRef.current = false;
+      return;
+    }
     setModuleState(emptyModuleState(totalQuestions));
     setSecondsLeft((section.durationMin || 30) * 60);
     setCurrentIndex(0);
@@ -479,6 +477,14 @@ export default function SessionTest() {
     proceedAfterSection();
   };
 
+  // Vaqt tugadi — modul avtomatik yakunlanadi (bergan javoblari bilan).
+  useTimeUp({
+    active: phase === "active" && !onBreak && !savingResult && totalQuestions > 0,
+    secondsLeft,
+    moduleKey: `${groupIndex}:${stage}:${route}`,
+    onTimeUp: handleFinishModule,
+  });
+
   const buildTerminationResults = () => {
     const rawCorrect = countCorrect(questions, moduleState.answers);
     let finalResults = { ...results };
@@ -549,48 +555,15 @@ export default function SessionTest() {
 
     setSavingResult(true);
     try {
-      await setDoc(doc(db, "testSessions", sessionId, "results", user.uid), {
-        uid: user.uid,
-        name: studentName,
-        email: user.email,
+      // Server bitta tranzaksiyada: sessiya natijasi, "Mening natijalarim"
+      // uchun nusxa, ishtirokchi holati va reytingni yangilaydi.
+      await api.post(`/sessions/${sessionId}/results`, {
         results: finalResults,
         total,
-        sessionTitle: session.title,
-        finishedAt: serverTimestamp(),
         ...(extraState.terminated
           ? { terminated: true, terminationReason: extraState.reason }
           : {}),
       });
-      // "Mening natijalarim" (History) sahifasi hozircha faqat ildiz
-      // darajasidagi "results" kolleksiyasini o'qiydi (collectionGroup
-      // so'rovlari index/rules bo'yicha ishonchsiz chiqdi). Shuning uchun
-      // sessiya natijasini shu yerga ham (kichik nusxa sifatida) yozib
-      // qo'yamiz — shunda u ham tarixda avtomatik ko'rinadi.
-      try {
-        await addDoc(collection(db, "results"), {
-          uid: user.uid,
-          email: user.email,
-          results: finalResults,
-          total,
-          sessionId,
-          sessionTitle: session.title,
-          createdAt: serverTimestamp(),
-          ...(extraState.terminated
-            ? { terminated: true, terminationReason: extraState.reason }
-            : {}),
-        });
-      } catch (mirrorErr) {
-        // Bu ikkinchi (ko'zgu) yozuv muvaffaqiyatsiz bo'lsa ham, asosiy
-        // natija testSessions ostida saqlanib bo'lgani uchun talaba hech
-        // narsani yo'qotmaydi — faqat History ro'yxatida darhol
-        // ko'rinmasligi mumkin. Shu sabab xatoni faqat konsolga chiqaramiz.
-        console.error("Natijani 'results' kolleksiyasiga nusxalashda xatolik:", mirrorErr);
-      }
-      updateParticipant({
-        totalScore: total,
-        ...(extraState.terminated ? {} : { status: "finished", finishedAt: serverTimestamp() }),
-      });
-      maybeUpdateLeaderboard(user, total);
       navigate(`/session/${sessionId}/results`, {
         state: { results: finalResults, sections: sectionsMeta, total, sessionTitle: session.title, ...extraState },
       });
@@ -616,6 +589,11 @@ export default function SessionTest() {
     if (!ok) return false;
 
     if (resumeSnapshot) {
+      const g = resumeSnapshot.groupIndex ?? 0;
+      const st = resumeSnapshot.stage ?? "module1";
+      const r = resumeSnapshot.route ?? null;
+      // Modul o'zgaradigan bo'lsa, "modul almashdi" effekti snapshot'ni o'chirmasin.
+      skipModuleResetRef.current = g !== groupIndex || st !== stage || r !== route;
       setGroupIndex(resumeSnapshot.groupIndex ?? 0);
       setStage(resumeSnapshot.stage ?? "module1");
       setRoute(resumeSnapshot.route ?? null);
@@ -623,9 +601,15 @@ export default function SessionTest() {
       setSecondsLeft(resumeSnapshot.secondsLeft ?? (section.durationMin || 30) * 60);
       setResults(resumeSnapshot.results || {});
       setOnBreak(!!resumeSnapshot.onBreak);
+    } else {
+      // Komponent ochilganda savollar hali yuklanmagan edi (0 ta savol,
+      // standart 30 daqiqa) — endi haqiqiy son va davomiylik bilan boshlaymiz.
+      setModuleState(emptyModuleState(totalQuestions));
+      setSecondsLeft((section.durationMin || 30) * 60);
+      setCurrentIndex(0);
     }
     setPhase("active");
-    updateParticipant({ status: "active", startedAt: serverTimestamp() });
+    updateParticipant({ status: "active" });
     return true;
   };
 
@@ -698,7 +682,9 @@ export default function SessionTest() {
     if (contentError) {
       return (
         <div className="min-h-screen flex items-center justify-center text-gray-500 text-center px-6">
-          Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang.
+          {joinError
+            ? `${joinError} Kodni "Mock with key" sahifasida qaytadan kiriting.`
+            : "Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang."}
         </div>
       );
     }

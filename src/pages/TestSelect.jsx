@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { LuNotebookPen, LuArrowRight, LuTimer, LuGlobe, LuListChecks, LuClock, LuLayers } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { testsCatalog } from "../data/testsCatalog";
@@ -18,7 +17,7 @@ function formatRemaining(ms) {
 function sessionMeta(session) {
   const sections = session.sections || [];
   const totalMinutes = sections.reduce((sum, sec) => sum + (sec.durationMin || 0) * 2, 0);
-  const totalQuestions = sections.reduce((sum, sec) => sum + (sec.module1?.length || 0) * 2, 0);
+  const totalQuestions = sections.reduce((sum, sec) => sum + (sec.questionCount || 0), 0);
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
   const timeLabel = hours > 0 ? `${hours} soat${mins ? ` ${mins} daqiqa` : ""}` : `${mins} daqiqa`;
@@ -36,16 +35,12 @@ export default function TestSelect() {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    const q = query(collection(db, "testSessions"), where("accessType", "==", "open"));
-    const unsub = onSnapshot(
-      q,
-      (snap) =>
-        setOpenSessions(
-          snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.status !== "closed")
-        ),
-      () => setOpenSessions([])
-    );
-    return unsub;
+    api
+      .get("/sessions")
+      .then((list) =>
+        setOpenSessions(list.filter((s) => s.accessType === "open" && s.status !== "closed"))
+      )
+      .catch(() => setOpenSessions([]));
   }, []);
 
   useEffect(() => {

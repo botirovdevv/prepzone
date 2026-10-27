@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import SATTest from "./pages/SATTest";
 import Results from "./pages/Results";
@@ -24,6 +25,10 @@ import SessionForm from "./pages/admin/SessionForm";
 import SessionMonitor from "./pages/admin/SessionMonitor";
 import SetsDashboard from "./pages/admin/SetsDashboard";
 import SetForm from "./pages/admin/SetForm";
+import DesmosIndex from "./pages/DesmosIndex";
+import DesmosTutorial from "./pages/DesmosTutorial";
+import DesmosDashboard from "./pages/admin/DesmosDashboard";
+import DesmosForm from "./pages/admin/DesmosForm";
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -69,6 +74,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           <Route
             path="/dashboard"
@@ -180,6 +186,24 @@ export default function App() {
             }
           />
 
+          {/* Desmos darsliklari */}
+          <Route
+            path="/desmos"
+            element={
+              <DashboardRoute>
+                <DesmosIndex />
+              </DashboardRoute>
+            }
+          />
+          <Route
+            path="/desmos/:id"
+            element={
+              <DashboardRoute>
+                <DesmosTutorial />
+              </DashboardRoute>
+            }
+          />
+
           {/* Admin panel */}
           <Route
             path="/admin"
@@ -237,6 +261,33 @@ export default function App() {
               </AdminDashboardRoute>
             }
           />
+          <Route
+            path="/admin/desmos"
+            element={
+              <AdminDashboardRoute>
+                <DesmosDashboard />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/desmos/new"
+            element={
+              <AdminDashboardRoute>
+                <DesmosForm />
+              </AdminDashboardRoute>
+            }
+          />
+          <Route
+            path="/admin/desmos/:id/edit"
+            element={
+              <AdminDashboardRoute>
+                <DesmosForm />
+              </AdminDashboardRoute>
+            }
+          />
+
+          {/* Noma'lum manzil — bosh sahifaga (login qilgan bo'lsa dashboard'ga) */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
