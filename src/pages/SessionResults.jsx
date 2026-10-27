@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { LuSearchX, LuChartColumn, LuArrowRight } from "react-icons/lu";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, EmptyState, PageLoader } from "../components/ui";
 import { ScoreSummary, ModuleBreakdown } from "../components/ScoreSummary";
@@ -24,23 +23,12 @@ export default function SessionResults() {
   useEffect(() => {
     if (location.state?.results || !user) return;
     setLoading(true);
-    getDoc(doc(db, "testSessions", sessionId, "results", user.uid))
-      .then((snap) => {
-        if (!snap.exists()) {
-          setNotFound(true);
-          return;
-        }
-        const data = snap.data();
+    Promise.all([api.get(`/sessions/${sessionId}/results/me`), api.get(`/sessions/${sessionId}`)])
+      .then(([data, s]) => {
         setResults(data.results);
         setTotal(data.total);
-        return getDoc(doc(db, "testSessions", sessionId));
-      })
-      .then((sessSnap) => {
-        if (sessSnap?.exists()) {
-          const s = sessSnap.data();
-          setSessionTitle(s.title);
-          setSections((s.sections || []).map((sec) => ({ id: sec.id, title: sec.title })));
-        }
+        setSessionTitle(s.title);
+        setSections((s.sections || []).map((sec) => ({ id: sec.id, title: sec.title })));
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -61,7 +49,9 @@ export default function SessionResults() {
     );
   }
 
-  const sectionsMeta = sections || Object.keys(results).map((id) => ({ id, title: id }));
+  const SECTION_TITLES = { rw: "Reading and Writing", math: "Math" };
+  const sectionsMeta =
+    sections || Object.keys(results).map((id) => ({ id, title: SECTION_TITLES[id] || id }));
   const groupResults = sectionsMeta.map((s) => ({ meta: s, r: results[s.id] })).filter((x) => x.r);
   const computedTotal =
     total ?? groupResults.reduce((sum, { r }) => sum + (r.scaledScore || 0), 0);

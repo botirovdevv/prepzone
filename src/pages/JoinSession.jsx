@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LuKeyRound, LuArrowRight, LuCircleAlert } from "react-icons/lu";
-import { findSessionByCode } from "../utils/sessionCode";
+import { api } from "../api/client";
 import { Page, Card, Button, IconTile } from "../components/ui";
 
 const CODE_LENGTH = 6;
@@ -24,7 +24,10 @@ export default function JoinSession() {
     }
     setLoading(true);
     try {
-      const session = await findSessionByCode(code.trim());
+      const session = await api.post("/sessions/lookup", { code: code.trim() }).catch((err) => {
+        if (err.status === 404) return null;
+        throw err;
+      });
       if (!session) {
         setError("Bunday kod bilan test topilmadi.");
         return;

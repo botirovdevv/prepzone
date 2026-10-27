@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 import { getSatTestTitle } from "../data/testsCatalog";
-import { fetchUserResults, countUserResults } from "../utils/userResults";
+import { toDate } from "../utils/dates";
 const HandIcon = "/waving-hand-icon.png";
 import {
   LuNotebookPen,
@@ -32,7 +31,7 @@ function greeting() {
 }
 
 function formatDate(ts) {
-  const d = ts?.toDate ? ts.toDate() : null;
+  const d = toDate(ts);
   if (!d) return "—";
   return d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
 }
@@ -59,15 +58,18 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     // Faqat oxirgi 12 ta natija (trend va ro'yxat uchun) + jami soni.
-    fetchUserResults("results", user.uid, { pageSize: 12 })
+    api
+      .get("/results?limit=12")
       .then(({ items }) => setAttempts(items))
       .catch(() => setAttempts([]));
-    countUserResults("results", user.uid)
-      .then(setTotalCount)
+    api
+      .get("/results/count")
+      .then(({ count }) => setTotalCount(count))
       .catch(() => setTotalCount(null));
 
-    getDoc(doc(db, "leaderboard", user.uid))
-      .then((snap) => setBestScore(snap.exists() ? snap.data().bestScore : null))
+    api
+      .get("/leaderboard/me")
+      .then((entry) => setBestScore(entry ? entry.bestScore : null))
       .catch(() => setBestScore(null));
   }, [user]);
 
@@ -103,7 +105,7 @@ export default function Dashboard() {
         }
       />
 
-      <TestCountdown exam="sat" />
+      <TestCountdown />
 
       {/* Statistika */}
       <section className="grid gap-4 sm:grid-cols-3 mb-6">

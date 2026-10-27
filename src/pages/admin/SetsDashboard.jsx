@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { writeSetIndex, deleteSetIndex, countSetQuestions } from "../../utils/questionSetIndex";
-import { deleteSetImages } from "../../utils/setImages";
+import { api } from "../../api/client";
 import { LuPlus, LuLibrary, LuChevronRight, LuTrash2, LuEye, LuBookOpen } from "react-icons/lu";
 import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
@@ -12,16 +9,12 @@ export default function SetsDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "questionSets"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    // Yengil ro'yxat: server savollar o'rniga faqat ularning sonini qaytaradi.
+    api
+      .get("/question-sets")
+      .then(setSets)
+      .catch(() => setSets([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleDelete = async (e, id, title) => {
@@ -29,28 +22,15 @@ export default function SetsDashboard() {
     e.stopPropagation();
     if (!window.confirm(`"${title}" to'plamini o'chirishni tasdiqlaysizmi?`)) return;
     try {
-      await deleteSetImages(id).catch((err) => console.error("Rasmlarni o'chirib bo'lmadi:", err));
-      await deleteDoc(doc(db, "questionSets", id));
-      await deleteSetIndex(id);
+      await api.delete(`/question-sets/${id}`);
+      setSets((list) => list.filter((item) => item.id !== id));
     } catch (err) {
       console.error(err);
-      window.alert("To'plamni o'chirib bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.");
+      window.alert(err.message || "To'plamni o'chirib bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.");
     }
   };
 
-  // Eski to'plamlar (index paydo bo'lishidan oldin yaratilgan) uchun
-  // questionSetIndex yozuvlarini bir marta to'ldiradi.
-  useEffect(() => {
-    if (loading || sets.length === 0) return;
-    getDocs(collection(db, "questionSetIndex"))
-      .then((snap) => {
-        const have = new Set(snap.docs.map((d) => d.id));
-        return Promise.all(sets.filter((s) => !have.has(s.id)).map((s) => writeSetIndex(s.id, s)));
-      })
-      .catch((err) => console.error("To'plamlar ro'yxatini yangilashda xatolik:", err));
-  }, [loading, sets]);
-
-  const countQuestions = (s) => countSetQuestions(s.sections);
+  const countQuestions = (s) => s.questionCount ?? 0;
 
   return (
     <Page>

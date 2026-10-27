@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LuDatabase, LuLoaderCircle, LuCircleCheck, LuCircleAlert } from "react-icons/lu";
-import { apiFetch } from "../../utils/api";
+import { api } from "../../api/client";
 import { newQuestionId } from "../../utils/questionId";
 
 // Har bir fan (subject) uchun JSON fayllar server/question-bank/ ostida
@@ -30,7 +30,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
 
   // Savol banki (to'g'ri javoblar bilan) public'da emas — faqat admin API orqali.
   const fetchBank = (domain) =>
-    apiFetch("admin/question-bank", { method: "GET", query: { file: `${subject}-${domain}` } });
+    api.get(`/admin/question-bank?file=${encodeURIComponent(`${subject}-${domain}`)}`);
 
   const handlePreview = async (domain) => {
     setError("");

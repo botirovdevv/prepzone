@@ -18,7 +18,7 @@ const PAGES = {
     sections: [
       [
         "1. Umumiy qoidalar",
-        "Prepzone — SAT va IELTS imtihonlariga tayyorlanish uchun onlayn mock testlar platformasi. Saytdan foydalanib, siz ushbu shartlarga rozilik bildirasiz. Shartlarga rozi bo'lmasangiz, platformadan foydalanmang.",
+        "Prepzone — Digital SAT imtihoniga tayyorlanish uchun onlayn mock testlar platformasi. Saytdan foydalanib, siz ushbu shartlarga rozilik bildirasiz. Shartlarga rozi bo'lmasangiz, platformadan foydalanmang.",
       ],
       [
         "2. Hisob",
@@ -26,7 +26,7 @@ const PAGES = {
       ],
       [
         "3. Testlar va natijalar",
-        "Testlar va ballar tayyorgarlik maqsadida beriladi va taxminiy hisoblanadi. Ular College Board, British Council, IDP yoki Cambridge tomonidan berilgan rasmiy natija emas va ular bilan bog'liq emas. SAT® — College Board'ning, IELTS™ — British Council, IDP va Cambridge University Press & Assessment'ning savdo belgilari.",
+        "Testlar va ballar tayyorgarlik maqsadida beriladi va taxminiy hisoblanadi. Ular College Board tomonidan berilgan rasmiy natija emas va College Board bilan bog'liq emas. SAT® — College Board'ning savdo belgisi.",
       ],
       [
         "4. Halollik qoidalari",
@@ -51,27 +51,23 @@ const PAGES = {
     sections: [
       [
         "1. Qanday ma'lumot yig'amiz",
-        "Ism, email manzil va (Google orqali kirsangiz) Google hisobingizdagi asosiy profil ma'lumotlari; test javoblaringiz, natijalar va o'quv rejasi sozlamalari; sahifalardan foydalanish statistikasi (qaysi bo'limlar ochilgani). Parolingizni biz ko'rmaymiz — u Google Firebase Authentication'da shifrlangan holda saqlanadi.",
+        "Ism, email manzil va (Google orqali kirsangiz) Google hisobingizdagi asosiy profil ma'lumotlari; test javoblaringiz, natijalar va o'quv rejasi sozlamalari; sahifalardan foydalanish statistikasi (qaysi bo'limlar ochilgani). Parolingizni biz ko'rmaymiz — u faqat qaytarib bo'lmaydigan (bcrypt) xesh ko'rinishida saqlanadi.",
       ],
       [
         "2. Ma'lumotdan qanday foydalanamiz",
         "Hisobingizni yuritish, testlarni baholash va natijalarni ko'rsatish, reyting (faqat ism va eng yaxshi ball), platformani yaxshilash va xavfsizlikni ta'minlash uchun. Ma'lumotlaringizni sotmaymiz va reklama uchun uchinchi shaxslarga bermaymiz.",
       ],
       [
-        "3. AI bilan baholash",
-        "IELTS Writing javoblaringiz baholash uchun sun'iy intellekt xizmatiga (Anthropic Claude API) yuboriladi. Matn faqat baholash uchun ishlatiladi.",
+        "3. Saqlash va xizmat ko'rsatuvchilar",
+        "Ma'lumotlar Prepzone'ning o'z serverida (Oracle Cloud, Frankfurt) shifrlangan HTTPS ulanish orqali saqlanadi va qayta ishlanadi. Tasdiqlash kodlari Resend xizmati orqali emailingizga yuboriladi; Google orqali kirganda Google faqat hisobingizni tasdiqlaydi.",
       ],
       [
-        "4. Saqlash va xizmat ko'rsatuvchilar",
-        "Ma'lumotlar Google Firebase (Firestore, Authentication) va Vercel serverlarida saqlanadi va qayta ishlanadi. Ular o'z xavfsizlik standartlariga ega.",
-      ],
-      [
-        "5. Sizning huquqlaringiz",
+        "4. Sizning huquqlaringiz",
         `Ma'lumotlaringizni ko'rish, tuzatish yoki hisobingizni butunlay o'chirishni so'rashingiz mumkin — ${CONTACT_EMAIL} manziliga yozing.`,
       ],
       [
-        "6. Cookie va brauzer xotirasi",
-        "Kirgan holatingizni saqlash va sozlamalar (masalan tanlangan imtihon) uchun brauzer xotirasidan (localStorage, IndexedDB) foydalanamiz.",
+        "5. Cookie va brauzer xotirasi",
+        "Kirgan holatingizni saqlash uchun himoyalangan (httpOnly) cookie, test jarayoni va lug'at mashqlari uchun esa brauzer xotirasidan (localStorage) foydalanamiz.",
       ],
     ],
   },
@@ -93,7 +89,7 @@ export default function LegalPage({ page }) {
   useEffect(() => {
     document.title = `${data.title} — Prepzone`;
     return () => {
-      document.title = "Prepzone — SAT va IELTS mock testlar";
+      document.title = "Prepzone — Digital SAT mock testlar";
     };
   }, [data.title]);
 

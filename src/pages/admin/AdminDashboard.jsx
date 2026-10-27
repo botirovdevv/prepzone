@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { getSessionCode, migrateLegacyCodes } from "../../utils/sessionCode";
+import { api } from "../../api/client";
 import { LuPlus, LuCalendarClock, LuChevronRight, LuShieldCheck, LuGlobe, LuCalendarX } from "react-icons/lu";
 import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton } from "../../components/ui";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const d = new Date(ts);
   return d.toLocaleString("uz-UZ", {
     day: "2-digit",
     month: "2-digit",
@@ -21,9 +19,7 @@ function formatDateTime(ts) {
 function sessionStatusLabel(session) {
   if (session.status === "closed") return { text: "Yakunlangan", tone: "ink" };
   if (session.accessType === "open") return { text: "Doimiy ochiq", tone: "emerald" };
-  const scheduled = session.scheduledAt?.toDate
-    ? session.scheduledAt.toDate()
-    : new Date(session.scheduledAt);
+  const scheduled = new Date(session.scheduledAt);
   if (scheduled > new Date()) return { text: "Hali boshlanmagan", tone: "amber" };
   return { text: "Faol", tone: "emerald" };
 }
@@ -32,38 +28,14 @@ export default function AdminDashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Admin uchun server barcha testlarni kirish kodi bilan qaytaradi.
   useEffect(() => {
-    const q = query(collection(db, "testSessions"), orderBy("scheduledAt", "desc"), limit(100));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setSessions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      () => setLoading(false)
-    );
-    return unsub;
+    api
+      .get("/sessions")
+      .then(setSessions)
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false));
   }, []);
-
-  // Kirish kodlari himoyalangan joyda (secure/admin) — alohida o'qiladi.
-  // Eski formatdagi sessiyalar shu yerda bir martalik ko'chiriladi.
-  const [codes, setCodes] = useState({});
-  useEffect(() => {
-    if (!sessions.length) return;
-    let cancelled = false;
-    migrateLegacyCodes(sessions)
-      .then(() =>
-        Promise.all(
-          sessions
-            .filter((s) => s.accessType !== "open")
-            .map((s) => getSessionCode(s.id, s.code).then((c) => [s.id, c]).catch(() => [s.id, null]))
-        )
-      )
-      .then((pairs) => !cancelled && setCodes(Object.fromEntries(pairs)));
-    return () => {
-      cancelled = true;
-    };
-  }, [sessions]);
 
   return (
     <Page>
@@ -117,7 +89,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span className="hidden rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-[#12213D]/70 sm:inline">
-                    {s.accessType === "open" ? "OPEN" : codes[s.id] || "······"}
+                    {s.accessType === "open" ? "OPEN" : s.code || "······"}
                   </span>
                   <LuChevronRight
                     size={18}

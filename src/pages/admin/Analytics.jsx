@@ -1,20 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  doc,
-  documentId,
-  endAt,
-  getCountFromServer,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  setDoc,
-  startAfter,
-  startAt,
-  where,
-} from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { api } from "../../api/client";
 import {
   LuChartColumn,
   LuUsers,
@@ -41,24 +26,18 @@ import {
   inputClass,
 } from "../../components/ui";
 import { dayKey, routeLabel } from "../../utils/analytics";
-import { countUserResults } from "../../utils/userResults";
 
 const SOURCE_LABELS = { instagram: "Instagram", telegram: "Telegram", friends: "Do'stlari", other: "Boshqa" };
 
-// Onboarding maqsadlari: "SAT 1400 · IELTS 8".
+// Onboarding maqsadi: "SAT 1400".
 function formatTargets(t) {
-  if (!t) return "—";
-  const parts = [];
-  if (t.sat != null) parts.push(`SAT ${t.sat}`);
-  if (t.ielts != null) parts.push(`IELTS ${t.ielts}`);
-  return parts.join(" · ") || "—";
+  return t?.sat != null ? `SAT ${t.sat}` : "—";
 }
 
 const RANGES = [7, 30, 90];
 
 function toDate(ts) {
-  if (!ts) return null;
-  return ts.toDate ? ts.toDate() : new Date(ts);
+  return ts ? new Date(ts) : null;
 }
 
 function formatDate(ts, withTime = false) {
@@ -124,57 +103,6 @@ function PageBars({ entries, total, label = routeLabel }) {
   );
 }
 
-const USERS_PAGE = 50;
-
-const countOf = (q) =>
-  getCountFromServer(q)
-    .then((s) => s.data().count)
-    .catch((err) => {
-      console.error(err);
-      return null;
-    });
-
-// O'tgan kunlar uchun yig'ma: analyticsDaily/{kun} = { date, views, pages, active }.
-// Bir marta hisoblanadi (shard'lar + visitor soni), keyin faqat shu hujjat
-// o'qiladi — har ochilishda 90 kunlik barcha shard'larni o'qimaslik uchun.
-async function loadDays(keys) {
-  const today = dayKey();
-  const past = keys.filter((k) => k !== today);
-  const dailySnap = await getDocs(
-    query(collection(db, "analyticsDaily"), where("date", ">=", keys[0]), where("date", "<=", keys.at(-1)))
-  );
-  const byDay = Object.fromEntries(dailySnap.docs.map((d) => [d.id, d.data()]));
-
-  const aggregate = async (k) => {
-    const [shards, legacy, visitors] = await Promise.all([
-      getDocs(query(collection(db, "analyticsShards"), where("date", "==", k))),
-      getDocs(query(collection(db, "analytics"), where("date", "==", k))),
-      countOf(query(collection(db, "analyticsVisitors"), where("date", "==", k))),
-    ]);
-    const day = { date: k, views: 0, pages: {}, active: visitors || 0 };
-    for (const d of [...shards.docs, ...legacy.docs]) {
-      const x = d.data();
-      day.views += x.views || 0;
-      for (const [p, c] of Object.entries(x.pages || {})) day.pages[p] = (day.pages[p] || 0) + c;
-      if (x.activeUsers) day.active = Math.max(day.active, x.activeUsers.length);
-    }
-    return day;
-  };
-
-  // Yig'masi yo'q o'tgan kunlar — hisoblab, saqlab qo'yamiz.
-  const missing = past.filter((k) => !byDay[k]);
-  for (let i = 0; i < missing.length; i += 10) {
-    const chunk = await Promise.all(missing.slice(i, i + 10).map(aggregate));
-    await Promise.all(
-      chunk.map((day) => {
-        byDay[day.date] = day;
-        return setDoc(doc(db, "analyticsDaily", day.date), day).catch((err) => console.error(err));
-      })
-    );
-  }
-  if (keys.includes(today)) byDay[today] = await aggregate(today);
-  return byDay;
-}
 
 export default function Analytics() {
   const [range, setRange] = useState(30);
@@ -188,98 +116,40 @@ export default function Analytics() {
 
   // Foydalanuvchilar jadvali — sahifalab (oxirgi faollik bo'yicha) yoki email bo'yicha qidiruv.
   const [users, setUsers] = useState([]);
-  const [usersCursor, setUsersCursor] = useState(null);
   const [usersHasMore, setUsersHasMore] = useState(false);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [bestScores, setBestScores] = useState({});
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const errs = [];
-    const keys = lastDays(range);
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const todayStart = new Date(start);
-    start.setDate(start.getDate() - (range - 1));
-
-    const usersCol = collection(db, "users");
-    const [totalUsers, newUsers, activeInRange, activeToday, satTests, ieltsTests, ...sourceCounts] = await Promise.all([
-      countOf(usersCol),
-      countOf(query(usersCol, where("createdAt", ">=", start))),
-      countOf(query(usersCol, where("lastSeenAt", ">=", start))),
-      countOf(query(usersCol, where("lastSeenAt", ">=", todayStart))),
-      countOf(query(collection(db, "results"), where("createdAt", ">=", start))),
-      countOf(query(collection(db, "ieltsResults"), where("createdAt", ">=", start))),
-      ...Object.keys(SOURCE_LABELS).map((s) => countOf(query(usersCol, where("onboarding.source", "==", s)))),
-    ]);
-    if (totalUsers == null) errs.push("users");
-    if (satTests == null) errs.push("results");
-    if (ieltsTests == null) errs.push("ieltsResults");
-    setStats({
-      totalUsers,
-      newUsers,
-      activeInRange,
-      activeToday,
-      testsInRange: (satTests || 0) + (ieltsTests || 0),
-    });
-    setSources(
-      Object.keys(SOURCE_LABELS)
-        .map((s, i) => [s, sourceCounts[i] || 0])
-        .filter(([, c]) => c > 0)
-        .sort((a, b) => b[1] - a[1])
-    );
     try {
-      setDays(await loadDays(keys));
+      const data = await api.get(`/admin/analytics?range=${range}`);
+      setStats(data.stats);
+      setSources(data.sources.map(([source, count]) => [source, count]).filter(([s]) => SOURCE_LABELS[s]));
+      setDays(data.days);
+      setErrors([]);
     } catch (err) {
       console.error(err);
-      errs.push("analyticsShards");
+      setErrors([err.message || "analytics"]);
+    } finally {
+      setLoading(false);
     }
-    setErrors(errs);
-    setLoading(false);
   }, [range]);
 
   useEffect(() => {
     load();
   }, [load, reloadKey]);
 
-  // Ko'rsatilayotgan userlarning eng yaxshi SAT ballari (leaderboard'dan, 30 tadan).
-  const loadBestScores = async (list) => {
-    const ids = list.map((u) => u.id);
-    const found = {};
-    for (let i = 0; i < ids.length; i += 30) {
-      const snap = await getDocs(
-        query(collection(db, "leaderboard"), where(documentId(), "in", ids.slice(i, i + 30)))
-      ).catch(() => null);
-      snap?.docs.forEach((d) => (found[d.id] = d.data().bestScore));
-    }
-    setBestScores((prev) => ({ ...prev, ...found }));
-  };
-
-  const loadUsers = useCallback(async (after = null, term = "") => {
+  // Foydalanuvchilar (eng yaxshi ball va testlar soni bilan) — server sahifalab beradi.
+  const loadUsers = useCallback(async (offset = 0, term = "") => {
     setUsersLoading(true);
     try {
-      const q = term
-        ? query(
-            collection(db, "users"),
-            orderBy("email"),
-            startAt(term),
-            endAt(`${term}`),
-            limit(USERS_PAGE)
-          )
-        : query(
-            collection(db, "users"),
-            orderBy("lastSeenAt", "desc"),
-            ...(after ? [startAfter(after)] : []),
-            limit(USERS_PAGE)
-          );
-      const snap = await getDocs(q);
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setUsers((prev) => (after ? [...prev, ...list] : list));
-      setUsersCursor(snap.docs.at(-1) || null);
-      setUsersHasMore(!term && snap.docs.length === USERS_PAGE);
-      loadBestScores(list);
+      const qs = new URLSearchParams({ offset: String(offset) });
+      if (term) qs.set("search", term);
+      const { items, hasMore } = await api.get(`/admin/users?${qs}`);
+      setUsers((prev) => (offset ? [...prev, ...items] : items));
+      setUsersHasMore(hasMore);
     } catch (err) {
       console.error(err);
     } finally {
@@ -290,7 +160,7 @@ export default function Analytics() {
   // Qidiruv: email boshlanishi bo'yicha (kichik harflarda), 400 ms kechikish bilan.
   useEffect(() => {
     const term = search.trim().toLowerCase();
-    const t = setTimeout(() => loadUsers(null, term), term ? 400 : 0);
+    const t = setTimeout(() => loadUsers(0, term), term ? 400 : 0);
     return () => clearTimeout(t);
   }, [search, loadUsers, reloadKey]);
 
@@ -358,8 +228,7 @@ export default function Analytics() {
               Ba'zi ma'lumotlarni o'qib bo'lmadi: {errors.join(", ")}
             </p>
             <p className="mt-1 text-amber-800/80">
-              Firebase Console → Firestore → Rules'da admin uchun o'qish ruxsati berilganini tekshiring
-              (users, analytics, results, leaderboard kolleksiyalari).
+              Sahifani yangilang. Muammo takrorlansa, server loglarini tekshiring.
             </p>
           </div>
         </Card>
@@ -501,7 +370,7 @@ export default function Analytics() {
                           user={u}
                           open={open}
                           onToggle={() => setExpanded(open ? null : u.id)}
-                          best={bestScores[u.id]}
+                          best={u.bestScore}
                           pages={userPages}
                         />
                       );
@@ -514,7 +383,7 @@ export default function Analytics() {
                       variant="outline"
                       size="sm"
                       disabled={usersLoading}
-                      onClick={() => loadUsers(usersCursor)}
+                      onClick={() => loadUsers(users.length, search.trim().toLowerCase())}
                     >
                       {usersLoading ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
                     </Button>
@@ -531,13 +400,7 @@ export default function Analytics() {
 
 function UserRow({ user, open, onToggle, best, pages }) {
   const name = user.displayName || user.email?.split("@")[0] || "—";
-  const [tests, setTests] = useState(null);
-  useEffect(() => {
-    if (!open || tests != null) return;
-    Promise.all([countUserResults("results", user.id), countUserResults("ieltsResults", user.id)])
-      .then(([a, b]) => setTests(a + b))
-      .catch(() => setTests("—"));
-  }, [open, tests, user.id]);
+  const tests = user.tests;
   return (
     <>
       <tr onClick={onToggle} className="cursor-pointer transition hover:bg-[#F6F7FB]">
@@ -556,7 +419,7 @@ function UserRow({ user, open, onToggle, best, pages }) {
         <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#12213D]">
           {(user.pageViews || 0).toLocaleString()}
         </td>
-        <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests ?? (open ? "…" : "·")}</td>
+        <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests ?? "—"}</td>
         <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#087fd1]">{best ?? "—"}</td>
         <td className="px-3 py-3">
           <p className="font-semibold text-[#12213D]">{formatTargets(user.onboarding?.targets)}</p>

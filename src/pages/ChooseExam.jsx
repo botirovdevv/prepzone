@@ -2,15 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LuArrowLeft, LuArrowRight, LuCheck, LuInstagram, LuSend, LuUsers, LuEllipsis } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
-import { useExam } from "../context/ExamContext";
 
 const logo = "/Logo.png";
 
 // ------------------------------------------------------------------
 // Ro'yxatdan o'tgandan keyingi qisqa so'rovnoma (email va Google userlar
-// ikkalasi ham shu yerga tushadi — App.jsx dagi ExamDashboard):
+// ikkalasi ham shu yerga tushadi — AuthedApp.jsx dagi HomeDashboard):
 //   1) Bizni qayerdan topdingiz?
-//   2) Qaysi testga tayyorlanyapsiz? + har biri uchun maqsad ball.
+//   2) Maqsad SAT ballingiz.
 // ------------------------------------------------------------------
 
 const SOURCES = [
@@ -20,60 +19,33 @@ const SOURCES = [
   { id: "other", label: "Boshqa", icon: LuEllipsis },
 ];
 
-const OPTIONS = [
-  {
-    id: "sat",
-    badge: "SAT",
-    badgeClass: "bg-[#087fd1] text-white",
-    title: "Digital SAT",
-    text: "Bluebook formatidagi adaptiv mock testlar, 400–1600 ball.",
-    target: { label: "Maqsad ball", min: 400, max: 1600, step: 10, def: 1400 },
-  },
-  {
-    id: "ielts",
-    badge: "IELTS",
-    badgeClass: "bg-[#e4002b] text-white",
-    title: "IELTS Academic",
-    text: "Listening, Reading va Writing mock testlari, band 0–9.",
-    target: { label: "Maqsad band", min: 0, max: 9, step: 0.5, def: 7 },
-  },
-];
+const TARGET = { min: 400, max: 1600, step: 10, def: 1400 };
 
-function validTarget(id, v) {
-  const t = OPTIONS.find((o) => o.id === id).target;
-  return Number.isFinite(v) && v >= t.min && v <= t.max && Number.isInteger(v / t.step);
+function validTarget(v) {
+  return Number.isFinite(v) && v >= TARGET.min && v <= TARGET.max && Number.isInteger(v / TARGET.step);
 }
 
 export default function ChooseExam() {
-  const { user } = useAuth();
-  const { targets: savedTargets, saveOnboarding } = useExam();
+  const { user, saveOnboarding } = useAuth();
+  const savedTarget = user?.onboarding?.targets?.sat;
   const navigate = useNavigate();
   const name = user?.displayName || user?.email?.split("@")[0] || "";
 
   const [step, setStep] = useState(1);
   const [source, setSource] = useState("");
   const [sourceOther, setSourceOther] = useState("");
-  const [exams, setExams] = useState(() => OPTIONS.map((o) => o.id).filter((id) => savedTargets?.[id] != null));
-  const [targets, setTargets] = useState(() =>
-    Object.fromEntries(OPTIONS.map((o) => [o.id, String(savedTargets?.[o.id] ?? o.target.def)]))
-  );
+  const [target, setTarget] = useState(() => String(savedTarget ?? TARGET.def));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const toggleExam = (id) => setExams((xs) => (xs.includes(id) ? xs.filter((x) => x !== id) : [...xs, id]));
-  const targetsValid = exams.length > 0 && exams.every((id) => validTarget(id, Number(targets[id])));
+  const targetValid = validTarget(Number(target));
 
   const submit = async () => {
-    if (!source || !targetsValid) return;
+    if (!source || !targetValid) return;
     setError("");
     setSaving(true);
     try {
-      await saveOnboarding({
-        source,
-        sourceOther,
-        exams: OPTIONS.map((o) => o.id).filter((id) => exams.includes(id)),
-        targets: Object.fromEntries(exams.map((id) => [id, Number(targets[id])])),
-      });
+      await saveOnboarding({ source, sourceOther, targets: { sat: Number(target) } });
       navigate("/dashboard", { replace: true });
     } catch (err) {
       console.error("So'rovnomani saqlashda xatolik:", err);
@@ -145,68 +117,38 @@ export default function ChooseExam() {
         ) : (
           <>
             <h1 className="mt-5 font-display text-[28px] font-extrabold tracking-[-0.02em] text-[#12213D] sm:text-[36px]">
-              Qaysi testga tayyorlanyapsiz?
+              Maqsad SAT ballingiz qancha?
             </h1>
             <p className="mt-2 text-[15px] text-[#12213D]/55">
-              Bittasini yoki ikkalasini tanlang va olmoqchi bo'lgan ballingizni yozing.
+              Bluebook formatidagi adaptiv mock testlar 400–1600 ball oralig'ida baholanadi. Maqsadingizni
+              keyin Study Plan'da o'zgartirishingiz mumkin.
             </p>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {OPTIONS.map((o) => {
-                const active = exams.includes(o.id);
-                const value = targets[o.id];
-                const bad = active && !validTarget(o.id, Number(value));
-                return (
-                  <div
-                    key={o.id}
-                    className={`rounded-3xl border bg-white p-6 transition ${
-                      active ? "border-[#087fd1] ring-4 ring-[#087fd1]/10" : "border-[#12213D]/[0.08]"
-                    }`}
-                  >
-                    <button type="button" onClick={() => toggleExam(o.id)} className="w-full text-left">
-                      <div className="flex items-center justify-between">
-                        <span className={`inline-block rounded-lg px-2.5 py-1 font-display text-[14px] font-black tracking-wide ${o.badgeClass}`}>
-                          {o.badge}
-                        </span>
-                        <span
-                          className={`flex h-6 w-6 items-center justify-center rounded-md border ${
-                            active ? "border-[#087fd1] bg-[#087fd1] text-white" : "border-[#12213D]/20"
-                          }`}
-                        >
-                          {active && <LuCheck size={15} />}
-                        </span>
-                      </div>
-                      <h2 className="mt-4 font-display text-[20px] font-extrabold text-[#12213D]">{o.title}</h2>
-                      <p className="mt-1 text-[14px] leading-relaxed text-[#12213D]/55">{o.text}</p>
-                    </button>
-
-                    {active && (
-                      <label className="mt-5 block">
-                        <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">
-                          {o.target.label} ({o.target.min}–{o.target.max})
-                        </span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min={o.target.min}
-                          max={o.target.max}
-                          step={o.target.step}
-                          value={value}
-                          onChange={(e) => setTargets((t) => ({ ...t, [o.id]: e.target.value }))}
-                          className={`h-11 w-full rounded-xl border bg-white px-3.5 text-[16px] font-bold tabular-nums text-[#12213D] outline-none transition focus:ring-4 ${
-                            bad ? "border-red-400 focus:ring-red-500/10" : "border-[#12213D]/12 focus:border-[#087fd1] focus:ring-[#087fd1]/10"
-                          }`}
-                        />
-                        {bad && (
-                          <span className="mt-1.5 block text-xs text-red-600">
-                            {o.id === "sat" ? "400–1600 oralig'ida, 10 ga karrali son kiriting." : "0–9 oralig'ida, 0.5 qadam bilan kiriting."}
-                          </span>
-                        )}
-                      </label>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="mt-8 max-w-md rounded-3xl border border-[#087fd1] bg-white p-6 ring-4 ring-[#087fd1]/10">
+              <span className="inline-block rounded-lg bg-[#087fd1] px-2.5 py-1 font-display text-[14px] font-black tracking-wide text-white">
+                SAT
+              </span>
+              <h2 className="mt-4 font-display text-[20px] font-extrabold text-[#12213D]">Digital SAT</h2>
+              <label className="mt-5 block">
+                <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">
+                  Maqsad ball ({TARGET.min}–{TARGET.max})
+                </span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={TARGET.min}
+                  max={TARGET.max}
+                  step={TARGET.step}
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  className={`h-11 w-full rounded-xl border bg-white px-3.5 text-[16px] font-bold tabular-nums text-[#12213D] outline-none transition focus:ring-4 ${
+                    targetValid ? "border-[#12213D]/12 focus:border-[#087fd1] focus:ring-[#087fd1]/10" : "border-red-400 focus:ring-red-500/10"
+                  }`}
+                />
+                {!targetValid && (
+                  <span className="mt-1.5 block text-xs text-red-600">400–1600 oralig'ida, 10 ga karrali son kiriting.</span>
+                )}
+              </label>
             </div>
 
             {error && (
@@ -223,7 +165,7 @@ export default function ChooseExam() {
               </button>
               <button
                 type="button"
-                disabled={!targetsValid || saving}
+                disabled={!targetValid || saving}
                 onClick={submit}
                 className="inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-6 py-3 text-[15px] font-bold text-white transition hover:bg-[#066fb8] disabled:opacity-50"
               >

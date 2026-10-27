@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  setDoc,
-  addDoc,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
-import { apiFetchRetry } from "../utils/api";
+import { api, withRetry } from "../api/client";
+import { useSessionLive } from "../api/socket";
 import { useDeadline, secondsUntil } from "../hooks/useCountdown";
 import {
   saveLocalProgress,
@@ -60,49 +51,42 @@ export default function SessionTest() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: sessionId } = useParams();
-  // JoinSession sahifasidan o'tkazilgan kod — birinchi marta ishtirokchi
-  // hujjati yaratilganda xavfsizlik qoidasi shuni tekshiradi (pastga qarang).
+  // JoinSession sahifasidan o'tkazilgan kod — birinchi marta qo'shilganda
+  // server shuni sessiyaning haqiqiy kodi bilan solishtiradi (pastga qarang).
   const joinCode = location.state?.code || null;
 
   const studentName = user?.displayName || user?.email?.split("@")[0] || "Student";
   const progressKey = `session:${sessionId}`;
 
   // ------------------------------------------------------------
-  // Sessiya META ma'lumoti (nom, kod, jadval, holat) — bularni HAR
-  // QANDAY login qilgan foydalanuvchi o'qiy oladi (Firestore qoidasi).
-  // Savollarning o'zi (module1/2 massivlari) BU YERDA YO'Q — ular
-  // alohida, faqat ishtirokchiga ochiladigan "secure/content"
-  // hujjatida saqlanadi (pastga qarang). Shu ajratish orqali,
-  // kodni bilmagan yoki hali qo'shilmagan foydalanuvchi hech qachon
-  // Firestore orqali to'g'ridan-to'g'ri savollarni (va to'g'ri
-  // javoblarni!) o'qiy olmaydi.
+  // Sessiya META ma'lumoti (nom, jadval, holat) — har qanday login
+  // qilgan foydalanuvchi o'qiy oladi (kodsiz). Savollarning o'zi
+  // (module1/2 massivlari) BU YERDA YO'Q — server ularni faqat sessiyaga
+  // qo'shilgan ishtirokchiga, test vaqti kelgandagina va to'g'ri
+  // javoblarsiz beradi (pastga qarang).
   // ------------------------------------------------------------
   const [sessionMeta, setSessionMeta] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionMissing, setSessionMissing] = useState(false);
 
+  const loadMeta = () =>
+    api
+      .get(`/sessions/${sessionId}`)
+      .then(setSessionMeta)
+      .catch(() => setSessionMissing(true))
+      .finally(() => setSessionLoading(false));
+
   useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "testSessions", sessionId),
-      (snap) => {
-        if (!snap.exists()) {
-          setSessionMissing(true);
-          setSessionLoading(false);
-          return;
-        }
-        setSessionMeta({ id: snap.id, ...snap.data() });
-        setSessionLoading(false);
-      },
-      () => {
-        setSessionMissing(true);
-        setSessionLoading(false);
-      }
-    );
-    return unsub;
+    loadMeta();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Savollarning o'zi (to'g'ri javoblar bilan) — faqat ishtirokchi
-  // hujjati yaratilgach yuklanadi (pastdagi effekt orqali).
+  // Admin testni yopsa — server Socket.IO orqali darhol xabar beradi
+  // (ulanish uzilib qayta tiklansa meta qayta yuklanadi).
+  useSessionLive(sessionId, { "session:update": setSessionMeta }, loadMeta);
+
+  // Savollarning o'zi (javob kalitlarisiz) — faqat ishtirokchi sifatida
+  // qo'shilgach yuklanadi (pastdagi effekt orqali).
   const [sessionContent, setSessionContent] = useState(null);
   const [contentError, setContentError] = useState(false);
   const [participantReady, setParticipantReady] = useState(false);
@@ -111,21 +95,15 @@ export default function SessionTest() {
 
   const fetchContent = async (attempt = 0) => {
     try {
-      const snap = await getDoc(doc(db, "testSessions", sessionId, "secure", "content"));
-      if (snap.exists()) {
-        setSessionContent(snap.data());
-      } else {
-        console.error(
-          `Savollar topilmadi: testSessions/${sessionId}/secure/content mavjud emas. ` +
-            "Admin paneldan testni ochib, qayta saqlang."
-        );
-        setContentError(true);
-      }
+      setSessionContent(await api.get(`/sessions/${sessionId}/content`));
     } catch (err) {
-      // Xavfsizlik qoidasi ishtirokchi hujjati "ko'rinishi" uchun bir
-      // zumlik kechikish bo'lishi mumkin — bir necha marta qayta urinamiz.
-      if (attempt < 3) {
-        retryTimerRef.current = setTimeout(() => fetchContent(attempt + 1), 700);
+      if (err.code === "not-started") {
+        // Qurilma soati serverdan biroz oldinda — bir necha soniyadan keyin qayta.
+        retryTimerRef.current = setTimeout(() => fetchContent(attempt), 3000);
+      } else if (err.code === "failed-precondition") {
+        setPhase("closed");
+      } else if (attempt < 3 && (err.status === 0 || err.status >= 500)) {
+        retryTimerRef.current = setTimeout(() => fetchContent(attempt + 1), 1000 * 2 ** attempt);
       } else {
         console.error("Savollarni yuklashda xatolik:", err);
         setContentError(true);
@@ -222,35 +200,32 @@ export default function SessionTest() {
   }, [loading, user, navigate]);
 
   // ------------------------------------------------------------
-  // Ishtirokchi hujjatini yaratish (admin monitoring uchun) —
-  // faqat bir marta.
+  // Ishtirokchi sifatida qo'shilish (admin monitoring uchun) — bir marta.
+  // Server kodni tekshiradi ("code" turidagi testlar uchun; allaqachon
+  // qo'shilgan bo'lsa — kodsiz), test vaqti kelgan bo'lsa savollarni
+  // darhol qaytaradi. Kodli testni qayta topshirib bo'lmaydi.
   // ------------------------------------------------------------
+  const [joinError, setJoinError] = useState("");
   useEffect(() => {
     if (!user || !sessionMeta || participantInitRef.current) return;
     participantInitRef.current = true;
-    const participantRef = doc(db, "testSessions", sessionId, "participants", user.uid);
-    // Qayta kirganda (sahifa yangilangan, pauzadan keyin) mavjud hujjat
-    // qayta yozilmaydi — kod va holat saqlanib qoladi.
-    getDoc(participantRef)
-      .then((snap) => {
-        if (snap.exists()) return;
-        return setDoc(participantRef, {
-          uid: user.uid,
-          name: studentName,
-          email: user.email,
-          status: "not_started",
-          joinedAt: serverTimestamp(),
-          // Xavfsizlik qoidasi shu maydonni sessiyaning haqiqiy kodi bilan
-          // solishtiradi (faqat "code" turidagi testlar uchun) — shuning
-          // uchun kodni bilmagan/o'tmagan foydalanuvchi ishtirokchi
-          // sifatida ro'yxatdan o'ta olmaydi va savol tarkibiga kira
-          // olmaydi, hatto sessiya ID'sini bilsa ham.
-          enteredCode: sessionMeta.accessType === "open" ? null : joinCode,
-        });
+    api
+      .post(`/sessions/${sessionId}/join`, { code: sessionMeta.accessType === "open" ? null : joinCode })
+      .then(({ content }) => {
+        if (content) setSessionContent(content);
+        setParticipantReady(true);
       })
-      .then(() => setParticipantReady(true))
       .catch((err) => {
+        if (err.code === "already-finished") {
+          navigate(`/session/${sessionId}/results`, { replace: true });
+          return;
+        }
+        if (err.code === "failed-precondition") {
+          setPhase("closed");
+          return;
+        }
         console.error("Ishtirokchi sifatida ro'yxatdan o'tishda xatolik:", err);
+        setJoinError(err.code === "permission-denied" ? err.message : "");
         setContentError(true);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,29 +235,22 @@ export default function SessionTest() {
   // scheduledAt'dan oldin o'qishga ruxsat bermaydi).
   const contentRequestedRef = useRef(false);
   useEffect(() => {
-    if (!participantReady || contentRequestedRef.current) return;
+    if (!participantReady || sessionContent || contentRequestedRef.current) return;
     if (phase !== "rules" && phase !== "locked") return;
     contentRequestedRef.current = true;
     fetchContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [participantReady, phase]);
+  }, [participantReady, phase, sessionContent]);
 
+  // Vaqt belgilari (startedAt, terminatedAt, ...) serverda qo'yiladi.
   const updateParticipant = (data) => {
     if (!user) return;
-    setDoc(doc(db, "testSessions", sessionId, "participants", user.uid), data, {
-      merge: true,
-    }).catch(() => {});
+    api.patch(`/sessions/${sessionId}/participants/me`, data).catch(() => {});
   };
 
   const logEvent = (type, message) => {
     if (!user) return;
-    addDoc(collection(db, "testSessions", sessionId, "events"), {
-      uid: user.uid,
-      name: studentName,
-      type,
-      message,
-      at: serverTimestamp(),
-    }).catch(() => {});
+    api.post(`/sessions/${sessionId}/events`, { type, message }).catch(() => {});
   };
 
   // ------------------------------------------------------------
@@ -348,11 +316,7 @@ export default function SessionTest() {
     terminatingRef.current = true;
     setTerminationReason(reasonCode);
     setPhase("terminated");
-    updateParticipant({
-      status: "terminated",
-      terminationReason: reasonCode,
-      terminatedAt: serverTimestamp(),
-    });
+    updateParticipant({ status: "terminated", terminationReason: reasonCode });
     finishTest(withCurrentModule(attempts, moduleState.answers), { terminated: true, reason: reasonCode });
   };
 
@@ -446,9 +410,12 @@ export default function SessionTest() {
     setSubmitError(null);
     setEndAt(null);
     try {
-      const { route: nextRoute } = await apiFetchRetry("session/route", {
-        body: { sessionId, sectionId: section.id, module1Answers: nextAttempts[section.id].module1Answers },
-      });
+      const { route: nextRoute } = await withRetry(() =>
+        api.post(`/sessions/${sessionId}/route`, {
+          sectionId: section.id,
+          module1Answers: nextAttempts[section.id].module1Answers,
+        })
+      );
       const r = nextRoute === "hard" ? "hard" : nextRoute === "easy" ? "easy" : null;
       setAttempts((prev) => ({ ...prev, [section.id]: { ...prev[section.id], route: r } }));
       setRoute(r);
@@ -486,13 +453,12 @@ export default function SessionTest() {
     setBusy("saving");
     setSubmitError(null);
     try {
-      const data = await apiFetchRetry("session/finish", {
-        body: {
-          sessionId,
+      const data = await withRetry(() =>
+        api.post(`/sessions/${sessionId}/finish`, {
           attempts: finalAttempts,
           ...(extraState.terminated ? { terminated: true, terminationReason: extraState.reason } : {}),
-        },
-      });
+        })
+      );
       if (user) clearLocalProgress(user.uid, progressKey);
       navigate(`/session/${sessionId}/results`, {
         replace: true,
@@ -534,7 +500,7 @@ export default function SessionTest() {
       startModule(totalQuestions, section.durationMin);
     }
     setPhase("active");
-    updateParticipant({ status: "active", startedAt: serverTimestamp() });
+    updateParticipant({ status: "active" });
     return true;
   };
 
@@ -607,7 +573,9 @@ export default function SessionTest() {
     if (contentError) {
       return (
         <div className="min-h-screen flex items-center justify-center text-gray-500 text-center px-6">
-          Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang.
+          {joinError
+            ? `${joinError} Kodni "Mock with key" sahifasida qaytadan kiriting.`
+            : "Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang."}
         </div>
       );
     }

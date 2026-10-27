@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { fetchUserResults } from "../utils/userResults";
-import { db } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import {
   LuCompass,
@@ -193,7 +191,7 @@ function TaskRow({ task, done, onToggle }) {
 
 // ---------------- Sahifa ----------------
 export default function StudyPlan() {
-  const { user } = useAuth();
+  const { user, saveStudyPlan, setStudyPlanDone } = useAuth();
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState(null); // { settings, done }
   const [attempts, setAttempts] = useState([]);
@@ -201,27 +199,20 @@ export default function StudyPlan() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const userRef = user ? doc(db, "users", user.uid) : null;
-
+  // Reja foydalanuvchi profilida (/auth/me) keladi; natijalar alohida so'rovda.
+  const uid = user?.uid;
   useEffect(() => {
-    if (!user) return;
-    Promise.allSettled([
-      getDoc(doc(db, "users", user.uid)),
-      fetchUserResults("results", user.uid, { pageSize: 10 }),
-    ]).then(([p, r]) => {
-      if (p.status === "fulfilled") {
-        const sp = p.value.data()?.studyPlan;
-        if (sp?.settings) setPlan({ settings: sp.settings, done: sp.done || {} });
-      } else {
-        console.error(p.reason);
-        setError("Rejani yuklab bo'lmadi. Internet yoki Firestore ruxsatlarini tekshiring.");
-      }
-      if (r.status === "fulfilled") {
-        setAttempts(r.value.items);
-      }
-      setLoading(false);
-    });
-  }, [user]);
+    if (!uid) return;
+    const sp = user.studyPlan;
+    if (sp?.settings) setPlan({ settings: sp.settings, done: sp.done || {} });
+    fetchUserResults("results", uid, { pageSize: 10 })
+      .then((r) => setAttempts(r.items))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+    // Faqat foydalanuvchi almashganda — saqlashdan keyingi user yangilanishi
+    // mahalliy holatni qayta yozmasin.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid]);
 
   const analysis = useMemo(() => analyzeAttempts(attempts), [attempts]);
 
@@ -240,7 +231,7 @@ export default function StudyPlan() {
     setSaving(true);
     setError("");
     try {
-      await setDoc(userRef, { studyPlan: { settings, updatedAt: new Date() } }, { merge: true });
+      await saveStudyPlan(settings);
       setPlan((p) => ({ settings, done: p?.done || {} }));
       setEditing(false);
     } catch (err) {
@@ -255,7 +246,7 @@ export default function StudyPlan() {
     const current = plan.done[dateKey] || [];
     const next = current.includes(taskId) ? current.filter((t) => t !== taskId) : [...current, taskId];
     setPlan((p) => ({ ...p, done: { ...p.done, [dateKey]: next } }));
-    setDoc(userRef, { studyPlan: { done: { [dateKey]: next } } }, { merge: true }).catch((err) => {
+    setStudyPlanDone(dateKey, next).catch((err) => {
       console.error(err);
       setError("Belgini saqlab bo'lmadi.");
     });

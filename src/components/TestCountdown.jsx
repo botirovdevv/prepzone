@@ -1,18 +1,16 @@
 import { Link } from "react-router-dom";
 import { LuCalendarClock, LuTarget } from "react-icons/lu";
-import { useExam, EXAMS } from "../context/ExamContext";
+import { useAuth } from "../context/AuthContext";
 import { nextTestDate, daysLeft } from "../data/testDates";
-import { formatBand } from "../utils/ieltsScoring";
 import { Card, IconTile } from "./ui";
 
-// Eng yaqin rasmiy test day'gacha qolgan kunlar + onboarding'da
+// Eng yaqin rasmiy SAT test day'gacha qolgan kunlar + onboarding'da
 // kiritilgan maqsad ball (masalan "1400 ga 4 kun qoldi").
-export default function TestCountdown({ exam }) {
-  const { targets } = useExam();
-  const date = nextTestDate(exam);
+export default function TestCountdown() {
+  const { user } = useAuth();
+  const date = nextTestDate();
   const left = date ? daysLeft(date) : null;
-  const target = targets?.[exam];
-  const targetLabel = target == null ? null : exam === "ielts" ? formatBand(target) : target;
+  const targetLabel = user?.onboarding?.targets?.sat ?? null;
   const dateLabel = date
     ? date.split("-").reverse().join(".")
     : "Keyingi sanalar hali e'lon qilinmagan";
@@ -23,7 +21,7 @@ export default function TestCountdown({ exam }) {
         <IconTile icon={LuCalendarClock} tone="blue" />
         <div className="min-w-0">
           <p className="text-[12px] font-semibold uppercase tracking-wide text-[#12213D]/45">
-            {EXAMS[exam].label} test day · {dateLabel}
+            SAT test day · {dateLabel}
           </p>
           <p className="mt-0.5 font-display text-[24px] font-extrabold leading-tight text-[#12213D]">
             {left == null ? (
@@ -50,7 +48,7 @@ export default function TestCountdown({ exam }) {
         </div>
       ) : (
         <Link
-          to="/choose-exam"
+          to="/onboarding"
           className="inline-flex items-center gap-2 rounded-xl bg-[#087fd1]/[0.07] px-4 py-2.5 text-sm font-semibold text-[#087fd1] hover:bg-[#087fd1]/[0.12]"
         >
           <LuTarget size={16} /> Maqsad ball qo'yish

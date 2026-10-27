@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, Timestamp } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import { writeSetIndex } from "../../utils/questionSetIndex";
-import { loadSetImages, storeSetImages } from "../../utils/setImages";
+import { api } from "../../api/client";
 import { withUniqueIds } from "../../utils/questionId";
-import { useAuth } from "../../context/AuthContext";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
@@ -13,25 +9,15 @@ import { LuArrowLeft, LuInfo, LuLibrary } from "react-icons/lu";
 import { Page, PageHeader, Card, CardHeader, Button, Field, inputClass, PageLoader } from "../../components/ui";
 import useUnsavedChangesWarning from "../../hooks/useUnsavedChangesWarning";
 
-// Firestore hujjati ≤ 1 MiB; zaxira bilan.
-const MAX_SET_BYTES = 900 * 1024;
+// Server bitta so'rovni 25 MB gacha qabul qiladi (rasmlar siqilgan base64
+// ko'rinishida savollar ichida) — zaxira bilan.
+const MAX_SET_BYTES = 20 * 1024 * 1024;
 
-// Firestore xatosini admin tushunadigan matnga aylantiradi.
-function describeFirestoreError(err, prefix) {
-  if (err?.code === "permission-denied") {
-    return `${prefix}: ruxsat yo'q. Hisobingiz admins ro'yxatida borligini va firestore.rules Firebase Console'da Publish qilinganini tekshiring.`;
-  }
-  if (err?.code === "invalid-argument" && /exceeds|size|bytes/i.test(err.message || "")) {
-    return `${prefix}: to'plam juda katta (Firestore 1 MB chegarasi). Savollarni ikki to'plamga bo'ling.`;
-  }
-  if (err?.code === "unavailable") {
-    return `${prefix}: internet aloqasini tekshiring.`;
-  }
+function describeError(err, prefix) {
   return `${prefix}: ${err?.message || "noma'lum xatolik"}`;
 }
 
 export default function SetForm() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -65,13 +51,15 @@ export default function SetForm() {
     if (!isEdit) return;
     (async () => {
       try {
-        const snap = await getDoc(doc(db, "questionSets", id));
-        if (!snap.exists()) {
+        const s = await api.get(`/question-sets/${id}`).catch((err) => {
+          if (err.status === 404) return null;
+          throw err;
+        });
+        if (!s) {
           setError("To'plam topilmadi.");
           return;
         }
-        const s = snap.data();
-        const sections = await loadSetImages(id, s.sections);
+        const sections = s.sections;
         setTitle(s.title || "");
         setDescription(s.description || "");
         const rw = (sections || []).find((sec) => sec.id === "rw");
@@ -80,7 +68,7 @@ export default function SetForm() {
         setMathQuestions(withUniqueIds(math?.questions));
       } catch (err) {
         console.error(err);
-        setError(describeFirestoreError(err, "To'plamni yuklab bo'lmadi"));
+        setError(describeError(err, "To'plamni yuklab bo'lmadi"));
       } finally {
         setLoadingExisting(false);
       }
@@ -110,10 +98,7 @@ export default function SetForm() {
 
     setSaving(true);
     try {
-      // Rasmlar alohida saqlanadi, shuning uchun hajmga faqat havolasi kiradi.
-      const size = new Blob([
-        JSON.stringify(sections, (k, v) => (k === "image" && typeof v === "string" ? "img:xxxxxxxxxxxxxxxxxxxx" : v)),
-      ]).size;
+      const size = new Blob([JSON.stringify(sections)]).size;
       if (size > MAX_SET_BYTES) {
         setError(
           `To'plam juda katta (${Math.round(size / 1024)} KB, chegara ~${Math.round(MAX_SET_BYTES / 1024)} KB). ` +
@@ -122,45 +107,14 @@ export default function SetForm() {
         return;
       }
 
-      const setRef = isEdit ? doc(db, "questionSets", id) : doc(collection(db, "questionSets"));
-      // Rasmlar alohida hujjatlarga — asosiy hujjat 1 MiB limitdan oshmasin.
-      const { sections: stored, removeUnused } = await storeSetImages(setRef.id, sections);
-
-      if (isEdit) {
-        await updateDoc(setRef, {
-          title: title.trim(),
-          description: description.trim(),
-          sections: stored,
-        });
-        const snap = await getDoc(setRef);
-        await writeSetIndex(id, {
-          title: title.trim(),
-          description: description.trim(),
-          sections: stored,
-          createdAt: snap.data()?.createdAt ?? Timestamp.now(),
-        });
-      } else {
-        await setDoc(setRef, {
-          title: title.trim(),
-          description: description.trim(),
-          sections: stored,
-          createdBy: user.uid,
-          createdByName: user.displayName || user.email,
-          createdAt: serverTimestamp(),
-        });
-        await writeSetIndex(setRef.id, {
-          title: title.trim(),
-          description: description.trim(),
-          sections: stored,
-          createdAt: Timestamp.now(),
-        });
-      }
-      await removeUnused().catch((err) => console.error("Eski rasmlarni o'chirib bo'lmadi:", err));
+      const payload = { title: title.trim(), description: description.trim(), sections };
+      if (isEdit) await api.put(`/question-sets/${id}`, payload);
+      else await api.post("/question-sets", payload);
       savedSnapshotRef.current = JSON.stringify({ title, description, rwQuestions, mathQuestions });
       navigate("/admin/sets");
     } catch (err) {
       console.error(err);
-      setError(describeFirestoreError(err, "Saqlashda xatolik yuz berdi"));
+      setError(describeError(err, "Saqlashda xatolik yuz berdi"));
     } finally {
       setSaving(false);
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, onSnapshot, collection, query, orderBy, limit, updateDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../../firebase/config";
+import { api } from "../../api/client";
+import { useSessionLive } from "../../api/socket";
 import {
   LuArrowLeft,
   LuCopy,
@@ -19,12 +19,11 @@ import {
   LuActivity,
   LuSearchX,
 } from "react-icons/lu";
-import { generateUniqueCode, assignCode, getSessionCode, releaseCode } from "../../utils/sessionCode";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, StatTile, EmptyState, PageLoader } from "../../components/ui";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const d = new Date(ts);
   return d.toLocaleString("uz-UZ", {
     day: "2-digit",
     month: "2-digit",
@@ -61,7 +60,6 @@ export default function SessionMonitor() {
   const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [code, setCode] = useState(null);
   const [actionError, setActionError] = useState("");
   const [listenError, setListenError] = useState(false);
   const onListenError = (err) => {
@@ -70,44 +68,43 @@ export default function SessionMonitor() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "testSessions", id),
-      (snap) => {
-        setSession(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-        setLoading(false);
-      },
-      onListenError
-    );
-    return unsub;
-  }, [id]);
+  // Admin uchun server sessiyani kirish kodi bilan qaytaradi.
+  const loadAll = () => {
+    api
+      .get(`/sessions/${id}`)
+      .then(setSession)
+      .catch((err) => {
+        if (err.status === 404) setSession(null);
+        else onListenError(err);
+      })
+      .finally(() => setLoading(false));
+    api.get(`/sessions/${id}/participants`).then(setParticipants).catch(onListenError);
+    api.get(`/sessions/${id}/events?limit=50`).then(setEvents).catch(onListenError);
+  };
 
-  useEffect(() => {
-    const q = query(collection(db, "testSessions", id, "participants"), limit(500));
-    const unsub = onSnapshot(
-      q,
-      (snap) => setParticipants(snap.docs.map((d) => ({ uid: d.id, ...d.data() }))),
-      onListenError
-    );
-    return unsub;
-  }, [id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(loadAll, [id]);
 
-  useEffect(() => {
-    const q = query(collection(db, "testSessions", id, "events"), orderBy("at", "desc"), limit(50));
-    const unsub = onSnapshot(q, (snap) => setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), onListenError);
-    return unsub;
-  }, [id]);
+  // Jonli yangilanishlar: ishtirokchilar holati, proktoring hodisalari va
+  // sessiya meta'si (kod, holat) serverdan Socket.IO orqali keladi.
+  useSessionLive(
+    id,
+    {
+      "session:update": setSession,
+      "participant:update": (p) =>
+        setParticipants((list) => {
+          const i = list.findIndex((x) => x.uid === p.uid);
+          if (i === -1) return [...list, p];
+          const next = [...list];
+          next[i] = p;
+          return next;
+        }),
+      "event:new": (e) => setEvents((list) => [e, ...list].slice(0, 50)),
+    },
+    loadAll
+  );
 
-  // Kod himoyalangan joydan o'qiladi; eski formatdagi sessiya bo'lsa — ko'chiriladi.
-  const legacyCode = session?.code || null;
-  const sessionExists = !!session;
-  useEffect(() => {
-    if (!sessionExists) return;
-    const load = legacyCode
-      ? assignCode(id, legacyCode).then(() => legacyCode)
-      : getSessionCode(id);
-    load.then(setCode).catch((err) => console.error("Kodni o'qishda xatolik:", err));
-  }, [id, sessionExists, legacyCode]);
+  const code = session?.code || null;
 
   const handleCopyCode = () => {
     if (!code) return;
@@ -120,9 +117,7 @@ export default function SessionMonitor() {
     setRegenerating(true);
     setActionError("");
     try {
-      const newCode = await generateUniqueCode();
-      await assignCode(id, newCode, code);
-      setCode(newCode);
+      setSession(await api.post(`/sessions/${id}/regenerate-code`));
     } catch (err) {
       console.error(err);
       setActionError("Yangi kod yaratib bo'lmadi. Qaytadan urinib ko'ring.");
@@ -136,7 +131,7 @@ export default function SessionMonitor() {
     setClosing(true);
     setActionError("");
     try {
-      await updateDoc(doc(db, "testSessions", id), { status: "closed" });
+      setSession(await api.patch(`/sessions/${id}/status`, { status: "closed" }));
     } catch (err) {
       console.error(err);
       setActionError("Testni yopib bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.");
@@ -145,27 +140,23 @@ export default function SessionMonitor() {
     }
   };
 
-  // Testni butunlay o'chirish. Firestore klient SDK'si pastki
-  // kolleksiyalarni (participants/events/results) avtomatik
-  // o'chirmaydi — ular bazada qoladi, lekin asosiy hujjat va savollar
-  // o'chgach hech qayerda ko'rinmaydi.
+  // Testni butunlay o'chirish: savollar, ishtirokchilar, hodisalar va
+  // sessiya natijalari ham o'chadi (talabalarning "Mening natijalarim"
+  // ro'yxatidagi nusxalari qoladi).
   const handleDeleteSession = async () => {
     if (
       !window.confirm(
-        `"${session.title}" testini butunlay o'chirishni tasdiqlaysizmi? Savollar va kirish kodi o'chadi, bu amalni qaytarib bo'lmaydi.`
+        `"${session.title}" testini butunlay o'chirishni tasdiqlaysizmi? Savollar, ishtirokchilar ro'yxati va xavfsizlik hodisalari o'chadi (talabalarning "Mening natijalarim"idagi ballari qoladi). Bu amalni qaytarib bo'lmaydi.`
       )
     )
       return;
     setDeleting(true);
     try {
-      await releaseCode(id);
-      await deleteDoc(doc(db, "testSessions", id, "secure", "content"));
-      await deleteDoc(doc(db, "testSessions", id, "secure", "answers"));
-      await deleteDoc(doc(db, "testSessions", id));
-      navigate("/admin");
+      await api.delete(`/sessions/${id}`);
+      navigate("/admin", { replace: true });
     } catch (err) {
       console.error("Testni o'chirishda xatolik:", err);
-      setActionError("Testni o'chirib bo'lmadi. Firestore qoidalari admin uchun o'chirishga ruxsat berishini tekshiring.");
+      setActionError(err.message || "Testni o'chirib bo'lmadi. Qaytadan urinib ko'ring.");
       setDeleting(false);
     }
   };

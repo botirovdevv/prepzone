@@ -1,13 +1,13 @@
 // ------------------------------------------------------------------
 // Parol siyosati (Register va Sozlamalar sahifalari uchun).
 //
-// Bu tekshiruv brauzerda — userga darhol ko'rsatish uchun. Serverda ham
-// majburlash uchun Firebase Console -> Authentication -> Settings ->
-// Password policy'da xuddi shu talablarni yoqing (aks holda API orqali
-// to'g'ridan-to'g'ri zaif parol bilan ro'yxatdan o'tish mumkin bo'ladi).
+// Bu tekshiruv brauzerda — userga darhol ko'rsatish uchun. Minimal uzunlik
+// serverda ham majburlanadi (server/src/routes/auth.js -> password, 8 belgi) —
+// ikkalasi bir xil bo'lishi kerak, aks holda ro'yxatdan o'tgan parolni
+// keyin almashtirib bo'lmay qoladi.
 // ------------------------------------------------------------------
 
-export const MIN_PASSWORD_LENGTH = 10;
+export const MIN_PASSWORD_LENGTH = 8;
 
 // Eng ko'p tarqalgan / sizib chiqqan parollar (kichik harflarda).
 const COMMON = new Set(
@@ -21,7 +21,7 @@ const COMMON = new Set(
     "internet samsung google apple mustang access flower hello123 test123 test1234 secret 11111111 " +
     "00000000 88888888 99999999 12341234 11223344 147258369 159753 1q2w3e4r5t 1qaz2wsx3edc zaq12wsx " +
     "q1w2e3r4 q1w2e3r4t5 asd123 qweasd qweasdzxc 123qwe 123abc abcd1234 abcdef 987654 prepzone " +
-    "prepzone123 sat123 ielts123 uzbekistan tashkent toshkent parol parol123 salom salom123 " +
+    "prepzone123 sat123 uzbekistan tashkent toshkent parol parol123 salom salom123 " +
     "iloveyou1 football1 baseball1 princess1 sunshine1 welcome123 changeme default guest"
   ).split(/\s+/)
 );

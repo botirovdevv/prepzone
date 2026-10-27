@@ -1,86 +1,71 @@
-# Prepzone — SAT va IELTS mock test platformasi
+# Prepzone — Digital SAT mock test platformasi
 
-Digital SAT (adaptiv, Bluebook formati) va IELTS Academic (Listening, Reading, Writing) uchun
-online mock testlar, reyting, o'quv reja, lug'at va admin panel (kodli mock sessiyalar,
-amaliyot to'plamlari, analitika).
+Digital SAT (adaptiv, Bluebook formati) uchun online mock testlar, oylik amaliyot to'plamlari,
+reyting, o'quv reja (Study Plan), lug'at, Desmos darsliklari va admin panel (kodli mock
+sessiyalar, amaliyot to'plamlari, Desmos, analitika).
 
 ## Arxitektura
 
 | Qism | Texnologiya |
 |---|---|
-| Frontend | React 19 + Vite + Tailwind (SPA), Vercel'da |
-| Auth, ma'lumotlar | Firebase Authentication + Firestore (Spark tarifi) |
-| Server | Vercel Functions (`api/`) + `firebase-admin` |
-| AI | Claude API (IELTS Writing baholash) |
+| Frontend | React 19 + Vite + Tailwind (SPA) |
+| Backend | Node.js + Express 5 (`server/`), Socket.IO (jonli monitoring) |
+| Ma'lumotlar | PostgreSQL 16 (`server/src/db/migrations/*.sql`) |
+| Auth | Email + parol (6 xonali kod bilan tasdiqlash, Resend) va Google; httpOnly JWT cookie |
+| Deploy | Docker Compose: `db` + `api` + `web` (Caddy, avtomatik HTTPS) — qarang: `DEPLOY.md` |
 
-**Ishonchli mantiq serverda.** Ball hisoblash, SAT routing (oson/qiyin Module 2), natija va
-reyting yozish faqat `api/` orqali. Firestore rules bu kolleksiyalarga client yozuvini yopadi.
-To'g'ri javoblar brauzer bundle'iga tushmaydi:
+**Ishonchli mantiq serverda.** Ball hisoblash (IRT), SAT routing (oson/qiyin Module 2), natija
+va reyting yozish faqat backend orqali. To'g'ri javoblar brauzer bundle'iga tushmaydi:
 
-- `content/` — testlarning to'liq manbasi (kalitlar bilan), faqat server va build skripti o'qiydi.
+- `content/sat/` — statik testlarning to'liq manbasi (kalitlar bilan), faqat server
+  (`server/src/lib/satScoring.js`) va build skripti o'qiydi.
 - `scripts/build-content.mjs` — `npm run dev`/`build` dan oldin avtomatik ishlaydi va
   `src/data/generated/` ga kalitsiz nusxa yozadi (git'ga kirmaydi).
-- Admin sessiyalari: `testSessions/{id}/secure/answers` (kalitlar, faqat admin/server) va
-  `secure/content` (ishtirokchilar uchun, kalitsiz; faqat test vaqti kelganda o'qiladi).
+- Admin sessiyalari: savollar kalitlar bilan bazada; ishtirokchi ularni faqat test vaqti
+  kelganda va kalitsiz oladi.
 - Admin savol banki: `server/question-bank/` (faqat `/api/admin/question-bank` orqali).
 
-### API endpointlar (`api/`)
+### Asosiy API endpointlar (`server/src/routes/`)
 
 | Endpoint | Vazifa |
 |---|---|
-| `POST /api/sat/route` | Module 1 javoblaridan Module 2 yo'nalishi |
-| `POST /api/sat/finish` | SAT natijasini baholash va saqlash, reyting |
-| `POST /api/session/route`, `/api/session/finish` | Admin sessiyalari uchun xuddi shu |
-| `POST /api/ielts/submit` | IELTS baholash (+ AI Writing, kuniga 3 ta) |
-| `GET /api/review` | Natija egasiga to'g'ri javoblar (ko'rib chiqish uchun) |
-| `GET /api/admin/question-bank` | Admin savol banki |
+| `/api/auth/*` | Ro'yxatdan o'tish, kirish, Google, email kodi, parolni tiklash |
+| `POST /api/sat/route`, `/api/sat/finish` | Statik test: Module 2 yo'nalishi, baholash va saqlash |
+| `GET /api/sat/review?id=` | Natija egasiga to'g'ri javoblar (ko'rib chiqish uchun) |
+| `/api/sessions/*` | Admin sessiyalari: yaratish, kod, qo'shilish, `/:id/route`, `/:id/finish` |
+| `/api/question-sets/*`, `/api/desmos/*` | Amaliyot to'plamlari va Desmos darsliklari |
+| `/api/results`, `/api/leaderboard` | "Mening natijalarim" (sahifalab) va reyting |
+| `/api/me/*` | Onboarding so'rovnomasi, Study Plan |
+| `POST /api/analytics/track` | Sahifa ko'rishlar (faqat login qilganlar) |
+| `/api/admin/*` | Analitika, foydalanuvchilar, savol banki |
 
-Hamma endpoint `Authorization: Bearer <Firebase ID token>` talab qiladi (`src/utils/api.js`).
 Natija yuboruvchi endpointlar idempotent (`attemptId`) — tarmoq xatosida qayta yuborish
-ikkinchi natija yaratmaydi.
+ikkinchi natija yaratmaydi. Kodli sessiya bir marta topshiriladi, "doimiy ochiq" — qayta.
 
 ## Lokal ishga tushirish
 
 ```bash
-npm install
-cp .env.example .env   # qiymatlarni to'ldiring (pastga qarang)
-npm run dev            # http://localhost:5173 — /api ham shu serverda ishlaydi
+npm install && (cd server && npm install)
+cp .env.example .env              # VITE_GOOGLE_CLIENT_ID
+cp server/.env.example server/.env
+
+# 1-terminal: Docker'siz lokal PostgreSQL (PGlite)
+cd server && npm run db:local
+# 2-terminal: API (migratsiyalar avtomatik)
+cd server && npm run dev
+# 3-terminal: frontend — http://localhost:5173 (/api va /socket.io proxy orqali)
+npm run dev
 ```
 
-`.env` kalitlari (`.env.example` da izohlar bilan):
-
-- `VITE_FIREBASE_*` — Firebase Console → Project settings → Your apps → Web app.
-- `VITE_DESMOS_API_KEY` — https://www.desmos.com/my-api (bo'sh bo'lsa demo kalit).
-- `FIREBASE_SERVICE_ACCOUNT` — Project settings → Service accounts → *Generate new private key*,
-  JSON mazmuni bitta qatorda. **Maxfiy** — faqat `.env` va Vercel env'da.
-- `ANTHROPIC_API_KEY` — https://console.anthropic.com. Bo'sh bo'lsa Writing avtomatik (taxminiy)
-  baholanadi. `AI_WRITING_MODEL` — `claude-sonnet-5` (standart) yoki arzonroq `claude-haiku-4-5`.
+Amaliyot to'plamlarini bazaga yozish: `cd server && npm run seed:practice -- --write`.
+Admin qilish: `cd server && npm run make-admin -- email@example.com`.
 
 ## Deploy
 
-1. **Vercel env**: yuqoridagi barcha kalitlarni Project → Settings → Environment Variables ga
-   kiriting (Production va Preview).
-2. **Firestore rules va indekslar**: `npm run deploy:rules` (firebase-tools orqali), yoki
-   `firestore.rules` ni Console → Firestore → Rules ga qo'yib Publish qiling va
-   `firestore.indexes.json` dagi indekslarni yarating (`results` va `ieltsResults`:
-   `uid` ASC + `createdAt` DESC).
-3. **Eski natijalar** (bir marta): `node --env-file=.env scripts/backfill-results.mjs --write`.
-4. **Admin qo'shish**: Firestore'da `admins/{uid}` hujjatini qo'lda yarating.
-5. Git push → Vercel avtomatik build qiladi.
+Oracle Cloud VM'ga joylash, `.env` sozlamalari, backup va yangilash — `DEPLOY.md`.
 
-## Firestore bepul tarifi (Spark) bo'yicha eslatmalar
+## Yangi statik test qo'shish
 
-Kunlik limit: 50k o'qish, 20k yozish. Shu uchun:
-
-- ro'yxatlar sahifalab yuklanadi (`src/utils/userResults.js`), sonlar `count()` bilan;
-- analitika kuniga ~3–5 yozuv/user (`src/utils/analytics.js`), admin analitikasi o'tgan kunlarni
-  `analyticsDaily` ga yig'ib qo'yadi;
-- amaliyot to'plamlari ro'yxati yengil `questionSetIndex` dan o'qiladi.
-
-Kuniga ~1000+ faol user yoki pullik funksiyalar paydo bo'lsa — Blaze tarifiga o'ting (budget alert bilan).
-
-## Yangi test qo'shish
-
-- SAT: `content/sat/` da modul fayllarini yozing va `content/sat/index.js` dagi `SAT_TESTS` ga,
-  `src/data/testsCatalog.js` ga qo'shing.
-- IELTS: `content/ielts/test1.js` formatida fayl yozib, `content/ielts/index.js` ga qo'shing.
+`content/sat/` da modul fayllarini yozing va `content/sat/index.js` dagi `SAT_TESTS` ga hamda
+`src/data/testsCatalog.js` ga qo'shing. Admin panel orqali qo'shiladigan testlar uchun kod
+yozish shart emas.

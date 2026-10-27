@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { api } from "../api/client";
 import { LuBookOpen, LuArrowRight, LuLayers, LuSparkles } from "react-icons/lu";
 import { Page, PageHeader, Card, Badge, EmptyState, Skeleton } from "../components/ui";
 
@@ -12,8 +11,9 @@ export default function PracticeIndex() {
   useEffect(() => {
     // Yengil ro'yxat (savollarsiz) — to'liq to'plam faqat ochilganda yuklanadi.
     let cancelled = false;
-    getDocs(query(collection(db, "questionSetIndex"), orderBy("createdAt", "desc")))
-      .then((snap) => !cancelled && setSets(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
+    api
+      .get("/question-sets")
+      .then((list) => !cancelled && setSets(list))
       .catch((err) => console.error("To'plamlarni yuklashda xatolik:", err))
       .finally(() => !cancelled && setLoading(false));
     return () => {

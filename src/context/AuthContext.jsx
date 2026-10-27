@@ -1,165 +1,103 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  browserPopupRedirectResolver,
-  GoogleAuthProvider,
-  signOut,
-  onAuthStateChanged,
-  updateProfile,
-  updatePassword,
-  updateEmail,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-} from "firebase/auth";
-import { auth } from "../firebase/app";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { api } from "../api/client";
+import { resetSocket } from "../api/socket";
+
+// ------------------------------------------------------------------
+// Autentifikatsiya — endi o'z backendimiz orqali (server/src/routes/auth.js).
+//
+// `user` obyekti: { uid, email, displayName, emailVerified, isAdmin,
+// hasPassword, hasGoogle }. Sessiya httpOnly cookie'da, shuning uchun
+// sahifa yangilanganda /auth/me orqali tiklanadi.
+// ------------------------------------------------------------------
 
 const AuthContext = createContext(null);
-const googleProvider = new GoogleAuthProvider();
-
-// Email havolalari (tasdiqlash, parolni tiklash) bosilgandan keyin qaytish manzili.
-const actionSettings = () => ({ url: `${window.location.origin}/login` });
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
+    api
+      .get("/auth/me")
+      .then((data) => setUser(data.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
-  const register = useCallback(async (email, password, displayName) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    if (displayName) {
-      await updateProfile(cred.user, { displayName });
-      // onAuthStateChanged snapshot may not include the fresh displayName yet,
-      // shuning uchun local state'ni ham darhol yangilaymiz.
-      setUser({ ...cred.user, displayName });
-    }
-    // Email tasdiqlash havolasini yuboramiz — foydalanuvchi shu havolani
-    // bosmaguncha ProtectedRoute uni /verify-email'da tutib turadi.
-    // Google orqali ro'yxatdan o'tganlar Google tomonidan allaqachon
-    // tasdiqlangan bo'ladi, shuning uchun bu shart faqat email/parol
-    // bilan ro'yxatdan o'tganlarga tegishli.
-    try {
-      await sendEmailVerification(cred.user, actionSettings());
-    } catch (err) {
-      console.error("Tasdiqlash xatini yuborishda xatolik:", err);
-    }
-    return cred;
+  // Har bir auth javobi yangilangan foydalanuvchini qaytaradi.
+  const apply = useCallback((data) => {
+    resetSocket();
+    setUser(data.user);
+    return data.user;
   }, []);
 
-  const login = useCallback((email, password) => signInWithEmailAndPassword(auth, email, password), []);
+  const register = (email, password, displayName) =>
+    api.post("/auth/register", { email, password, displayName }).then(apply);
 
-  // Google popup orqali kirish/ro'yxatdan o'tish (bir xil funksiya ikkalasi
-  // uchun ham ishlaydi — Google hisob birinchi marta ishlatilsa avtomatik
-  // yangi foydalanuvchi yaratiladi).
-  const googleLogin = useCallback(
-    () => signInWithPopup(auth, googleProvider, browserPopupRedirectResolver),
-    []
-  );
+  const login = (email, password) => api.post("/auth/login", { email, password }).then(apply);
 
-  // Chiqishdan oldin yig'ilgan analitikani yuboramiz (keyin ruxsat bo'lmaydi).
-  // Analitika moduli Firestore'ni tortadi — shuning uchun dinamik import.
-  const logout = useCallback(async () => {
-    try {
-      const { flushPageViews } = await import("../utils/analytics");
-      await flushPageViews();
-    } catch {
-      /* analitika yuborilmasa ham chiqish davom etadi */
-    }
-    return signOut(auth);
+  // Google — bitta funksiya ham kirish, ham ro'yxatdan o'tish uchun.
+  // Server Google foydalanuvchini darhol tasdiqlangan deb belgilaydi.
+  const googleLogin = (accessToken) => api.post("/auth/google", { accessToken }).then(apply);
+
+  const logout = async () => {
+    await api.post("/auth/logout").catch(() => {});
+    resetSocket();
+    setUser(null);
+  };
+
+  const sendVerificationCode = () => api.post("/auth/otp/send");
+
+  const verifyEmailCode = (code) => api.post("/auth/otp/verify", { code }).then(apply);
+
+  const requestPasswordReset = (email) => api.post("/auth/password/forgot", { email });
+
+  const resetPassword = (email, code, password) =>
+    api.post("/auth/password/reset", { email, code, password }).then(apply);
+
+  const updateDisplayName = (displayName) =>
+    api.patch("/auth/profile", { displayName }).then(apply);
+
+  const changePassword = (currentPassword, newPassword) =>
+    api.post("/auth/password/change", { currentPassword, newPassword }).then(apply);
+
+  // Email noto'g'ri kiritilgan bo'lsa (VerifyEmail sahifasi) — joriy parol
+  // bilan almashtiriladi, yangi manzil qayta tasdiqlanishi kerak bo'ladi.
+  const changeEmail = (currentPassword, newEmail) =>
+    api.post("/auth/email/change", { currentPassword, newEmail }).then(apply);
+
+  // Profil ma'lumotlari (socket'ni qayta ochmasdan, faqat user yangilanadi).
+  const applyProfile = useCallback((data) => {
+    setUser(data.user);
+    return data.user;
   }, []);
 
-  // "Parolni unutdingizmi?" — tiklash havolasini emailga yuboradi.
-  const resetPassword = useCallback(
-    (email) => sendPasswordResetEmail(auth, email.trim(), actionSettings()),
-    []
-  );
+  // Onboarding so'rovnomasi: { source, sourceOther, targets: { sat } }.
+  const saveOnboarding = (answers) => api.put("/me/onboarding", answers).then(applyProfile);
 
-  // Tasdiqlash havolasini qayta yuborish (VerifyEmail sahifasidagi
-  // "Qayta yuborish" tugmasi uchun).
-  const resendVerificationEmail = useCallback(() => {
-    if (!auth.currentUser) throw new Error("Foydalanuvchi topilmadi");
-    return sendEmailVerification(auth.currentUser, actionSettings());
-  }, []);
+  // Study Plan: sozlamalar va bitta kunning bajarilgan vazifalari.
+  const saveStudyPlan = (settings) => api.put("/me/study-plan", { settings }).then(applyProfile);
+  const setStudyPlanDone = (date, done) =>
+    api.patch("/me/study-plan/done", { date, done }).then(applyProfile);
 
-  // Foydalanuvchi havolani bosgandan keyin Firebase'dagi holatni qayta
-  // yuklab, local "user" state'ni yangilaydi (aks holda emailVerified
-  // eski qiymatda "yopishib" qolaveradi).
-  const refreshEmailVerified = useCallback(async () => {
-    if (!auth.currentUser) return false;
-    await auth.currentUser.reload();
-    // ID token'dagi email_verified ham yangilansin (server API shunga qaraydi).
-    await auth.currentUser.getIdToken(true);
-    setUser({ ...auth.currentUser });
-    return auth.currentUser.emailVerified;
-  }, []);
-
-  const updateDisplayName = useCallback(async (displayName) => {
-    if (!auth.currentUser) throw new Error("Foydalanuvchi topilmadi");
-    await updateProfile(auth.currentUser, { displayName });
-    setUser((prev) => (prev ? { ...prev, displayName } : prev));
-  }, []);
-
-  const changePassword = useCallback(async (currentPassword, newPassword) => {
-    if (!auth.currentUser?.email) throw new Error("Foydalanuvchi topilmadi");
-    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
-    await reauthenticateWithCredential(auth.currentUser, credential);
-    await updatePassword(auth.currentUser, newPassword);
-  }, []);
-
-  // Email manzilini o'zgartirish (masalan ro'yxatdan o'tishda xato email
-  // kiritilgan bo'lsa) — xavfsizlik uchun joriy parol bilan qayta
-  // autentifikatsiya talab qilinadi, so'ng yangi manzilga tasdiqlash
-  // havolasi qayta yuboriladi.
-  const changeEmail = useCallback(async (currentPassword, newEmail) => {
-    if (!auth.currentUser?.email) throw new Error("Foydalanuvchi topilmadi");
-    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
-    await reauthenticateWithCredential(auth.currentUser, credential);
-    await updateEmail(auth.currentUser, newEmail);
-    await sendEmailVerification(auth.currentUser, actionSettings());
-    setUser({ ...auth.currentUser });
-  }, []);
-
-  // Barqaror qiymat: faqat user/loading o'zgarganda iste'molchilar qayta render bo'ladi.
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      register,
-      login,
-      googleLogin,
-      logout,
-      resetPassword,
-      updateDisplayName,
-      changePassword,
-      changeEmail,
-      resendVerificationEmail,
-      refreshEmailVerified,
-    }),
-    [
-      user,
-      loading,
-      register,
-      login,
-      googleLogin,
-      logout,
-      resetPassword,
-      updateDisplayName,
-      changePassword,
-      changeEmail,
-      resendVerificationEmail,
-      refreshEmailVerified,
-    ]
-  );
+  const value = {
+    user,
+    loading,
+    register,
+    login,
+    googleLogin,
+    logout,
+    sendVerificationCode,
+    verifyEmailCode,
+    requestPasswordReset,
+    resetPassword,
+    updateDisplayName,
+    changePassword,
+    changeEmail,
+    saveOnboarding,
+    saveStudyPlan,
+    setStudyPlanDone,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

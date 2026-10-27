@@ -1,17 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useOtpVerified } from "../hooks/useOtpVerified";
 import { LuMailCheck, LuRefreshCw, LuLogOut, LuPencil } from "react-icons/lu";
 
+const RESEND_COOLDOWN_S = 60;
+
 export default function VerifyEmail() {
-  const { user, loading, logout, resendVerificationEmail, refreshEmailVerified, changeEmail } =
-    useAuth();
+  const { user, loading, logout, changeEmail, sendVerificationCode, verifyEmailCode } = useAuth();
+  const { verified, checked } = useOtpVerified();
   const navigate = useNavigate();
 
+  const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
+  const [sentOnce, setSentOnce] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const sentForEmailRef = useRef(null);
 
   const [showFix, setShowFix] = useState(false);
   const [fixPassword, setFixPassword] = useState("");
@@ -25,40 +31,60 @@ export default function VerifyEmail() {
       navigate("/login", { replace: true });
       return;
     }
-    if (user.emailVerified) {
+    if (checked && verified) {
       navigate("/dashboard", { replace: true });
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, checked, verified, navigate]);
 
-  const handleResend = async () => {
+  // Sahifa ochilganda (yoki email o'zgarganda) avtomatik birinchi kodni yuboramiz.
+  useEffect(() => {
+    if (!user || !checked || verified) return;
+    if (sentForEmailRef.current === user.email) return;
+    sentForEmailRef.current = user.email;
+    handleSend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email, checked, verified]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  const handleSend = async () => {
+    if (!user || sending || cooldown > 0) return;
     setSending(true);
     setError("");
     try {
-      await resendVerificationEmail();
-      setSent(true);
+      await sendVerificationCode();
+      setSentOnce(true);
+      setCooldown(RESEND_COOLDOWN_S);
     } catch (err) {
-      setError(
-        err.code === "auth/too-many-requests"
-          ? "Juda ko'p urinish. Bir necha daqiqadan keyin qayta urinib ko'ring."
-          : "Yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring."
-      );
+      // Sahifa yangilangan bo'lsa, avvalgi kod hali amal qiladi — kutish vaqtini ko'rsatamiz.
+      if (err.code === "resource-exhausted") {
+        setSentOnce(true);
+        setCooldown(45);
+        return;
+      }
+      console.error(err);
+      setError(err.message || "Kodni yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } finally {
       setSending(false);
     }
   };
 
-  const handleCheck = async () => {
-    setChecking(true);
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    if (code.trim().length !== 6) return;
+    setVerifying(true);
     setError("");
     try {
-      const verified = await refreshEmailVerified();
-      if (verified) {
-        navigate("/dashboard", { replace: true });
-      } else {
-        setError("Hali tasdiqlanmagan. Emailingizdagi havolani bosganingizga ishonch hosil qiling.");
-      }
+      await verifyEmailCode(code.trim());
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.");
     } finally {
-      setChecking(false);
+      setVerifying(false);
     }
   };
 
@@ -70,23 +96,24 @@ export default function VerifyEmail() {
     try {
       await changeEmail(fixPassword, fixEmail.trim());
       setShowFix(false);
-      setSent(true);
       setFixPassword("");
       setFixEmail("");
+      setCode("");
+      // useEffect user.email o'zgarganini ko'rib, avtomatik yangi kod yuboradi.
     } catch (err) {
       setFixError(
-        err.code === "auth/wrong-password" || err.code === "auth/invalid-credential"
+        err.code === "auth/wrong-password"
           ? "Parol noto'g'ri."
           : err.code === "auth/email-already-in-use"
           ? "Bu email allaqachon band."
-          : "Xatolik yuz berdi. Qaytadan urinib ko'ring."
+          : err.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring."
       );
     } finally {
       setFixLoading(false);
     }
   };
 
-  if (loading || !user) {
+  if (loading || !user || !checked) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Yuklanmoqda...
@@ -100,41 +127,48 @@ export default function VerifyEmail() {
         <LuMailCheck size={28} />
       </div>
       <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">Emailingizni tasdiqlang</h1>
-      <p className="text-[#12213D]/55 max-w-md mb-1">
-        <span className="font-semibold text-[#12213D]">{user.email}</span> manziliga tasdiqlash
-        havolasi yuborildi.
-      </p>
       <p className="text-[#12213D]/55 max-w-md mb-8">
-        Emailingizni oching, havolani bosing, so'ng shu yerga qaytib "Tasdiqladim" tugmasini
-        bosing.
+        <span className="font-semibold text-[#12213D]">{user.email}</span> manziliga 6 xonali kod
+        yuborildi (10 daqiqa amal qiladi). Kodni pastga kiriting.
       </p>
 
-      {error && <p className="text-red-600 text-sm mb-4 max-w-md">{error}</p>}
-      {sent && !error && (
-        <p className="text-emerald-600 text-sm mb-4">Email yuborildi, iltimos tekshiring ✓</p>
-      )}
+      <form onSubmit={handleVerify} className="w-full max-w-xs space-y-3">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          inputMode="numeric"
+          autoFocus
+          placeholder="000000"
+          className="w-full text-center tracking-[0.5em] text-2xl font-black font-mono rounded-xl border border-[#12213D]/15 py-3.5 outline-none focus:border-[#087fd1]"
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <button
+          type="submit"
+          disabled={verifying || code.length !== 6}
+          className="w-full bg-[#087fd1] text-white font-semibold py-3 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
+        >
+          {verifying ? "Tekshirilmoqda..." : "Tasdiqlash"}
+        </button>
+      </form>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handleCheck}
-          disabled={checking}
-          className="flex items-center justify-center gap-2 bg-[#087fd1] text-white font-semibold px-6 py-3 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
-        >
-          <LuRefreshCw size={16} className={checking ? "animate-spin" : ""} />
-          {checking ? "Tekshirilmoqda..." : "Tasdiqladim, tekshirish"}
-        </button>
-        <button
-          onClick={handleResend}
-          disabled={sending}
-          className="border border-[#12213D]/15 text-[#12213D] font-semibold px-6 py-3 rounded-full hover:bg-[#12213D]/5 disabled:opacity-60"
-        >
-          {sending ? "Yuborilmoqda..." : "Qayta yuborish"}
-        </button>
-      </div>
+      <button
+        onClick={handleSend}
+        disabled={sending || cooldown > 0}
+        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mt-5 disabled:opacity-50"
+      >
+        <LuRefreshCw size={14} className={sending ? "animate-spin" : ""} />
+        {cooldown > 0
+          ? `Qayta yuborish (${cooldown}s)`
+          : sending
+          ? "Yuborilmoqda..."
+          : sentOnce
+          ? "Qayta yuborish"
+          : "Kodni yuborish"}
+      </button>
 
       <button
         onClick={() => setShowFix((s) => !s)}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/45 hover:text-[#12213D] mt-6"
+        className="flex items-center gap-1.5 text-sm text-[#12213D]/45 hover:text-[#12213D] mt-3"
       >
         <LuPencil size={14} /> Email manzilini noto'g'ri kiritdingizmi?
       </button>
@@ -174,7 +208,7 @@ export default function VerifyEmail() {
             disabled={fixLoading}
             className="w-full bg-[#12213D] text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-[#1a2f52] disabled:opacity-60"
           >
-            {fixLoading ? "Yangilanmoqda..." : "Emailni yangilash va qayta yuborish"}
+            {fixLoading ? "Yangilanmoqda..." : "Emailni yangilash va yangi kod yuborish"}
           </button>
         </form>
       )}

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getModuleQuestions } from "../data/satTest";
 import { useSatTest } from "../hooks/useTestContent";
 import { useDeadline, secondsUntil } from "../hooks/useCountdown";
-import { apiFetchRetry } from "../utils/api";
+import { api, withRetry } from "../api/client";
 import {
   saveLocalProgress,
   loadLocalProgress,
@@ -145,14 +145,14 @@ export default function SATTest() {
     setBusy("saving");
     setSubmitError(null);
     try {
-      const data = await apiFetchRetry("sat/finish", {
-        body: {
+      const data = await withRetry(() =>
+        api.post("/sat/finish", {
           attemptId: attemptIdRef.current,
           testId: TEST_ID,
           attempts: finalAttempts,
           ...(extraState.terminated ? { terminated: true, terminationReason: extraState.reason } : {}),
-        },
-      });
+        })
+      );
       if (user) clearLocalProgress(user.uid, TEST_ID);
       navigate(`/sat/results/${data.resultId}`, {
         replace: true,
@@ -281,9 +281,13 @@ export default function SATTest() {
     setSubmitError(null);
     setEndAt(null);
     try {
-      const { route: nextRoute } = await apiFetchRetry("sat/route", {
-        body: { testId: TEST_ID, sectionId: group.id, module1Answers: nextAttempts[group.id].module1Answers },
-      });
+      const { route: nextRoute } = await withRetry(() =>
+        api.post("/sat/route", {
+          testId: TEST_ID,
+          sectionId: group.id,
+          module1Answers: nextAttempts[group.id].module1Answers,
+        })
+      );
       const r = nextRoute === "hard" ? "hard" : "easy";
       setAttempts((prev) => ({ ...prev, [group.id]: { ...prev[group.id], route: r } }));
       setRoute(r);

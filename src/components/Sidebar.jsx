@@ -17,18 +17,15 @@ import {
   LuLibrary,
   LuKeyRound,
   LuChartColumn,
-  LuHeadphones,
-  LuBookOpenText,
-  LuPenLine,
   LuHouse,
+  LuCalculator,
 } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
-import { useExam, EXAMS } from "../context/ExamContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 const logo = "/Logo.png";
 const LogoMark = "/Logo-sm.png";
 
-const SAT_NAV = [
+const NAV = [
   {
     label: "MAIN",
     items: [
@@ -46,7 +43,10 @@ const SAT_NAV = [
   },
   {
     label: "LEARN",
-    items: [{ to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" }],
+    items: [
+      { to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" },
+      { to: "/desmos", label: "Desmos darslari", icon: LuCalculator, iconColor: "text-[#16a34a]" },
+    ],
   },
   {
     label: "PROGRESS",
@@ -57,77 +57,12 @@ const SAT_NAV = [
   },
 ];
 
-const IELTS_NAV = [
-  {
-    label: "MAIN",
-    items: [{ to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-[#0096c7]" }],
-  },
-  {
-    label: "PRACTICE",
-    items: [
-      { to: "/ielts/tests", label: "Mock tests", icon: LuFileText, iconColor: "text-[#e4002b]" },
-      { to: "/ielts/practice/listening", label: "Listening", icon: LuHeadphones, iconColor: "text-[#e07a5f]" },
-      { to: "/ielts/practice/reading", label: "Reading", icon: LuBookOpenText, iconColor: "text-[#087fd1]" },
-      { to: "/ielts/practice/writing", label: "Writing", icon: LuPenLine, iconColor: "text-[#2a9d8f]" },
-    ],
-  },
-  {
-    label: "LEARN",
-    items: [{ to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" }],
-  },
-  {
-    label: "PROGRESS",
-    items: [{ to: "/ielts/history", label: "Band scores", icon: LuTrendingUp, iconColor: "text-[#0096c7]" }],
-  },
-];
 
-// SAT | IELTS almashtirgich (yig'ilgan holatda — faqat joriy imtihon belgisi).
-function ExamSwitcher({ collapsed, onSwitched }) {
-  const { exam, setExam } = useExam();
-  const navigate = useNavigate();
-  const current = exam || "sat";
-  const pick = (id) => {
-    if (id === current) return;
-    setExam(id);
-    navigate("/dashboard");
-    onSwitched?.();
-  };
-  if (collapsed) {
-    const next = current === "sat" ? "ielts" : "sat";
-    return (
-      <button
-        onClick={() => pick(next)}
-        title={`${EXAMS[next].label} ga o'tish`}
-        className={`mx-auto mb-3 flex h-8 w-12 items-center justify-center rounded-lg font-display text-[11px] font-black text-white ${
-          current === "ielts" ? "bg-[#e4002b]" : "bg-[#087fd1]"
-        }`}
-      >
-        {EXAMS[current].label}
-      </button>
-    );
-  }
-  return (
-    <div className="mx-3 mb-3 flex rounded-xl bg-[#12213D]/[0.05] p-1">
-      {Object.values(EXAMS).map((e) => (
-        <button
-          key={e.id}
-          onClick={() => pick(e.id)}
-          className={`h-8 flex-1 rounded-lg text-[13px] font-bold transition ${
-            current === e.id
-              ? `${e.id === "ielts" ? "bg-[#e4002b]" : "bg-[#087fd1]"} text-white shadow-sm`
-              : "text-[#12213D]/50 hover:text-[#12213D]"
-          }`}
-        >
-          {e.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 const ADMIN_ITEMS = [
   { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]" },
   { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary },
+  { to: "/admin/desmos", label: "Desmos (admin)", icon: LuCalculator },
   { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn },
 ];
 
@@ -190,9 +125,8 @@ function NavItem({ item, collapsed, onNavigate }) {
 export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpenMobile, onCloseMobile }) {
   const { user, logout } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { exam } = useExam();
   const navigate = useNavigate();
-  const navGroups = exam === "ielts" ? IELTS_NAV : SAT_NAV;
+  const navGroups = NAV;
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
 
@@ -218,8 +152,6 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
           />
         </NavLink>
       </div>
-
-      <ExamSwitcher collapsed={isCollapsed} onSwitched={onCloseMobile} />
 
       {/* Navigatsiya */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pt-2 [scrollbar-width:none]">

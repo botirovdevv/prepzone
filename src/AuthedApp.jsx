@@ -1,7 +1,6 @@
 import { lazy, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AdminProvider } from "./context/AdminContext";
-import { ExamProvider, useExam } from "./context/ExamContext";
+import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import DashboardLayout from "./components/DashboardLayout";
@@ -11,8 +10,7 @@ import NotFound from "./pages/NotFound";
 import { onIdle, prefetchAll } from "./utils/idle";
 
 // ------------------------------------------------------------------
-// Login qilingan foydalanuvchi sahifalari. Bu modul (va Firestore SDK)
-// alohida chunk — bosh sahifa (Home) va kirish sahifalari uni yuklamaydi.
+// Login qilingan foydalanuvchi sahifalari. Bu modul alohida chunk — bosh sahifa (Home) va kirish sahifalari uni yuklamaydi.
 // Har bir sahifa ham alohida chunk bo'lib, faqat ochilganda yuklanadi.
 // ------------------------------------------------------------------
 const pages = {
@@ -37,11 +35,10 @@ const pages = {
   SetForm: () => import("./pages/admin/SetForm"),
   Analytics: () => import("./pages/admin/Analytics"),
   ChooseExam: () => import("./pages/ChooseExam"),
-  IeltsDashboard: () => import("./pages/ielts/IeltsDashboard"),
-  IeltsTests: () => import("./pages/ielts/IeltsTests"),
-  IeltsTest: () => import("./pages/ielts/IeltsTest"),
-  IeltsResults: () => import("./pages/ielts/IeltsResults"),
-  IeltsHistory: () => import("./pages/ielts/IeltsHistory"),
+  DesmosIndex: () => import("./pages/DesmosIndex"),
+  DesmosTutorial: () => import("./pages/DesmosTutorial"),
+  DesmosDashboard: () => import("./pages/admin/DesmosDashboard"),
+  DesmosForm: () => import("./pages/admin/DesmosForm"),
 };
 const Dashboard = lazy(pages.Dashboard);
 const SATTest = lazy(pages.SATTest);
@@ -64,11 +61,10 @@ const SetsDashboard = lazy(pages.SetsDashboard);
 const SetForm = lazy(pages.SetForm);
 const Analytics = lazy(pages.Analytics);
 const ChooseExam = lazy(pages.ChooseExam);
-const IeltsDashboard = lazy(pages.IeltsDashboard);
-const IeltsTests = lazy(pages.IeltsTests);
-const IeltsTest = lazy(pages.IeltsTest);
-const IeltsResults = lazy(pages.IeltsResults);
-const IeltsHistory = lazy(pages.IeltsHistory);
+const DesmosIndex = lazy(pages.DesmosIndex);
+const DesmosTutorial = lazy(pages.DesmosTutorial);
+const DesmosDashboard = lazy(pages.DesmosDashboard);
+const DesmosForm = lazy(pages.DesmosForm);
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -89,17 +85,25 @@ function AdminDashboardRoute({ children }) {
   );
 }
 
-// "/dashboard" tanlangan imtihonga qarab SAT yoki IELTS dashboard'ini
-// ko'rsatadi; imtihon hali tanlanmagan bo'lsa — tanlash sahifasiga.
-function ExamDashboard() {
-  const { exam, ready } = useExam();
-  if (!ready) return <PageLoader />;
-  if (!exam) return <Navigate to="/choose-exam" replace />;
-  return exam === "ielts" ? <IeltsDashboard /> : <Dashboard />;
+// Onboarding so'rovnomasini hali to'ldirmagan foydalanuvchi avval o'shanga.
+function HomeDashboard() {
+  const { user, loading } = useAuth();
+  if (loading) return <PageLoader />;
+  if (!user?.onboarding) return <Navigate to="/onboarding" replace />;
+  return <Dashboard />;
 }
 
 // Admin bo'lmagan sahifalar fonda oldindan yuklanadi.
-const ADMIN_PAGES = ["AdminDashboard", "SessionForm", "SessionMonitor", "SetsDashboard", "SetForm", "Analytics"];
+const ADMIN_PAGES = [
+  "AdminDashboard",
+  "SessionForm",
+  "SessionMonitor",
+  "SetsDashboard",
+  "SetForm",
+  "Analytics",
+  "DesmosDashboard",
+  "DesmosForm",
+];
 const PREFETCH = Object.entries(pages)
   .filter(([name]) => !ADMIN_PAGES.includes(name))
   .map(([, load]) => load);
@@ -110,13 +114,12 @@ export default function AuthedApp() {
   useEffect(() => onIdle(() => prefetchAll(PREFETCH)), []);
 
   return (
-    <AdminProvider>
-      <ExamProvider>
-        <AnalyticsTracker />
-        <Routes>
-
+    <>
+      <AnalyticsTracker />
+      <Routes>
+        <Route path="choose-exam" element={<Navigate to="/onboarding" replace />} />
         <Route
-          path="choose-exam"
+          path="onboarding"
           element={
             <ProtectedRoute>
               <ChooseExam />
@@ -127,54 +130,11 @@ export default function AuthedApp() {
           path="dashboard"
           element={
             <DashboardRoute>
-              <ExamDashboard />
+              <HomeDashboard />
             </DashboardRoute>
           }
         />
 
-        <Route
-          path="ielts/tests"
-          element={
-            <DashboardRoute>
-              <IeltsTests />
-            </DashboardRoute>
-          }
-        />
-        {["listening", "reading", "writing"].map((s) => (
-          <Route
-            key={s}
-            path={`ielts/practice/${s}`}
-            element={
-              <DashboardRoute>
-                <IeltsTests key={s} initialSection={s} />
-              </DashboardRoute>
-            }
-          />
-        ))}
-        <Route
-          path="ielts/test/:testId"
-          element={
-            <ProtectedRoute>
-              <IeltsTest />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="ielts/results/:id"
-          element={
-            <DashboardRoute>
-              <IeltsResults />
-            </DashboardRoute>
-          }
-        />
-        <Route
-          path="ielts/history"
-          element={
-            <DashboardRoute>
-              <IeltsHistory />
-            </DashboardRoute>
-          }
-        />
         <Route
           path="join"
           element={
@@ -358,9 +318,49 @@ export default function AuthedApp() {
             </AdminDashboardRoute>
           }
         />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </ExamProvider>
-    </AdminProvider>
+        {/* Desmos darsliklari */}
+        <Route
+          path="desmos"
+          element={
+            <DashboardRoute>
+              <DesmosIndex />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="desmos/:id"
+          element={
+            <DashboardRoute>
+              <DesmosTutorial />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="admin/desmos"
+          element={
+            <AdminDashboardRoute>
+              <DesmosDashboard />
+            </AdminDashboardRoute>
+          }
+        />
+        <Route
+          path="admin/desmos/new"
+          element={
+            <AdminDashboardRoute>
+              <DesmosForm />
+            </AdminDashboardRoute>
+          }
+        />
+        <Route
+          path="admin/desmos/:id/edit"
+          element={
+            <AdminDashboardRoute>
+              <DesmosForm />
+            </AdminDashboardRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }

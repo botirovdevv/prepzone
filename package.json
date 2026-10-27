@@ -10,18 +10,15 @@
     "prebuild": "npm run content",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "deploy:rules": "npx firebase-tools deploy --only firestore:rules,firestore:indexes"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0",
-    "@google-cloud/firestore": "^9.3.0",
-    "firebase": "^12.17.1",
-    "firebase-admin": "^14.5.0",
+    "@react-oauth/google": "^0.13.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

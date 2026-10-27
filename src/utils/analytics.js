@@ -1,30 +1,22 @@
-import { doc, increment, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { API_URL } from "../api/client";
 import { dayKey } from "./date";
 
 // ------------------------------------------------------------------
 // Sayt analitikasi (admin → Analitika sahifasi uchun ma'lumot yig'ish).
 //
-// Faqat login qilgan foydalanuvchilar kuzatiladi. Ko'p user bir vaqtda
-// ishlaganda bitta hujjatga yozish tiqilib qolmasligi (Firestore bitta
-// hujjatga ~1 yozuv/soniya tavsiya qiladi) uchun:
-//   analyticsShards/{kun}_{0..9}  — kunlik hisoblagich 10 ta bo'lakka
-//                                    bo'lingan (tasodifiy bo'lakka yoziladi)
-//   analyticsVisitors/{kun}_{uid}  — shu kuni faol bo'lgan user (kuniga 1 marta)
-//   users/{uid}                    — user profili + sahifa statistikasi
-// Firestore bepul tarifi (kuniga 20k yozuv) uchun yozuvlar kam: profil
-// kuniga 1 marta, sahifa ko'rishlar xotirada yig'ilib 5 daqiqada bir
-// (yoki tab yopilganda) yuboriladi — o'rtacha 3–5 yozuv/user/kun.
-// Eski format (analytics/{kun} hujjati) admin sahifasida hali ham o'qiladi.
+// Faqat login qilgan foydalanuvchilar kuzatiladi. Sahifa ko'rishlar
+// xotirada yig'ilib, 5 daqiqada bir (yoki tab yopilganda) bitta so'rov
+// bilan serverga yuboriladi: POST /api/analytics/track { views, pages }.
+// Server kunlik sahifa statistikasi, "bugun faol" ro'yxati va user
+// profilidagi hisoblagichlarni yangilaydi (server/src/routes/analytics.js).
 // ------------------------------------------------------------------
 
-const SHARDS = 10;
 const FLUSH_MS = 5 * 60_000;
 // Tab yashirilganda (boshqa tabga o'tish) — oxirgi yuborishdan shuncha vaqt o'tgan bo'lsa.
 const HIDDEN_FLUSH_MIN_MS = 2 * 60_000;
 
 // Tartib muhim: birinchi mos kelgan pattern olinadi.
-// Kalitlarda "/" bo'lmasligi kerak (Firestore field nomi sifatida ishlatiladi).
+// Kalitlar: kichik lotin harflari va "_" (server shu formatni qabul qiladi).
 const ROUTES = [
   { pattern: /^\/$/, key: "home", label: "Bosh sahifa" },
   { pattern: /^\/login$/, key: "login", label: "Kirish" },
@@ -39,12 +31,9 @@ const ROUTES = [
   { pattern: /^\/leaderboard$/, key: "leaderboard", label: "Leaderboard" },
   { pattern: /^\/vocabulary$/, key: "vocabulary", label: "Vocabulary" },
   { pattern: /^\/study-plan$/, key: "study_plan", label: "Study Plan" },
-  { pattern: /^\/choose-exam$/, key: "choose_exam", label: "Imtihon tanlash" },
-  { pattern: /^\/ielts\/tests$/, key: "ielts_tests", label: "IELTS mock testlar" },
-  { pattern: /^\/ielts\/practice\/[^/]+$/, key: "ielts_practice", label: "IELTS bo'lim mashqi" },
-  { pattern: /^\/ielts\/test\/[^/]+$/, key: "ielts_test", label: "IELTS test (imtihon)" },
-  { pattern: /^\/ielts\/results\/[^/]+$/, key: "ielts_results", label: "IELTS natija" },
-  { pattern: /^\/ielts\/history$/, key: "ielts_history", label: "IELTS band scores" },
+  { pattern: /^\/onboarding$/, key: "onboarding", label: "Onboarding so'rovnomasi" },
+  { pattern: /^\/desmos$/, key: "desmos", label: "Desmos darslari" },
+  { pattern: /^\/desmos\/[^/]+$/, key: "desmos_tutorial", label: "Desmos darsligi" },
   { pattern: /^\/account$/, key: "account", label: "Sozlamalar" },
   { pattern: /^\/session\/[^/]+\/test$/, key: "session_test", label: "Sessiya testi" },
   { pattern: /^\/session\/[^/]+\/results$/, key: "session_results", label: "Sessiya natijasi" },
@@ -64,39 +53,13 @@ export function routeLabel(key) {
 
 export { dayKey };
 
-// Kuniga bir marta (localStorage belgisi bo'yicha) — har sahifa ochilishida emas.
-export async function upsertUserProfile(user) {
-  if (!user) return;
-  const marker = `profile::${dayKey()}_${user.uid}`;
-  if (alreadyVisited(marker)) return;
-  rememberVisit(marker);
-  try {
-    const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime) : null;
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        uid: user.uid,
-        email: user.email || null,
-        displayName: user.displayName ? user.displayName.slice(0, 100) : null,
-        provider: user.providerData?.[0]?.providerId || "password",
-        emailVerified: !!user.emailVerified,
-        ...(created ? { createdAt: created } : {}),
-        lastSeenAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    console.error("User profilini saqlashda xatolik:", err);
-  }
-}
-
 // ---------------- Batching ----------------
 let pending = { uid: null, views: 0, pages: {} };
 let flushTimer = null;
 let lastFlushAt = 0;
 const visitedToday = new Set();
 
-// Belgilar localStorage'da (barcha tablar uchun umumiy), kun kaliti bilan.
+// "Bugun birinchi ko'rish" belgisi localStorage'da (barcha tablar uchun umumiy).
 function alreadyVisited(marker) {
   if (visitedToday.has(marker)) return true;
   try {
@@ -125,7 +88,8 @@ function rememberVisit(marker) {
   }
 }
 
-// Yig'ilgan ko'rishlarni Firestore'ga yuboradi (bitta shard + user hujjati).
+// Yig'ilgan ko'rishlarni serverga yuboradi. keepalive — tab yopilayotganda
+// ham so'rov oxirigacha yetib borishi uchun.
 export async function flushPageViews() {
   if (flushTimer) {
     clearTimeout(flushTimer);
@@ -135,31 +99,17 @@ export async function flushPageViews() {
   if (!batch.uid || batch.views === 0) return;
   pending = { uid: batch.uid, views: 0, pages: {} };
   lastFlushAt = Date.now();
-
-  const day = dayKey();
-  const pages = Object.fromEntries(Object.entries(batch.pages).map(([k, v]) => [k, increment(v)]));
-  const shard = Math.floor(Math.random() * SHARDS);
-  const marker = `${day}_${batch.uid}`;
-  const writes = [
-    setDoc(
-      doc(db, "analyticsShards", `${day}_${shard}`),
-      { date: day, views: increment(batch.views), pages },
-      { merge: true }
-    ),
-    setDoc(
-      doc(db, "users", batch.uid),
-      { pageViews: increment(batch.views), pages, lastSeenAt: serverTimestamp() },
-      { merge: true }
-    ),
-  ];
-  if (!alreadyVisited(marker)) {
-    rememberVisit(marker);
-    writes.push(setDoc(doc(db, "analyticsVisitors", marker), { date: day, uid: batch.uid }));
-  }
+  rememberVisit(`${dayKey()}_${batch.uid}`);
   try {
-    await Promise.all(writes);
+    await fetch(`${API_URL}/api/analytics/track`, {
+      method: "POST",
+      credentials: "include",
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ views: batch.views, pages: batch.pages }),
+    });
   } catch (err) {
-    console.error("Sahifa ko'rishlarni yozishda xatolik:", err);
+    console.error("Sahifa ko'rishlarni yuborishda xatolik:", err);
   }
 }
 

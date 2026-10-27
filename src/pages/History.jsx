@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { fetchUserResults, countUserResults } from "../utils/userResults";
 import { useAuth } from "../context/AuthContext";
 import { getSatTestTitle } from "../data/testsCatalog";
+import { toDate } from "../utils/dates";
 import {
   LuCalendar,
   LuChevronRight,
@@ -27,7 +28,7 @@ import {
 } from "../components/ui";
 
 function resultDate(a) {
-  return a.createdAt?.toDate ? a.createdAt.toDate() : a.finishedAt?.toDate ? a.finishedAt.toDate() : null;
+  return toDate(a.createdAt) || toDate(a.finishedAt);
 }
 
 const PAGE_SIZE = 20;
@@ -50,12 +51,8 @@ export default function History() {
   useEffect(() => {
     if (!user) return;
     // Barcha natijalar (statik SAT testlar HAM admin qo'shgan sessiya
-    // testlari) shu bitta ildiz "results" kolleksiyasida saqlanadi.
-    // Sessiya orqali tugatilgan testlar uchun asosiy nusxa
-    // "testSessions/{id}/results/{uid}" ostida saqlanadi, shu bilan birga
-    // shu yerga ham (sessionId/sessionTitle maydonlari bilan) nusxalab
-    // yoziladi — shunda tarix sahifasi oddiy, bitta so'rov bilan ishlayveradi.
-    // Sahifalab (20 tadan) yuklanadi — o'qishlar sonini cheklash uchun.
+    // testlari, sessionId/sessionTitle bilan) — server yangisini birinchi
+    // qilib, 20 tadan sahifalab qaytaradi.
     let cancelled = false;
     fetchUserResults("results", user.uid, { pageSize: PAGE_SIZE })
       .then((page) => {
@@ -161,6 +158,13 @@ export default function History() {
                   <Link
                     key={a.id}
                     to={linkTo}
+                    // Sessiya natijasining nusxasi shu yerda bor — admin testni
+                    // o'chirib yuborgan bo'lsa ham natija ochilaveradi.
+                    state={
+                      isSession && a.results
+                        ? { results: a.results, total: a.total, sessionTitle: a.sessionTitle, terminated: a.terminated }
+                        : undefined
+                    }
                     className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
                   >
                     <IconTile icon={isSession ? LuGlobe : LuCalendar} tone="ink" />

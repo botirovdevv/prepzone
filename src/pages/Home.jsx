@@ -10,15 +10,13 @@ import {
   LuCheck,
   LuChevronDown,
   LuClock,
-  LuHeadphones,
   LuKeyRound,
+  LuLayers,
   LuLanguages,
   LuListChecks,
   LuMenu,
-  LuMic,
   LuTarget,
   LuTrophy,
-  LuVolume2,
   LuX,
 } from "react-icons/lu";
 import { nextTestDate, daysLeft } from "../data/testDates";
@@ -226,101 +224,14 @@ function SatPreview() {
   );
 }
 
-// ---------------- Hero preview: IELTS ----------------
-function IeltsPreview() {
-  return (
-    <>
-      <div className="flex h-11 items-center justify-between bg-[#e4002b] px-5 text-[11px] text-white">
-        <span className="font-bold tracking-wide">IELTS · Listening · Part 1</span>
-        <span className="flex items-center gap-1.5 font-bold tabular-nums">
-          <LuClock size={12} /> 28:14
-        </span>
-      </div>
-      <div className="p-6">
-        <div className="flex items-center gap-3 rounded-xl bg-[#f6f7f9] px-4 py-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111827] text-white">
-            <LuVolume2 size={14} />
-          </span>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#dfe3e8]">
-            <div className="h-full w-[38%] rounded-full bg-[#e4002b]" />
-          </div>
-          <span className="text-[11px] font-semibold tabular-nums text-[#697586]">02:41</span>
-        </div>
-
-        <p className="mt-5 text-[12px] font-bold text-[#111827]">Questions 1–5</p>
-        <p className="mt-0.5 text-[11px] text-[#697586]">
-          Complete the form below. Write <b>NO MORE THAN TWO WORDS</b> for each answer.
-        </p>
-
-        <div className="mt-4 space-y-2.5 text-[12px] text-[#303a46]">
-          {[
-            ["Name of hotel:", "Riverside", true],
-            ["Type of room:", "double", true],
-            ["Check-in day:", "", false],
-          ].map(([label, value, filled], i) => (
-            <div key={label} className="flex items-center gap-3">
-              <span className="w-28 shrink-0">{label}</span>
-              <span
-                className={`flex h-8 flex-1 items-center rounded-lg border px-3 ${
-                  filled ? "border-[#cbd3dc] bg-white font-semibold text-[#111827]" : "border-[#e4002b] bg-[#e4002b]/[0.03]"
-                }`}
-              >
-                <span className="mr-2 text-[10px] font-bold text-[#9aa4b2]">{i + 1}</span>
-                {value}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-1.5 border-t border-[#e8edf1] pt-4">
-          {Array.from({ length: 10 }, (_, i) => (
-            <span
-              key={i}
-              className={`flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold ${
-                i < 2 ? "bg-[#111827] text-white" : i === 2 ? "border-2 border-[#e4002b] text-[#e4002b]" : "border border-[#dfe3e8] text-[#9aa4b2]"
-              }`}
-            >
-              {i + 1}
-            </span>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
 function HeroPreview() {
-  const [tab, setTab] = useState("sat");
   return (
     <div className="relative lg:pl-4">
-      <div className="absolute -inset-10 -z-10 bg-gradient-to-br from-[#087fd1]/15 via-transparent to-[#e4002b]/10 blur-3xl" />
-
-      <div role="tablist" aria-label="Imtihon ko'rinishi" className="mb-4 inline-flex rounded-full border border-[#111827]/[0.08] bg-white p-1 shadow-sm">
-        {[
-          ["sat", "SAT"],
-          ["ielts", "IELTS"],
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`rounded-full px-5 py-2 text-[13px] font-bold transition ${
-              tab === id
-                ? id === "sat"
-                  ? "bg-[#087fd1] text-white"
-                  : "bg-[#e4002b] text-white"
-                : "text-[#566176] hover:text-[#111827]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <div className="absolute -inset-10 -z-10 bg-gradient-to-br from-[#087fd1]/15 via-transparent to-[#087fd1]/5 blur-3xl" />
 
       <div className="overflow-hidden rounded-[20px] border border-[#cfd7df] bg-white shadow-[0_30px_80px_rgba(24,54,78,0.13)]">
-        <div key={tab} className="home-menu-in min-h-[340px]">
-          {tab === "sat" ? <SatPreview /> : <IeltsPreview />}
+        <div className="min-h-[340px]">
+          <SatPreview />
         </div>
       </div>
 
@@ -330,7 +241,7 @@ function HeroPreview() {
         </span>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#98a2b3]">Maqsad</p>
-          <p className="text-[15px] font-bold text-[#111827]">{tab === "sat" ? "SAT 1400" : "IELTS 7.5"}</p>
+          <p className="text-[15px] font-bold text-[#111827]">SAT 1400</p>
         </div>
       </div>
     </div>
@@ -339,10 +250,7 @@ function HeroPreview() {
 
 // Keyingi rasmiy test kunlari (src/data/testDates.js).
 function TestDayPills() {
-  const items = [
-    ["SAT", nextTestDate("sat"), "bg-[#087fd1]"],
-    ["IELTS", nextTestDate("ielts"), "bg-[#e4002b]"],
-  ].filter(([, d]) => d);
+  const items = [["SAT", nextTestDate(), "bg-[#087fd1]"]].filter(([, d]) => d);
   if (!items.length) return null;
   return (
     <div className="mt-8 flex flex-wrap gap-2">
@@ -433,17 +341,17 @@ function Features() {
           </FeatureCard>
 
           <FeatureCard
-            icon={LuHeadphones}
+            icon={LuLayers}
             tone="red"
-            title="IELTS on Computer"
-            text="Listening, Reading va Writing — CD IELTS interfeysida. L/R avtomatik baholanadi, Writing 4 mezon bo'yicha."
+            title="Oylik amaliyot to'plamlari"
+            text="Har bir rasmiy SAT sanasi uchun alohida to'plam — vaqt cheklovisiz, javob darhol tekshiriladi."
             delay={80}
           >
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                ["L", "7.5"],
-                ["R", "8.0"],
-                ["W", "6.5"],
+                ["Mart", "40"],
+                ["May", "98"],
+                ["Iyun", "40"],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-[#f6f7f9] py-2.5">
                   <p className="text-[10px] font-bold text-[#98a2b3]">{k}</p>
@@ -503,7 +411,7 @@ function Features() {
             icon={LuLanguages}
             tone="ink"
             title="Vocabulary"
-            text="SAT va IELTS uchun muhim so'zlar — kartochkalar va takrorlash bilan."
+            text="SAT uchun muhim so'zlar — kartochkalar va takrorlash bilan."
             delay={160}
           >
             <div className="flex flex-wrap gap-1.5">
@@ -632,19 +540,19 @@ function ReportPreview({ onStart }) {
 const FAQ = [
   [
     "Mock testlar haqiqiy imtihonga qanchalik o'xshash?",
-    "SAT — Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, Desmos kalkulyatori (tez orada) va formula varag'i bilan. IELTS — IELTS on Computer interfeysidagi Listening, Reading va Writing, rasmiy vaqt chegaralari bilan.",
+    "SAT — Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, Desmos kalkulyatori (tez orada) va formula varag'i bilan, rasmiy vaqt chegaralari va to'liq ekran rejimida.",
   ],
   [
     "Ball qanday hisoblanadi?",
-    "SAT natijasi javoblar va modul qiyinligi asosida 400–1600 shkalaga o'tkaziladi. IELTS Listening va Reading to'g'ri javoblar soni bo'yicha band'ga aylantiriladi, Writing esa 4 mezon bo'yicha taxminiy baholanadi. Bu rasmiy natija emas, balki tayyorgarlik darajangiz uchun yo'l-yo'riq.",
+    "SAT natijasi javoblar va modul qiyinligi asosida 400–1600 shkalaga o'tkaziladi (IRT modeli asosida). Bu rasmiy natija emas, balki tayyorgarlik darajangiz uchun yo'l-yo'riq.",
   ],
   [
     "Qaysi qurilmada ishlash kerak?",
     "Haqiqiy imtihon kabi kompyuter yoki noutbukda ishlash tavsiya etiladi — test to'liq ekran rejimida o'tadi. Natijalar, lug'at va rejani telefonda ham ko'rish mumkin.",
   ],
   [
-    "SAT va IELTS'ga birga tayyorlansam bo'ladimi?",
-    "Ha. Ro'yxatdan o'tishda ikkalasini ham tanlab, har biriga maqsad ball qo'yishingiz mumkin. Dashboard'lar orasida sidebar orqali bir bosishda almashasiz.",
+    "O'qituvchim bergan kod bilan qanday test topshiraman?",
+    "Dashboard yoki \"Mock with key\" bo'limida 6 xonali kodni kiriting — belgilangan vaqtda test ochiladi va natijangiz o'qituvchingizga ko'rinadi.",
   ],
   [
     "Natijalarim saqlanadimi?",
@@ -716,9 +624,9 @@ const FOOTER_COLUMNS = [
   {
     title: "Imtihonlar",
     links: [
-      { label: "SAT", section: "tests" },
-      { label: "IELTS Academic", section: "tests" },
-      { label: "CEFR Speaking", soon: true },
+      { label: "Digital SAT mock", section: "tests" },
+      { label: "Amaliyot to'plamlari", section: "tests" },
+      { label: "Kod bilan test", section: "tests" },
     ],
   },
   {
@@ -746,7 +654,7 @@ function Footer({ onNavigate }) {
           <div className="max-w-[360px]">
             <img src={logo} alt="Prepzone" className="h-8 w-auto object-contain" />
             <p className="mt-5 text-[15px] leading-7 text-[#667085]">
-              SAT va IELTS uchun real imtihon formatiga yaqin online mock test platformasi.
+              Digital SAT uchun real imtihon formatiga yaqin online mock test platformasi.
             </p>
             <button
               onClick={() => onNavigate("/register")}
@@ -813,8 +721,8 @@ export default function Home() {
   const rootRef = useRef(null);
   useReveal(rootRef);
 
-  // Yangi user: ro'yxatdan o'tadi, so'ng /choose-exam so'rovnomasida
-  // imtihon va maqsad ballni tanlaydi.
+  // Yangi user: ro'yxatdan o'tadi, so'ng /onboarding so'rovnomasida
+  // maqsad ballini belgilaydi.
   const handleStart = () => navigate("/register");
   const handleLogin = () => navigate("/login");
 
@@ -837,7 +745,7 @@ export default function Home() {
           <div className="home-reveal">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#087fd1]/20 bg-[#087fd1]/[0.06] px-3.5 py-1.5 text-[12px] font-bold text-[#087fd1]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#087fd1]" />
-              SAT · IELTS Academic mock testlar
+              Digital SAT mock testlar
             </span>
 
             <h1 className="mt-7 max-w-[640px] font-['Inter_Tight'] text-[46px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[64px] lg:text-[72px]">
@@ -856,7 +764,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-7 max-w-[520px] text-[17px] leading-7 text-[#667085] sm:text-[18px]">
-              Adaptiv Digital SAT va IELTS on Computer mock testlari, mavzular bo'yicha tahlil va maqsad ballingizga
+              Bluebook formatidagi adaptiv Digital SAT mock testlari, mavzular bo'yicha tahlil va maqsad ballingizga
               moslashgan reja — hammasi bitta platformada.
             </p>
 
@@ -897,18 +805,18 @@ export default function Home() {
               link: "text-[#087fd1]",
             },
             {
-              icon: LuHeadphones,
-              name: "IELTS Academic",
-              text: "Listening, Reading, Writing — CD IELTS interfeysida, band 0–9.",
-              accent: "text-[#e4002b] bg-[#e4002b]/10",
-              link: "text-[#e4002b]",
+              icon: LuLayers,
+              name: "Amaliyot to'plamlari",
+              text: "Har oylik rasmiy SAT sanasi uchun mavzular bo'yicha savollar — vaqt cheklovisiz, darhol javob bilan.",
+              accent: "text-[#e07a5f] bg-[#e07a5f]/10",
+              link: "text-[#e07a5f]",
             },
             {
-              icon: LuMic,
-              name: "CEFR Speaking",
-              text: "Speaking topshiriqlarini imtihon sharoitiga yaqin formatda mashq qiling.",
-              accent: "text-[#667085] bg-[#111827]/[0.05]",
-              soon: true,
+              icon: LuKeyRound,
+              name: "Kod bilan mock",
+              text: "O'qituvchingiz bergan 6 xonali kod bilan belgilangan vaqtda nazorat ostidagi test.",
+              accent: "text-[#12213D] bg-[#111827]/[0.06]",
+              link: "text-[#12213D]",
             },
           ].map((t, i) => (
             <div
@@ -957,7 +865,7 @@ export default function Home() {
 
         <ol className="mt-14 grid gap-4 md:grid-cols-3">
           {[
-            ["Ro'yxatdan o'ting", "SAT, IELTS yoki ikkalasini tanlang va olmoqchi bo'lgan ballingizni belgilang."],
+            ["Ro'yxatdan o'ting", "Olmoqchi bo'lgan SAT ballingizni belgilang — reja shunga moslashadi."],
             ["Mockni ishlang", "Real imtihon sharoitida — vaqt chegarasi va to'liq ekran rejimida."],
             ["Tahlil qiling", "Ball, xatolar va mavzular kesimi. Study Plan keyingi qadamni ko'rsatadi."],
           ].map(([title, text], i) => (

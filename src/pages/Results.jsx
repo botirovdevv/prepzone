@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
 import { LuCheck, LuX, LuMinus, LuSearchX, LuChartColumn, LuRotateCcw, LuChevronDown } from "react-icons/lu";
-import { db } from "../firebase/config";
 import { getModuleQuestions } from "../data/satTest";
 import { useSatTest } from "../hooks/useTestContent";
 import { isAnswerCorrect } from "../utils/irtScoring";
-import { apiFetch } from "../utils/api";
+import { api } from "../api/client";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
@@ -121,17 +119,14 @@ export default function Results() {
 
   useEffect(() => {
     // Agar sahifa /sat/results/:id orqali ochilgan bo'lsa (masalan,
-    // "Mening natijalarim" ro'yxatidan), natijani Firestore'dan olib kelamiz.
+    // "Mening natijalarim" ro'yxatidan), natijani serverdan olib kelamiz.
     if (location.state?.results || !id) return;
     setLoading(true);
-    getDoc(doc(db, "results", id))
-      .then((snap) => {
-        if (snap.exists()) {
-          setResults(snap.data().results);
-          setTestId(snap.data().testId || null);
-        } else {
-          setNotFound(true);
-        }
+    api
+      .get(`/results/${id}`)
+      .then((r) => {
+        setResults(r.results);
+        setTestId(r.testId || null);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -143,7 +138,8 @@ export default function Results() {
     if (!resultId || !results) return;
     let cancelled = false;
     setKeysError(false);
-    apiFetch("review", { method: "GET", query: { kind: "sat", id: resultId } })
+    api
+      .get(`/sat/review?id=${encodeURIComponent(resultId)}`)
       .then((d) => !cancelled && setKeys(d.keys))
       .catch((err) => {
         console.error("To'g'ri javoblarni yuklashda xatolik:", err);
