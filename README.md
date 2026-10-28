@@ -58,7 +58,9 @@ npm run dev
 ```
 
 Amaliyot to'plamlarini bazaga yozish: `cd server && npm run seed:practice -- --write`.
-Admin qilish: `cd server && npm run make-admin -- email@example.com`.
+Owner (to'liq huquqli admin) qilish: `cd server && npm run make-admin -- email@example.com`.
+Boshqa adminlar va ularning bo'lim ruxsatlari (Testlar, To'plamlar, Desmos, Analitika,
+Userlarni bloklash), shuningdek userlarni bloklash — saytda Analitika > Foydalanuvchilar bo'limida.
 
 ## Deploy
 

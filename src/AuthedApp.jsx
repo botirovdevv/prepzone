@@ -77,9 +77,9 @@ function DashboardRoute({ children }) {
   );
 }
 
-function AdminDashboardRoute({ children }) {
+function AdminDashboardRoute({ perm, children }) {
   return (
-    <AdminRoute>
+    <AdminRoute perm={perm}>
       <DashboardLayout>{children}</DashboardLayout>
     </AdminRoute>
   );
@@ -257,7 +257,7 @@ export default function AuthedApp() {
         <Route
           path="admin"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sessions">
               <AdminDashboard />
             </AdminDashboardRoute>
           }
@@ -265,7 +265,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sessions/new"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sessions">
               <SessionForm />
             </AdminDashboardRoute>
           }
@@ -273,7 +273,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sessions/:id/edit"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sessions">
               <SessionForm />
             </AdminDashboardRoute>
           }
@@ -281,7 +281,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sessions/:id/monitor"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sessions">
               <SessionMonitor />
             </AdminDashboardRoute>
           }
@@ -289,7 +289,7 @@ export default function AuthedApp() {
         <Route
           path="admin/analytics"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm={["analytics", "users"]}>
               <Analytics />
             </AdminDashboardRoute>
           }
@@ -297,7 +297,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sets"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sets">
               <SetsDashboard />
             </AdminDashboardRoute>
           }
@@ -305,7 +305,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sets/new"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sets">
               <SetForm />
             </AdminDashboardRoute>
           }
@@ -313,7 +313,7 @@ export default function AuthedApp() {
         <Route
           path="admin/sets/:id/edit"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="sets">
               <SetForm />
             </AdminDashboardRoute>
           }
@@ -338,7 +338,7 @@ export default function AuthedApp() {
         <Route
           path="admin/desmos"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="desmos">
               <DesmosDashboard />
             </AdminDashboardRoute>
           }
@@ -346,7 +346,7 @@ export default function AuthedApp() {
         <Route
           path="admin/desmos/new"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="desmos">
               <DesmosForm />
             </AdminDashboardRoute>
           }
@@ -354,7 +354,7 @@ export default function AuthedApp() {
         <Route
           path="admin/desmos/:id/edit"
           element={
-            <AdminDashboardRoute>
+            <AdminDashboardRoute perm="desmos">
               <DesmosForm />
             </AdminDashboardRoute>
           }

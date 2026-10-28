@@ -33,6 +33,11 @@ async function request(method, path, body) {
   }
 
   const data = await res.json().catch(() => null);
+  // Sessiya bekor bo'lgan (masalan user bloklangan yoki boshqa joyda parol
+  // o'zgargan) — AuthContext userni chiqarib, login sahifasiga qaytaradi.
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    window.dispatchEvent(new Event("auth:expired"));
+  }
   if (!res.ok) {
     throw new ApiError(
       res.status,

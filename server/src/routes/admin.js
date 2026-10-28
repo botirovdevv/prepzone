@@ -1,12 +1,16 @@
 import { readFile } from "node:fs/promises";
 import { Router } from "express";
+import { z } from "zod";
 import { one, query } from "../db/index.js";
-import { HttpError } from "../lib/errors.js";
+import { HttpError, badRequest, forbidden, notFound, parseBody } from "../lib/errors.js";
 import { dayKey } from "../lib/limits.js";
+import { ADMIN_PERMS, effectivePerms } from "../lib/permissions.js";
+import { requireOwner, requirePerm } from "../middleware/auth.js";
 
 // ------------------------------------------------------------------
 // Faqat admin (index.js'da requireAdmin bilan ulanadi): sayt analitikasi,
-// foydalanuvchilar ro'yxati va savol banki (to'g'ri javoblar bilan).
+// foydalanuvchilar ro'yxati, bloklash/admin tayinlash va savol banki
+// (to'g'ri javoblar bilan). Har bir endpoint o'z bo'limi ruxsatini talab qiladi.
 // ------------------------------------------------------------------
 
 const router = Router();
@@ -21,7 +25,7 @@ function lastDays(n) {
   return out;
 }
 
-router.get("/analytics", async (req, res) => {
+router.get("/analytics", requirePerm("analytics"), async (req, res) => {
   const range = RANGES.includes(Number(req.query.range)) ? Number(req.query.range) : 30;
   const keys = lastDays(range);
   const from = keys[0];
@@ -70,43 +74,114 @@ router.get("/analytics", async (req, res) => {
 
 const USERS_PAGE = 50;
 
-// Foydalanuvchilar: oxirgi faollik bo'yicha sahifalab (?offset=) yoki email
-// boshlanishi bo'yicha qidiruv (?search=).
-router.get("/users", async (req, res) => {
+const USER_SELECT = `SELECT u.*, l.best_score,
+    (SELECT count(*) FROM results r WHERE r.user_id = u.id)::int AS tests
+  FROM users u LEFT JOIN leaderboard l ON l.user_id = u.id`;
+
+const FILTERS = {
+  admins: "u.is_admin",
+  blocked: "u.blocked_at IS NOT NULL",
+};
+
+function userItem(u) {
+  return {
+    id: u.id,
+    email: u.email,
+    displayName: u.display_name,
+    provider: u.google_id ? "google.com" : "password",
+    emailVerified: u.email_verified,
+    isAdmin: u.is_admin,
+    isOwner: u.is_owner,
+    adminPerms: effectivePerms(u),
+    blocked: !!u.blocked_at,
+    blockedAt: u.blocked_at,
+    blockedReason: u.blocked_reason,
+    createdAt: u.created_at,
+    lastSeenAt: u.last_seen_at,
+    pageViews: u.page_views,
+    pages: u.pages,
+    onboarding: u.onboarding,
+    bestScore: u.best_score ?? null,
+    tests: u.tests,
+  };
+}
+
+// Foydalanuvchilar: oxirgi faollik bo'yicha sahifalab (?offset=), email
+// boshlanishi bo'yicha qidiruv (?search=) va ?filter=admins|blocked.
+router.get("/users", requirePerm("analytics", "users"), async (req, res) => {
   const search = String(req.query.search || "").trim().toLowerCase().slice(0, 100);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const params = [USERS_PAGE + 1, offset];
+  const where = [];
+  if (search) {
+    params.push(search.replace(/[%_\\]/g, "\\$&"));
+    where.push(`lower(u.email) LIKE $${params.length} || '%'`);
+  }
+  if (Object.hasOwn(FILTERS, req.query.filter)) where.push(FILTERS[req.query.filter]);
   const { rows } = await query(
-    `SELECT u.*, l.best_score,
-       (SELECT count(*) FROM results r WHERE r.user_id = u.id)::int AS tests
-     FROM users u LEFT JOIN leaderboard l ON l.user_id = u.id
-     ${search ? "WHERE lower(u.email) LIKE $3 || '%'" : ""}
+    `${USER_SELECT}
+     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
      ORDER BY u.last_seen_at DESC NULLS LAST, u.created_at DESC
      LIMIT $1 OFFSET $2`,
-    search ? [USERS_PAGE + 1, offset, search.replace(/[%_\\]/g, "\\$&")] : [USERS_PAGE + 1, offset]
+    params
   );
   res.json({
-    items: rows.slice(0, USERS_PAGE).map((u) => ({
-      id: u.id,
-      email: u.email,
-      displayName: u.display_name,
-      provider: u.google_id ? "google.com" : "password",
-      emailVerified: u.email_verified,
-      isAdmin: u.is_admin,
-      createdAt: u.created_at,
-      lastSeenAt: u.last_seen_at,
-      pageViews: u.page_views,
-      pages: u.pages,
-      onboarding: u.onboarding,
-      bestScore: u.best_score ?? null,
-      tests: u.tests,
-    })),
+    items: rows.slice(0, USERS_PAGE).map(userItem),
     hasMore: rows.length > USERS_PAGE,
   });
 });
 
+const findUserItem = async (id) => userItem(await one(`${USER_SELECT} WHERE u.id = $1`, [id]));
+
+// Bloklash va admin tayinlash uchun nishon: o'zingiz va owner hisobi o'zgarmaydi.
+async function targetUser(req) {
+  const user = await one("SELECT * FROM users WHERE id = $1", [req.params.id]);
+  if (!user) throw notFound("Foydalanuvchi topilmadi.");
+  if (user.id === req.user.id) throw badRequest("invalid-argument", "O'zingizga bu amalni qo'llab bo'lmaydi.");
+  if (user.is_owner) throw forbidden("Owner hisobini o'zgartirib bo'lmaydi.");
+  return user;
+}
+
+// Bloklash / blokdan chiqarish. Bloklashda barcha sessiyalari bekor bo'ladi.
+// Adminni faqat owner bloklay oladi.
+router.patch("/users/:id/block", requirePerm("users"), async (req, res) => {
+  const body = parseBody(
+    z.object({ blocked: z.boolean(), reason: z.string().trim().max(300).optional() }),
+    req.body
+  );
+  const user = await targetUser(req);
+  if (user.is_admin && !req.user.is_owner) throw forbidden("Adminni faqat owner bloklay oladi.");
+  if (body.blocked) {
+    await query(
+      `UPDATE users SET blocked_at = now(), blocked_reason = $2, token_version = token_version + 1
+       WHERE id = $1`,
+      [user.id, body.reason || null]
+    );
+  } else {
+    await query("UPDATE users SET blocked_at = NULL, blocked_reason = NULL WHERE id = $1", [user.id]);
+  }
+  res.json({ user: await findUserItem(user.id) });
+});
+
+// Admin tayinlash va bo'lim ruxsatlari — faqat owner. Bo'sh ro'yxat = adminlikdan olish.
+router.put("/users/:id/admin", requireOwner, async (req, res) => {
+  const body = parseBody(z.object({ perms: z.array(z.enum(ADMIN_PERMS, "Noma'lum ruxsat.")).max(ADMIN_PERMS.length) }), req.body);
+  const user = await targetUser(req);
+  const perms = [...new Set(body.perms)];
+  if (perms.length && user.blocked_at) {
+    throw badRequest("failed-precondition", "Bloklangan userni admin qilib bo'lmaydi.");
+  }
+  await query("UPDATE users SET admin_perms = $2, is_admin = $3 WHERE id = $1", [
+    user.id,
+    perms,
+    perms.length > 0,
+  ]);
+  res.json({ user: await findUserItem(user.id) });
+});
+
 // Admin savol banki: server/question-bank/<file>.json (to'g'ri javoblar bilan,
 // shuning uchun public'da emas).
-router.get("/question-bank", async (req, res) => {
+router.get("/question-bank", requirePerm("sets", "sessions"), async (req, res) => {
   const file = String(req.query.file || "");
   if (!/^(rw|math)-[a-z-]{2,40}$/.test(file)) throw new HttpError(400, "invalid-argument", "Noto'g'ri fayl nomi.");
   let body;

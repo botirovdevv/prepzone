@@ -3,6 +3,7 @@
 // aylantirish: { id, ...data, <ustunlar> }. Sanalar ISO string bo'lib
 // qaytadi (frontendda src/utils/dates.js orqali o'qiladi).
 // ------------------------------------------------------------------
+import { effectivePerms } from "./permissions.js";
 
 export function publicUser(u) {
   return {
@@ -11,6 +12,8 @@ export function publicUser(u) {
     displayName: u.display_name || "",
     emailVerified: u.email_verified,
     isAdmin: u.is_admin,
+    isOwner: u.is_owner,
+    adminPerms: effectivePerms(u),
     hasPassword: !!u.password_hash,
     hasGoogle: !!u.google_id,
     onboarding: u.onboarding || null,
