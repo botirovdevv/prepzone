@@ -148,6 +148,9 @@ Avval saytda odatdagidek ro'yxatdan o'ting, keyin serverda:
 docker compose exec api node scripts/make-admin.js sizning@email.com
 ```
 
+Bu sizni **owner** qiladi. Boshqa adminlarni va ularga qaysi bo'limlar ochiqligini saytdagi
+Analitika > Foydalanuvchilar bo'limida user qatorini ochib belgilaysiz.
+
 ## 10. Amaliyot to'plamlarini yuklash (bir marta)
 
 "Exam questions" bo'limidagi oylik SAT to'plamlari (`content/practice-sets`) bazaga

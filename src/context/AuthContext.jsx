@@ -6,7 +6,7 @@ import { resetSocket } from "../api/socket";
 // Autentifikatsiya — endi o'z backendimiz orqali (server/src/routes/auth.js).
 //
 // `user` obyekti: { uid, email, displayName, emailVerified, isAdmin,
-// hasPassword, hasGoogle }. Sessiya httpOnly cookie'da, shuning uchun
+// isOwner, adminPerms, hasPassword, hasGoogle }. Sessiya httpOnly cookie'da, shuning uchun
 // sahifa yangilanganda /auth/me orqali tiklanadi.
 // ------------------------------------------------------------------
 
@@ -22,6 +22,15 @@ export function AuthProvider({ children }) {
       .then((data) => setUser(data.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const expire = () => {
+      resetSocket();
+      setUser(null);
+    };
+    window.addEventListener("auth:expired", expire);
+    return () => window.removeEventListener("auth:expired", expire);
   }, []);
 
   // Har bir auth javobi yangilangan foydalanuvchini qaytaradi.

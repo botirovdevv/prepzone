@@ -6,6 +6,7 @@ import { getStaticSections, reviewKeys, routeFor, scoreAttempt } from "../lib/sa
 import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
 import { consumeDaily } from "../lib/limits.js";
 import { resultDoc } from "../lib/serialize.js";
+import { hasPerm } from "../lib/permissions.js";
 
 // ------------------------------------------------------------------
 // Statik SAT mock testlari (content/sat). Javob kalitlari faqat serverda:
@@ -107,7 +108,7 @@ router.get("/review", async (req, res) => {
   if (!id || id.length > 64) throw new HttpError(400, "invalid-argument", "Noto'g'ri id.");
   const row = await one("SELECT * FROM results WHERE id = $1", [id]);
   if (!row) throw notFound("Natija topilmadi.");
-  if (row.user_id !== req.user.id && !req.user.is_admin) {
+  if (row.user_id !== req.user.id && !hasPerm(req.user, "analytics") && !hasPerm(req.user, "sessions")) {
     throw new HttpError(403, "permission-denied", "Bu natija sizga tegishli emas.");
   }
   if (row.session_id) {

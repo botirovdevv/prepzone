@@ -12,7 +12,8 @@ import {
 import { emitSessionUpdate, emitToAdmins } from "../lib/realtime.js";
 import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
 import { routeFor, scoreAttempt, stripSections } from "../lib/satScoring.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { requirePerm } from "../middleware/auth.js";
+import { hasPerm } from "../lib/permissions.js";
 
 // ------------------------------------------------------------------
 // Admin tashkil qilgan testlar (kod bilan yoki doimiy ochiq).
@@ -28,6 +29,7 @@ import { requireAdmin } from "../middleware/auth.js";
 // ------------------------------------------------------------------
 
 const router = Router();
+const requireSessions = requirePerm("sessions");
 
 const QUESTION_KEYS = ["module1", "module2Easy", "module2Hard", "module2Mixed"];
 
@@ -118,7 +120,7 @@ const studentName = (user) => user.display_name || user.email.split("@")[0] || "
 // ------------------------------------------------------------------
 
 router.get("/", async (req, res) => {
-  const isAdmin = req.user.is_admin;
+  const isAdmin = hasPerm(req.user, "sessions");
   const { rows } = await query(
     isAdmin
       ? "SELECT * FROM test_sessions ORDER BY scheduled_at DESC NULLS LAST, created_at DESC"
@@ -138,14 +140,14 @@ router.post("/lookup", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const s = await getSession(req.params.id);
-  res.json(sessionDoc(s, { includeCode: req.user.is_admin }));
+  res.json(sessionDoc(s, { includeCode: hasPerm(req.user, "sessions") }));
 });
 
 // ------------------------------------------------------------------
 // Admin: yaratish / tahrirlash / yopish
 // ------------------------------------------------------------------
 
-router.post("/", requireAdmin, async (req, res) => {
+router.post("/", requireSessions, async (req, res) => {
   const body = parseBody(sessionBody, req.body);
   const { meta, content } = splitSections(body.sections);
   const scheduledAt = body.accessType === "open" ? null : body.scheduledAt || null;
@@ -178,7 +180,7 @@ router.post("/", requireAdmin, async (req, res) => {
   throw new HttpError(500, "internal", "Yagona kod yaratib bo'lmadi. Qaytadan urinib ko'ring.");
 });
 
-router.put("/:id", requireAdmin, async (req, res) => {
+router.put("/:id", requireSessions, async (req, res) => {
   const body = parseBody(sessionBody, req.body);
   const { meta, content } = splitSections(body.sections);
   const s = await one(
@@ -199,7 +201,7 @@ router.put("/:id", requireAdmin, async (req, res) => {
   res.json(sessionDoc(s, { includeCode: true }));
 });
 
-router.patch("/:id/status", requireAdmin, async (req, res) => {
+router.patch("/:id/status", requireSessions, async (req, res) => {
   const { status } = parseBody(
     z.object({ status: z.enum(["scheduled", "closed"]) }),
     req.body
@@ -213,7 +215,7 @@ router.patch("/:id/status", requireAdmin, async (req, res) => {
   res.json(sessionDoc(s, { includeCode: true }));
 });
 
-router.post("/:id/regenerate-code", requireAdmin, async (req, res) => {
+router.post("/:id/regenerate-code", requireSessions, async (req, res) => {
   await getSession(req.params.id);
   for (let attempt = 0; attempt < 20; attempt++) {
     try {
@@ -230,12 +232,12 @@ router.post("/:id/regenerate-code", requireAdmin, async (req, res) => {
   throw new HttpError(500, "internal", "Yagona kod yaratib bo'lmadi. Qaytadan urinib ko'ring.");
 });
 
-router.delete("/:id", requireAdmin, async (req, res) => {
+router.delete("/:id", requireSessions, async (req, res) => {
   await query("DELETE FROM test_sessions WHERE id = $1", [req.params.id]);
   res.json({ ok: true });
 });
 
-router.get("/:id/participants", requireAdmin, async (req, res) => {
+router.get("/:id/participants", requireSessions, async (req, res) => {
   const { rows } = await query(
     "SELECT * FROM session_participants WHERE session_id = $1 ORDER BY joined_at ASC",
     [req.params.id]
@@ -243,7 +245,7 @@ router.get("/:id/participants", requireAdmin, async (req, res) => {
   res.json(rows.map(participantDoc));
 });
 
-router.get("/:id/events", requireAdmin, async (req, res) => {
+router.get("/:id/events", requireSessions, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 200);
   const { rows } = await query(
     "SELECT * FROM session_events WHERE session_id = $1 ORDER BY at DESC LIMIT $2",
@@ -261,7 +263,7 @@ router.get("/:id/events", requireAdmin, async (req, res) => {
 router.post("/:id/join", async (req, res) => {
   const { code } = parseBody(z.object({ code: z.string().nullable().optional() }), req.body);
   const s = await getSession(req.params.id);
-  const isAdmin = req.user.is_admin;
+  const isAdmin = hasPerm(req.user, "sessions");
 
   if (!isAdmin) {
     if (s.status === "closed") {
@@ -300,7 +302,7 @@ router.post("/:id/join", async (req, res) => {
 // Admin — to'liq (tahrirlash uchun, kalitlar bilan); ishtirokchi — kalitsiz.
 router.get("/:id/content", async (req, res) => {
   const s = await getSession(req.params.id);
-  if (req.user.is_admin) return res.json(s.content);
+  if (hasPerm(req.user, "sessions")) return res.json(s.content);
   if (!(await getParticipant(s.id, req.user.id))) throw forbidden("Avval testga qo'shiling.");
   if (s.status === "closed") throw new HttpError(403, "failed-precondition", "Bu test yakunlangan.");
   if (notStarted(s)) throw new HttpError(403, "not-started", "Test hali boshlanmagan.");

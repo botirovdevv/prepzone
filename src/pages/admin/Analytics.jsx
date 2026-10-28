@@ -25,7 +25,15 @@ import {
   ScoreTrend,
   inputClass,
 } from "../../components/ui";
+import UserAdminActions from "../../components/admin/UserAdminActions";
+import { useIsAdmin } from "../../hooks/useIsAdmin";
 import { dayKey, routeLabel } from "../../utils/analytics";
+
+const USER_FILTERS = [
+  ["", "Hammasi"],
+  ["admins", "Adminlar"],
+  ["blocked", "Bloklanganlar"],
+];
 
 const SOURCE_LABELS = { instagram: "Instagram", telegram: "Telegram", friends: "Do'stlari", other: "Boshqa" };
 
@@ -105,8 +113,11 @@ function PageBars({ entries, total, label = routeLabel }) {
 
 
 export default function Analytics() {
+  // Sahifaga "analytics" yoki "users" ruxsati bilan kiriladi; statistika faqat birinchisi bilan.
+  const { can } = useIsAdmin();
+  const canAnalytics = can("analytics");
   const [range, setRange] = useState(30);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(canAnalytics);
   const [errors, setErrors] = useState([]);
   const [stats, setStats] = useState({});
   const [days, setDays] = useState({});
@@ -119,9 +130,11 @@ export default function Analytics() {
   const [usersHasMore, setUsersHasMore] = useState(false);
   const [usersLoading, setUsersLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
   const [expanded, setExpanded] = useState(null);
 
   const load = useCallback(async () => {
+    if (!canAnalytics) return;
     setLoading(true);
     try {
       const data = await api.get(`/admin/analytics?range=${range}`);
@@ -135,18 +148,19 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, [range, canAnalytics]);
 
   useEffect(() => {
     load();
   }, [load, reloadKey]);
 
   // Foydalanuvchilar (eng yaxshi ball va testlar soni bilan) — server sahifalab beradi.
-  const loadUsers = useCallback(async (offset = 0, term = "") => {
+  const loadUsers = useCallback(async (offset = 0, term = "", only = "") => {
     setUsersLoading(true);
     try {
       const qs = new URLSearchParams({ offset: String(offset) });
       if (term) qs.set("search", term);
+      if (only) qs.set("filter", only);
       const { items, hasMore } = await api.get(`/admin/users?${qs}`);
       setUsers((prev) => (offset ? [...prev, ...items] : items));
       setUsersHasMore(hasMore);
@@ -160,9 +174,11 @@ export default function Analytics() {
   // Qidiruv: email boshlanishi bo'yicha (kichik harflarda), 400 ms kechikish bilan.
   useEffect(() => {
     const term = search.trim().toLowerCase();
-    const t = setTimeout(() => loadUsers(0, term), term ? 400 : 0);
+    const t = setTimeout(() => loadUsers(0, term, filter), term ? 400 : 0);
     return () => clearTimeout(t);
-  }, [search, loadUsers, reloadKey]);
+  }, [search, filter, loadUsers, reloadKey]);
+
+  const updateUser = (updated) => setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
 
   const data = useMemo(() => {
     const keys = lastDays(range);
@@ -196,23 +212,29 @@ export default function Analytics() {
       <PageHeader
         eyebrow="Admin panel"
         icon={LuChartColumn}
-        title="Sayt analitikasi"
-        subtitle="Foydalanuvchilar, faollik va eng ko'p ishlatiladigan sahifalar."
+        title={canAnalytics ? "Sayt analitikasi" : "Foydalanuvchilar"}
+        subtitle={
+          canAnalytics
+            ? "Foydalanuvchilar, faollik va eng ko'p ishlatiladigan sahifalar."
+            : "Userlarni qidirish va bloklash."
+        }
         actions={
           <>
-            <div className="flex rounded-xl border border-[#12213D]/10 bg-white p-1">
-              {RANGES.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRange(r)}
-                  className={`h-8 rounded-lg px-3 text-[13px] font-semibold transition ${
-                    range === r ? "bg-[#12213D] text-white" : "text-[#12213D]/55 hover:text-[#12213D]"
-                  }`}
-                >
-                  {r} kun
-                </button>
-              ))}
-            </div>
+            {canAnalytics && (
+              <div className="flex rounded-xl border border-[#12213D]/10 bg-white p-1">
+                {RANGES.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRange(r)}
+                    className={`h-8 rounded-lg px-3 text-[13px] font-semibold transition ${
+                      range === r ? "bg-[#12213D] text-white" : "text-[#12213D]/55 hover:text-[#12213D]"
+                    }`}
+                  >
+                    {r} kun
+                  </button>
+                ))}
+              </div>
+            )}
             <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)} disabled={loading}>
               <LuRefreshCw size={14} className={loading ? "animate-spin" : ""} /> Yangilash
             </Button>
@@ -234,7 +256,7 @@ export default function Analytics() {
         </Card>
       )}
 
-      {loading ? (
+      {!canAnalytics ? null : loading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-[92px]" />
@@ -317,88 +339,108 @@ export default function Analytics() {
               )}
             </div>
           </Card>
-
-          <Card className="mt-6 overflow-hidden">
-            <CardHeader
-              title="Foydalanuvchilar"
-              subtitle={search.trim() ? `${users.length} ta topildi · email bo'yicha` : `${stats.totalUsers ?? users.length} ta · oxirgi faollik bo'yicha`}
-              action={
-                <div className="relative w-full max-w-[240px]">
-                  <LuSearch
-                    size={15}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#12213D]/35"
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Email bo'yicha qidirish"
-                    className={`${inputClass} h-9 pl-9 text-[13px]`}
-                  />
-                </div>
-              }
-            />
-            {users.length === 0 && !usersLoading ? (
-              <div className="p-5 sm:p-6">
-                <EmptyState
-                  icon={LuUsers}
-                  title="Userlar topilmadi"
-                  text="Userlar saytga kirganlaridan so'ng shu yerda paydo bo'ladi."
-                />
-              </div>
-            ) : (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left text-[13px]">
-                  <thead>
-                    <tr className="border-y border-[#12213D]/[0.06] bg-[#F6F7FB] text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
-                      <th className="px-5 py-2.5 sm:px-6">User</th>
-                      <th className="px-3 py-2.5">Ro'yxatdan o'tgan</th>
-                      <th className="px-3 py-2.5">Oxirgi faollik</th>
-                      <th className="px-3 py-2.5 text-right">Ko'rishlar</th>
-                      <th className="px-3 py-2.5 text-right">Testlar</th>
-                      <th className="px-3 py-2.5 text-right">Eng yaxshi ball</th>
-                      <th className="px-3 py-2.5">Maqsad / manba</th>
-                      <th className="w-10 px-3 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#12213D]/[0.06]">
-                    {users.map((u) => {
-                      const open = expanded === u.id;
-                      const userPages = sortedPages(u.pages);
-                      return (
-                        <UserRow
-                          key={u.id}
-                          user={u}
-                          open={open}
-                          onToggle={() => setExpanded(open ? null : u.id)}
-                          best={u.bestScore}
-                          pages={userPages}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {(usersHasMore || usersLoading) && (
-                  <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={usersLoading}
-                      onClick={() => loadUsers(users.length, search.trim().toLowerCase())}
-                    >
-                      {usersLoading ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
         </>
       )}
+
+      <Card className={`overflow-hidden ${canAnalytics ? "mt-6" : ""}`}>
+        <CardHeader
+          title="Foydalanuvchilar"
+          subtitle={
+            search.trim() || filter || !canAnalytics
+              ? `${users.length}${usersHasMore ? "+" : ""} ta · oxirgi faollik bo'yicha`
+              : `${stats.totalUsers ?? users.length} ta · oxirgi faollik bo'yicha`
+          }
+          action={
+            <div className="flex w-full flex-wrap items-center justify-end gap-2">
+              <div className="flex rounded-lg bg-[#12213D]/[0.05] p-0.5 text-[12px] font-semibold">
+                {USER_FILTERS.map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setFilter(k)}
+                    className={`rounded-md px-2.5 py-1 transition ${
+                      filter === k ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative w-full max-w-[240px]">
+                <LuSearch
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#12213D]/35"
+                />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Email bo'yicha qidirish"
+                  className={`${inputClass} h-9 pl-9 text-[13px]`}
+                />
+              </div>
+            </div>
+          }
+        />
+        {users.length === 0 && !usersLoading ? (
+          <div className="p-5 sm:p-6">
+            <EmptyState
+              icon={LuUsers}
+              title="Userlar topilmadi"
+              text="Userlar saytga kirganlaridan so'ng shu yerda paydo bo'ladi."
+            />
+          </div>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-[13px]">
+              <thead>
+                <tr className="border-y border-[#12213D]/[0.06] bg-[#F6F7FB] text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
+                  <th className="px-5 py-2.5 sm:px-6">User</th>
+                  <th className="px-3 py-2.5">Ro'yxatdan o'tgan</th>
+                  <th className="px-3 py-2.5">Oxirgi faollik</th>
+                  <th className="px-3 py-2.5 text-right">Ko'rishlar</th>
+                  <th className="px-3 py-2.5 text-right">Testlar</th>
+                  <th className="px-3 py-2.5 text-right">Eng yaxshi ball</th>
+                  <th className="px-3 py-2.5">Maqsad / manba</th>
+                  <th className="w-10 px-3 py-2.5" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#12213D]/[0.06]">
+                {users.map((u) => {
+                  const open = expanded === u.id;
+                  const userPages = sortedPages(u.pages);
+                  return (
+                    <UserRow
+                      key={u.id}
+                      user={u}
+                      open={open}
+                      onToggle={() => setExpanded(open ? null : u.id)}
+                      best={u.bestScore}
+                      pages={userPages}
+                      onUpdated={updateUser}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+            {(usersHasMore || usersLoading) && (
+              <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={usersLoading}
+                  onClick={() => loadUsers(users.length, search.trim().toLowerCase(), filter)}
+                >
+                  {usersLoading ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
     </Page>
   );
 }
 
-function UserRow({ user, open, onToggle, best, pages }) {
+function UserRow({ user, open, onToggle, best, pages, onUpdated }) {
   const name = user.displayName || user.email?.split("@")[0] || "—";
   const tests = user.tests;
   return (
@@ -409,6 +451,8 @@ function UserRow({ user, open, onToggle, best, pages }) {
             <p className="font-semibold text-[#12213D]">{name}</p>
             {user.provider === "google.com" && <Badge tone="ink">Google</Badge>}
             {!user.emailVerified && <Badge tone="amber">tasdiqlanmagan</Badge>}
+            {user.isOwner ? <Badge tone="blue">Owner</Badge> : user.isAdmin && <Badge tone="blue">Admin</Badge>}
+            {user.blocked && <Badge tone="red">Bloklangan</Badge>}
           </div>
           <p className="text-[12px] text-[#12213D]/45">{user.email}</p>
         </td>
@@ -437,6 +481,7 @@ function UserRow({ user, open, onToggle, best, pages }) {
       {open && (
         <tr className="bg-[#F6F7FB]/60">
           <td colSpan={8} className="px-5 py-4 sm:px-6">
+            <UserAdminActions key={`${user.id}:${user.adminPerms?.join()}:${user.blocked}`} user={user} onUpdated={onUpdated} />
             {pages.length === 0 ? (
               <p className="text-[13px] text-[#12213D]/45">Bu user uchun sahifa statistikasi hali yo'q.</p>
             ) : (

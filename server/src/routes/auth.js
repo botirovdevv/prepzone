@@ -35,6 +35,13 @@ const code = z.string().trim().regex(/^\d{6}$/, "Kod 6 ta raqamdan iborat bo'lis
 
 const hashPassword = (pw) => bcrypt.hash(pw, 12);
 
+// Bloklangan user kira olmaydi (mavjud sessiyalari userFromToken'da bekor bo'ladi).
+function assertNotBlocked(user) {
+  if (user?.blocked_at) {
+    throw new HttpError(403, "auth/user-disabled", "Hisobingiz bloklangan. Administratorga murojaat qiling.");
+  }
+}
+
 const findByEmail = (addr) => one("SELECT * FROM users WHERE lower(email) = lower($1)", [addr]);
 
 function sendUser(res, user, status = 200) {
@@ -77,6 +84,7 @@ router.post("/login", strictLimiter, async (req, res) => {
   if (!user || !(await bcrypt.compare(body.password, user.password_hash))) {
     throw new HttpError(401, "auth/invalid-credential", "Email yoki parol noto'g'ri.");
   }
+  assertNotBlocked(user);
   setSessionCookie(res, user);
   sendUser(res, user);
 });
@@ -128,6 +136,7 @@ router.post("/google", strictLimiter, async (req, res) => {
     return created.rows[0];
   });
 
+  assertNotBlocked(user);
   setSessionCookie(res, user);
   sendUser(res, user);
 });
@@ -182,6 +191,7 @@ router.post("/password/reset", strictLimiter, async (req, res) => {
   const body = parseBody(z.object({ email, code, password }), req.body);
   const user = await findByEmail(body.email);
   if (!user) throw badRequest("invalid-argument", "Kod noto'g'ri.");
+  assertNotBlocked(user);
   await consumeCode(user, "reset", body.code);
   // Kodni olgan odam emailga egalik qilishini isbotladi — email ham tasdiqlanadi.
   const updated = await one(

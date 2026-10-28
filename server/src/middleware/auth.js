@@ -1,14 +1,16 @@
 import { one } from "../db/index.js";
 import { COOKIE_NAME, verifySession } from "../lib/session.js";
 import { forbidden, unauthorized, HttpError } from "../lib/errors.js";
+import { hasPerm } from "../lib/permissions.js";
 
 // Token'dan foydalanuvchini topadi. Har so'rovda DB'dan o'qiladi —
-// admin huquqi olib tashlansa yoki parol o'zgarsa darhol kuchga kiradi.
+// admin huquqi olib tashlansa, user bloklansa yoki parol o'zgarsa darhol
+// kuchga kiradi.
 export async function userFromToken(token) {
   const payload = token && verifySession(token);
   if (!payload) return null;
   const user = await one("SELECT * FROM users WHERE id = $1", [payload.sub]);
-  if (!user || user.token_version !== payload.tv) return null;
+  if (!user || user.token_version !== payload.tv || user.blocked_at) return null;
   return user;
 }
 
@@ -35,5 +37,20 @@ export function requireVerified(req, _res, next) {
 export function requireAdmin(req, _res, next) {
   if (!req.user) throw unauthorized();
   if (!req.user.is_admin) throw forbidden();
+  next();
+}
+
+// Admin bo'limi ruxsati: sanab o'tilganlardan kamida bittasi bo'lsa yetadi.
+export function requirePerm(...perms) {
+  return (req, _res, next) => {
+    if (!req.user) throw unauthorized();
+    if (!perms.some((p) => hasPerm(req.user, p))) throw forbidden();
+    next();
+  };
+}
+
+export function requireOwner(req, _res, next) {
+  if (!req.user) throw unauthorized();
+  if (!req.user.is_owner) throw forbidden();
   next();
 }

@@ -60,10 +60,10 @@ const NAV = [
 
 
 const ADMIN_ITEMS = [
-  { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]" },
-  { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary },
-  { to: "/admin/desmos", label: "Desmos (admin)", icon: LuCalculator },
-  { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn },
+  { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]", perm: "sessions" },
+  { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary, perm: "sets" },
+  { to: "/admin/desmos", label: "Desmos (admin)", icon: LuCalculator, perm: "desmos" },
+  { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn, perm: ["analytics", "users"] },
 ];
 
 function initials(nameOrEmail) {
@@ -124,7 +124,8 @@ function NavItem({ item, collapsed, onNavigate }) {
 
 export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpenMobile, onCloseMobile }) {
   const { user, logout } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, can } = useIsAdmin();
+  const adminItems = ADMIN_ITEMS.filter((item) => can(item.perm));
   const navigate = useNavigate();
   const navGroups = NAV;
 
@@ -172,7 +173,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
           </div>
         ))}
 
-        {isAdmin && (
+        {isAdmin && adminItems.length > 0 && (
           <div>
             {isCollapsed ? (
               <div className="mx-auto mb-2 h-px w-6 bg-[#12213D]/10" />
@@ -182,7 +183,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
               </p>
             )}
             <div className="space-y-1">
-              {ADMIN_ITEMS.map((item) => (
+              {adminItems.map((item) => (
                 <NavItem key={item.to} item={item} collapsed={isCollapsed} onNavigate={onCloseMobile} />
               ))}
             </div>

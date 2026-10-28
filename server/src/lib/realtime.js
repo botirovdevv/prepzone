@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { config } from "../config.js";
 import { COOKIE_NAME } from "./session.js";
 import { userFromToken } from "../middleware/auth.js";
+import { hasPerm } from "./permissions.js";
 
 // ------------------------------------------------------------------
 // Jonli yangilanishlar (Firestore onSnapshot o'rnini bosadi).
@@ -44,7 +45,7 @@ export function initRealtime(httpServer) {
     socket.on("session:watch", (sessionId) => {
       if (typeof sessionId !== "string") return;
       socket.join(`session:${sessionId}`);
-      if (socket.data.user.is_admin) socket.join(`session-admin:${sessionId}`);
+      if (hasPerm(socket.data.user, "sessions")) socket.join(`session-admin:${sessionId}`);
     });
     socket.on("session:unwatch", (sessionId) => {
       if (typeof sessionId !== "string") return;

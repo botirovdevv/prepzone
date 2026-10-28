@@ -4,7 +4,7 @@ import { z } from "zod";
 import { one, query } from "../db/index.js";
 import { notFound, parseBody } from "../lib/errors.js";
 import { desmosDoc, questionSetDoc } from "../lib/serialize.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { requirePerm } from "../middleware/auth.js";
 
 // ------------------------------------------------------------------
 // O'quv kontenti: amaliyot to'plamlari va Desmos darsliklari. Har bir
@@ -54,7 +54,7 @@ questionSetsRouter.get("/:id", async (req, res) => {
   res.json(questionSetDoc(row));
 });
 
-questionSetsRouter.post("/", requireAdmin, async (req, res) => {
+questionSetsRouter.post("/", requirePerm("sets"), async (req, res) => {
   const body = parseBody(questionSetBody, req.body);
   const row = await one("INSERT INTO question_sets (id, data) VALUES ($1, $2) RETURNING *", [
     crypto.randomUUID(),
@@ -63,7 +63,7 @@ questionSetsRouter.post("/", requireAdmin, async (req, res) => {
   res.status(201).json(questionSetDoc(row));
 });
 
-questionSetsRouter.put("/:id", requireAdmin, async (req, res) => {
+questionSetsRouter.put("/:id", requirePerm("sets"), async (req, res) => {
   const body = parseBody(questionSetBody, req.body);
   const row = await one(
     "UPDATE question_sets SET data = data || $2::jsonb, updated_at = now() WHERE id = $1 RETURNING *",
@@ -73,7 +73,7 @@ questionSetsRouter.put("/:id", requireAdmin, async (req, res) => {
   res.json(questionSetDoc(row));
 });
 
-questionSetsRouter.delete("/:id", requireAdmin, async (req, res) => {
+questionSetsRouter.delete("/:id", requirePerm("sets"), async (req, res) => {
   await query("DELETE FROM question_sets WHERE id = $1", [req.params.id]);
   res.json({ ok: true });
 });
@@ -95,7 +95,7 @@ desmosRouter.get("/:id", async (req, res) => {
   res.json(desmosDoc(row));
 });
 
-desmosRouter.post("/", requireAdmin, async (req, res) => {
+desmosRouter.post("/", requirePerm("desmos"), async (req, res) => {
   const { order, ...data } = parseBody(desmosBody, req.body);
   const row = await one(
     "INSERT INTO desmos_tutorials (id, sort_order, data) VALUES ($1, $2, $3) RETURNING *",
@@ -104,7 +104,7 @@ desmosRouter.post("/", requireAdmin, async (req, res) => {
   res.status(201).json(desmosDoc(row));
 });
 
-desmosRouter.put("/:id", requireAdmin, async (req, res) => {
+desmosRouter.put("/:id", requirePerm("desmos"), async (req, res) => {
   const { order, ...data } = parseBody(desmosBody, req.body);
   const row = await one(
     `UPDATE desmos_tutorials SET sort_order = $2, data = data || $3::jsonb, updated_at = now()
@@ -115,7 +115,7 @@ desmosRouter.put("/:id", requireAdmin, async (req, res) => {
   res.json(desmosDoc(row));
 });
 
-desmosRouter.delete("/:id", requireAdmin, async (req, res) => {
+desmosRouter.delete("/:id", requirePerm("desmos"), async (req, res) => {
   await query("DELETE FROM desmos_tutorials WHERE id = $1", [req.params.id]);
   res.json({ ok: true });
 });
