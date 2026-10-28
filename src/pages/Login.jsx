@@ -57,7 +57,7 @@ export default function Login() {
 
       <OrDivider />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <TextField
           label="Email"
           type="email"

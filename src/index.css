@@ -261,3 +261,145 @@ h6 {
       box-shadow 200ms var(--ease-out);
   }
 }
+
+/* ------------------------------------------------------------------
+   Auth (Kirish / Ro'yxatdan o'tish / Parolni tiklash)
+   Apple uslubi: bosilganda darhol javob, translucent navbar, yuzuvchi
+   label'li maydonlar, faqat transform/opacity animatsiyalari.
+------------------------------------------------------------------ */
+:root {
+  --auth-ink: #1d1d1f;
+  --auth-ink-2: #6e6e73;
+  --auth-line: rgba(0, 0, 0, 0.1);
+  --auth-blue: #087fd1;
+  --auth-blue-press: #066fb8;
+  --auth-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Bosilganda (pointer-down) darhol kichrayadi, qo'yib yuborilganda qaytadi. */
+.pz-press {
+  transition-property: color, background-color, border-color, box-shadow, opacity, scale;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.pz-press:active:not(:disabled) {
+  scale: 0.97;
+  transition-duration: 80ms;
+}
+
+@keyframes pz-fade {
+  from { opacity: 0; translate: 0 -2px; }
+}
+.pz-fade { animation: pz-fade 200ms var(--ease-out) both; }
+
+@keyframes pz-rise {
+  from { opacity: 0; translate: 0 12px; }
+}
+.pz-rise { animation: pz-rise 520ms var(--auth-spring) both; }
+.pz-rise-2 { animation: pz-rise 520ms var(--auth-spring) 80ms both; }
+.pz-rise-3 { animation: pz-rise 520ms var(--auth-spring) 160ms both; }
+
+.pz-auth-bg {
+  background:
+    radial-gradient(48rem 28rem at 12% -10%, rgba(8, 127, 209, 0.10), transparent 70%),
+    radial-gradient(40rem 24rem at 100% 110%, rgba(124, 111, 240, 0.08), transparent 70%),
+    #f5f5f7;
+}
+
+/* Navbar — kontent ostidan o'tadigan shaffof material. */
+.pz-auth-nav {
+  background: rgba(245, 245, 247, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Segment pill: interruptible CSS transition, joriy pozitsiyadan davom etadi. */
+.pz-segment-pill {
+  transition: transform 420ms var(--auth-spring);
+}
+
+.pz-auth-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.02),
+    0 12px 40px -12px rgba(16, 24, 40, 0.12);
+}
+
+/* Yuzuvchi label: placeholder bo'sh bo'lsa label markazda, fokus yoki qiymat bo'lsa tepaga chiqadi. */
+.pz-field {
+  position: relative;
+}
+.pz-field input {
+  height: 56px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--auth-line);
+  background: #fff;
+  padding: 22px 16px 6px;
+  font-size: 17px; /* iOS fokusda zoom qilmasligi uchun */
+  line-height: 1.2;
+  color: var(--auth-ink);
+  outline: none;
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+.pz-field input::placeholder { color: transparent; }
+.pz-field input:hover { border-color: rgba(0, 0, 0, 0.2); }
+.pz-field input:focus {
+  border-color: var(--auth-blue);
+  box-shadow: 0 0 0 4px rgba(8, 127, 209, 0.14);
+}
+.pz-field[data-invalid] input { border-color: #e5484d; }
+.pz-field[data-invalid] input:focus { box-shadow: 0 0 0 4px rgba(229, 72, 77, 0.14); }
+.pz-field label {
+  position: absolute;
+  left: 17px;
+  top: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  font-size: 17px;
+  color: #86868b;
+  pointer-events: none;
+  transform-origin: left center;
+  transition: transform 200ms var(--auth-spring), color 150ms var(--ease-out);
+}
+.pz-field input:focus + label,
+.pz-field input:not(:placeholder-shown) + label,
+.pz-field input:-webkit-autofill + label {
+  transform: translateY(-11px) scale(0.72);
+}
+.pz-field input:focus + label { color: var(--auth-blue); }
+.pz-field[data-invalid] input + label { color: #d93036; }
+
+/* O'ng panel (faqat katta ekran) — qorong'i, chuqur material. */
+.pz-auth-aside {
+  background:
+    radial-gradient(36rem 26rem at 85% 0%, rgba(8, 127, 209, 0.55), transparent 65%),
+    radial-gradient(30rem 22rem at 0% 100%, rgba(124, 111, 240, 0.45), transparent 65%),
+    #0b1220;
+}
+.pz-glass {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-rise, .pz-rise-2, .pz-rise-3 { animation: pz-fade-in 150ms linear both; }
+  .pz-fade { animation: pz-fade-in 150ms linear both; }
+  .pz-press:active:not(:disabled) { scale: none; }
+  .pz-segment-pill, .pz-field label { transition-duration: 0ms; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pz-auth-nav { background: #f5f5f7; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .pz-auth-card { background: #fff; }
+  .pz-glass { background: #1a2333; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .pz-field input, .pz-auth-card { border-color: rgba(0, 0, 0, 0.45); }
+}

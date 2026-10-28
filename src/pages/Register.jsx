@@ -36,7 +36,7 @@ function StrengthMeter({ password }) {
           <span
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-200"
-            style={{ background: i <= score ? color : "rgba(17,24,39,0.08)" }}
+            style={{ background: i <= score ? color : "rgba(0,0,0,0.08)" }}
           />
         ))}
       </div>
@@ -112,7 +112,7 @@ export default function Register() {
 
       <OrDivider />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <TextField
           label="To'liq ism"
           name="name"
@@ -144,7 +144,7 @@ export default function Register() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Kamida 8 ta belgi"
-          hint={password ? <StrengthMeter password={password} /> : null}
+          hint={password ? <StrengthMeter password={password} /> : "Kamida 8 ta belgi"}
         />
         <TextField
           label="Parolni tasdiqlang"
@@ -165,8 +165,8 @@ export default function Register() {
           Ro'yxatdan o'tish
         </PrimaryButton>
 
-        <p className="text-center text-[12px] leading-[1.5] text-[#667085]">
-          Emailingizga 6 xonali tasdiqlash kodi yuboriladi.
+        <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
+          Emailingizga 6 xonali tasdiqlash kodi yuboramiz.
         </p>
       </form>
     </AuthLayout>

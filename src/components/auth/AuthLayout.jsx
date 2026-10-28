@@ -1,53 +1,105 @@
+import { LuCalculator, LuChartLine, LuLayers } from "react-icons/lu";
 import AuthNavbar from "./AuthNavbar";
 
-// Login / Register / Parolni tiklash sahifalarining umumiy qobig'i:
-// yumshoq fon, yarim shaffof navbar va markazdagi forma kartasi.
+// ------------------------------------------------------------------
+// Login / Register / Parolni tiklash sahifalarining umumiy qobig'i.
+// Telefonda bitta ustun (faqat forma). Katta ekranda o'ngda Prepzone
+// nima berishini ko'rsatadigan qorong'i panel — forma diqqat markazida
+// qoladi, panel esa uni chalg'itmasdan to'ldiradi.
+// ------------------------------------------------------------------
 export default function AuthLayout({ eyebrow, title, subtitle, children, footer }) {
   return (
-    <div className="relative flex min-h-[100dvh] flex-col bg-[#fcfcfa] text-[#111827]">
-      {/* Fon: yuqoridan tushayotgan yumshoq ko'k nur + juda nozik nuqtali to'r */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{
-          backgroundImage: `
-            radial-gradient(60% 50% at 50% 0%, rgba(8, 127, 209, 0.14) 0%, transparent 70%),
-            radial-gradient(rgba(17, 24, 39, 0.09) 1px, transparent 1px)
-          `,
-          backgroundSize: "100% 100%, 22px 22px",
-        }}
-      />
-
+    <div className="pz-auth-bg relative flex min-h-[100dvh] flex-col text-[#1d1d1f]">
       <AuthNavbar />
 
-      <main className="relative flex flex-1 items-start justify-center px-4 pb-10 pt-8 sm:items-center sm:py-14">
-        <div className="pz-rise w-full max-w-[420px]">
-          <div className="pz-auth-card rounded-[28px] px-6 py-8 sm:px-9 sm:py-10">
-            <div className="mb-7">
-              {eyebrow && (
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#087fd1]">
-                  {eyebrow}
-                </p>
-              )}
-              <h1 className="mt-1.5 font-display text-[28px] font-semibold leading-[1.1] tracking-[-0.025em] text-[#111827] sm:text-[32px]">
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="mt-2.5 text-[15px] leading-[1.5] text-[#566176]">{subtitle}</p>
-              )}
-            </div>
-            {children}
+      <main className="mx-auto grid w-full max-w-[1120px] flex-1 items-center gap-10 px-4 pb-10 pt-6 sm:px-8 sm:pt-10 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:gap-14 lg:py-12">
+        <div className="mx-auto w-full max-w-[440px]">
+          <div className="pz-rise mb-7 px-1">
+            {eyebrow && (
+              <p className="text-[13px] font-semibold tracking-[-0.005em] text-[#087fd1]">{eyebrow}</p>
+            )}
+            <h1 className="mt-1 font-display text-[34px] font-bold leading-[1.06] tracking-[-0.03em] sm:text-[40px]">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.01em] text-[#6e6e73]">{subtitle}</p>
+            )}
           </div>
 
+          <div className="pz-rise-2 pz-auth-card rounded-[28px] p-5 sm:p-7">{children}</div>
+
           {footer && (
-            <div className="mt-6 text-center text-[15px] text-[#566176]">{footer}</div>
+            <div className="pz-rise-3 mt-6 text-center text-[15px] text-[#6e6e73]">{footer}</div>
           )}
         </div>
+
+        <Showcase />
       </main>
 
-      <footer className="relative pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-[12px] text-[#566176]/80">
+      <footer className="pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-[#86868b]">
         &copy; {new Date().getFullYear()} Prepzone
       </footer>
     </div>
+  );
+}
+
+const FEATURES = [
+  { icon: LuLayers, title: "Bluebook formatida", text: "Adaptiv modullar va haqiqiy imtihon interfeysi." },
+  { icon: LuCalculator, title: "Desmos ichida", text: "Math bo'limida o'rnatilgan kalkulyator va darsliklar." },
+  { icon: LuChartLine, title: "Natijalar tahlili", text: "Har bir testdan keyin ball va xatolar bo'yicha hisobot." },
+];
+
+// Faqat lg+ ekranlarda. Raqamlar namuna sifatida belgilangan — real statistika emas.
+function Showcase() {
+  return (
+    <aside
+      aria-hidden="true"
+      className="pz-rise-3 pz-auth-aside relative hidden min-h-[600px] overflow-hidden rounded-[32px] p-10 text-white lg:flex lg:flex-col lg:justify-between"
+    >
+      <div>
+        <p className="text-[13px] font-semibold text-white/60">Prepzone SAT</p>
+        <p className="mt-2 max-w-[22ch] font-display text-[34px] font-bold leading-[1.08] tracking-[-0.03em]">
+          Haqiqiy imtihonga o'xshab tayyorlaning.
+        </p>
+      </div>
+
+      <div className="pz-glass mx-auto my-8 w-full max-w-[340px] rounded-[24px] p-6">
+        <div className="flex items-center justify-between">
+          <p className="text-[13px] font-medium text-white/70">Taxminiy ball</p>
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">namuna</span>
+        </div>
+        <p className="mt-1 font-display text-[56px] font-bold leading-none tracking-[-0.04em] tabular-nums">1480</p>
+        <div className="mt-5 space-y-3">
+          {[
+            ["Reading & Writing", 740, 800],
+            ["Math", 740, 800],
+          ].map(([label, value, max]) => (
+            <div key={label}>
+              <div className="mb-1.5 flex justify-between text-[12px] text-white/70">
+                <span>{label}</span>
+                <span className="tabular-nums text-white">{value}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-white" style={{ width: `${(value / max) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <ul className="grid gap-4">
+        {FEATURES.map(({ icon: Icon, title, text }) => (
+          <li key={title} className="flex gap-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              <Icon size={18} />
+            </span>
+            <div>
+              <p className="text-[15px] font-semibold tracking-[-0.01em]">{title}</p>
+              <p className="text-[14px] leading-[1.45] text-white/65">{text}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </aside>
   );
 }

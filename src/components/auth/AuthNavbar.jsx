@@ -28,7 +28,7 @@ export default function AuthNavbar() {
           </Link>
           <Link
             to="/"
-            className="pz-press hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-[#566176] transition-colors hover:bg-[#111827]/[0.04] hover:text-[#111827] md:inline-flex"
+            className="pz-press hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-[#6e6e73] transition-colors hover:bg-[#1d1d1f]/[0.04] hover:text-[#1d1d1f] md:inline-flex"
           >
             <LuArrowLeft size={15} aria-hidden="true" />
             Bosh sahifa
@@ -37,12 +37,12 @@ export default function AuthNavbar() {
 
         <nav
           aria-label="Hisob"
-          className="relative grid grid-cols-2 rounded-full bg-[#111827]/[0.05] p-1 text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px] sm:tracking-normal"
+          className="relative grid grid-cols-2 rounded-full bg-black/[0.06] p-1 text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px] sm:tracking-normal"
         >
           {activeIndex >= 0 && (
             <span
               aria-hidden="true"
-              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-[0_1px_3px_rgba(17,24,39,0.12),0_1px_1px_rgba(17,24,39,0.04)]"
+              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.04)]"
               style={{ transform: `translateX(${activeIndex * 100}%)` }}
             />
           )}
@@ -55,7 +55,7 @@ export default function AuthNavbar() {
                 replace
                 aria-current={active ? "page" : undefined}
                 className={`pz-press relative z-10 whitespace-nowrap rounded-full px-3.5 py-1.5 text-center transition-colors sm:px-4 ${
-                  active ? "text-[#111827]" : "text-[#566176] hover:text-[#111827]"
+                  active ? "text-[#1d1d1f]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
                 }`}
               >
                 {tab.short ? (
