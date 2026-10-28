@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import BetaNotice from "./components/BetaNotice";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
 import { onIdle, prefetchAll } from "./utils/idle";
@@ -62,6 +63,7 @@ export default function App() {
               <Route path="/*" element={<AuthedApp />} />
             </Routes>
           </Suspense>
+          <BetaNotice />
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
