@@ -11,13 +11,17 @@ import {
   LuSparkles,
   LuCircleAlert,
   LuDatabase,
+  LuWandSparkles,
+  LuCircleCheck,
 } from "react-icons/lu";
 import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { parseBulkQuestions } from "../../utils/parseBulkQuestions";
 import { sanitizeRichText } from "../../utils/sanitizeHtml";
 import { newQuestionId } from "../../utils/questionId";
+import { DIFFICULTIES } from "../../utils/bankQuestion";
 import RichTextEditor, { isRichTextEmpty } from "./RichTextEditor";
 import QuestionBankImporter from "./QuestionBankImporter";
+import AiImporter from "./AiImporter";
 
 const emptyForm = {
   passage: "",
@@ -26,6 +30,13 @@ const emptyForm = {
   correctAnswer: "A",
   image: null,
   domain: "",
+  difficulty: "medium",
+};
+
+const DIFFICULTY_STYLES = {
+  easy: "text-emerald-700 bg-emerald-500/10",
+  medium: "text-amber-700 bg-amber-500/10",
+  hard: "text-red-600 bg-red-500/10",
 };
 
 const BULK_PLACEHOLDER = `Passage: (ixtiyoriy)
@@ -38,6 +49,7 @@ C) 3-variant
 D) 4-variant
 
 Javob: B
+Qiyinlik: o'rta
 
 ---
 
@@ -89,14 +101,19 @@ export default function QuestionEditor({
       correctAnswer: form.correctAnswer,
       image: form.image || null,
       domain: form.domain || "",
+      difficulty: form.difficulty,
     };
     onChange([...questions, q]);
     // Domainni tozalamaymiz — bir bo'limdan ketma-ket bir nechta savol
     // qo'shilganda qayta tanlashning hojati bo'lmasin.
-    setForm((f) => ({ ...emptyForm, domain: f.domain }));
+    setForm((f) => ({ ...emptyForm, domain: f.domain, difficulty: f.difficulty }));
   };
 
   const removeQuestion = (id) => onChange(questions.filter((q) => q.id !== id));
+  const patchQuestion = (id, patch) => onChange(questions.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  const setDifficulty = (id, difficulty) => patchQuestion(id, { difficulty });
+  // AI yaratgan savol admin ko'rib chiqmaguncha sessiyani saqlab bo'lmaydi (SessionForm).
+  const [reviewId, setReviewId] = useState(null);
 
   const handleBulkAdd = () => {
     const { items, errors } = parseBulkQuestions(bulkText);
@@ -135,7 +152,7 @@ export default function QuestionEditor({
       {open && (
         <div className="p-4 space-y-4">
           {questions.length > 0 && (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-96 overflow-y-auto">
               {questions.map((q, i) => (
                 <div
                   key={q.id}
@@ -151,10 +168,76 @@ export default function QuestionEditor({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-[#12213D]/75 line-clamp-2">{q.prompt}</p>
-                    {q.domain && domainOptions && (
-                      <span className="inline-block mt-1 text-[10px] font-semibold text-[#087fd1] bg-[#087fd1]/8 px-1.5 py-0.5 rounded">
-                        {domainOptions.find((d) => d.id === q.domain)?.label || q.domain}
-                      </span>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {q.domain && domainOptions && (
+                        <span className="text-[10px] font-semibold text-[#087fd1] bg-[#087fd1]/8 px-1.5 py-0.5 rounded">
+                          {domainOptions.find((d) => d.id === q.domain)?.label || q.domain}
+                        </span>
+                      )}
+                      {/* Qiyinlik IRT bahosi uchun muhim — ro'yxatning o'zida o'zgartiriladi. */}
+                      <select
+                        value={q.difficulty || "medium"}
+                        onChange={(e) => setDifficulty(q.id, e.target.value)}
+                        aria-label="Qiyinlik"
+                        className={`rounded px-1 py-0.5 text-[10px] font-semibold outline-none ${DIFFICULTY_STYLES[q.difficulty || "medium"]}`}
+                      >
+                        {DIFFICULTIES.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                      {q.aiGenerated && (
+                        <button
+                          type="button"
+                          onClick={() => setReviewId(reviewId === q.id ? null : q.id)}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                            q.aiReviewed ? "text-violet-700 bg-violet-500/10" : "text-white bg-violet-600 hover:bg-violet-700"
+                          }`}
+                        >
+                          {q.aiReviewed ? "AI · tasdiqlangan" : "AI · tekshirish kerak"}
+                        </button>
+                      )}
+                    </div>
+                    {reviewId === q.id && (
+                      <div className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-white p-2.5">
+                        {q.passage && (
+                          <p
+                            className="text-xs leading-relaxed text-[#12213D]/70"
+                            dangerouslySetInnerHTML={{ __html: sanitizeRichText(q.passage) }}
+                          />
+                        )}
+                        <p className="text-xs font-medium text-[#12213D]">{q.prompt}</p>
+                        <div className="grid gap-1">
+                          {q.choices?.map((c) => (
+                            <button
+                              key={c.label}
+                              type="button"
+                              onClick={() => patchQuestion(q.id, { correctAnswer: c.label })}
+                              title="To'g'ri javob deb belgilash"
+                              className={`flex gap-1.5 rounded px-2 py-1 text-left text-xs ${
+                                q.correctAnswer === c.label
+                                  ? "bg-emerald-500/12 font-semibold text-emerald-800"
+                                  : "text-[#12213D]/70 hover:bg-[#12213D]/5"
+                              }`}
+                            >
+                              <span className="font-bold">{c.label})</span>
+                              <span dangerouslySetInnerHTML={{ __html: sanitizeRichText(c.text) }} />
+                            </button>
+                          ))}
+                        </div>
+                        {q.explanation && <p className="text-[11px] text-[#12213D]/50">{q.explanation}</p>}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            patchQuestion(q.id, { aiReviewed: true });
+                            setReviewId(null);
+                          }}
+                          className="flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-violet-700"
+                        >
+                          <LuCircleCheck size={13} /> To'g'ri — tasdiqlash
+                        </button>
+                      </div>
                     )}
                   </div>
                   <span className="shrink-0 text-xs font-bold text-[#0E9A6C] bg-[#12B981]/10 px-2 py-0.5 rounded">
@@ -196,6 +279,17 @@ export default function QuestionEditor({
               {bankSubject && (
                 <button
                   type="button"
+                  onClick={() => setMode("ai")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    mode === "ai" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                  }`}
+                >
+                  <LuWandSparkles size={13} /> AI import (PDF/rasm)
+                </button>
+              )}
+              {bankSubject && (
+                <button
+                  type="button"
                   onClick={() => setMode("bank")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                     mode === "bank" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
@@ -208,7 +302,7 @@ export default function QuestionEditor({
 
             {/* Mavzu bloki (domain) — faqat bittalab/ko'plab rejimlarda; bank
                 rejimining o'z ichida alohida mavzu tanlovi bor */}
-            {domainOptions && mode !== "bank" && (
+            {domainOptions && mode !== "bank" && mode !== "ai" && (
               <div>
                 <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">
                   Mavzu bloki (domain)
@@ -233,7 +327,13 @@ export default function QuestionEditor({
               </div>
             )}
 
-            {mode === "bank" ? (
+            {mode === "ai" ? (
+              <AiImporter
+                subject={bankSubject}
+                domainOptions={domainOptions}
+                onImport={(newQs) => onChange([...questions, ...newQs])}
+              />
+            ) : mode === "bank" ? (
               <QuestionBankImporter
                 subject={bankSubject}
                 domainOptions={domainOptions}
@@ -346,7 +446,7 @@ export default function QuestionEditor({
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <label className="text-xs font-semibold text-[#12213D]/55">To'g'ri javob:</label>
                   <select
                     value={form.correctAnswer}
@@ -356,6 +456,18 @@ export default function QuestionEditor({
                     {["A", "B", "C", "D"].map((l) => (
                       <option key={l} value={l}>
                         {l}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="text-xs font-semibold text-[#12213D]/55">Qiyinlik:</label>
+                  <select
+                    value={form.difficulty}
+                    onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                    className="rounded-xl border border-[#12213D]/12 px-2 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                  >
+                    {DIFFICULTIES.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.label}
                       </option>
                     ))}
                   </select>
@@ -376,6 +488,8 @@ export default function QuestionEditor({
                   savolda <code className="bg-[#12213D]/6 px-1 rounded">A)</code>–
                   <code className="bg-[#12213D]/6 px-1 rounded">D)</code> variantlar va{" "}
                   <code className="bg-[#12213D]/6 px-1 rounded">Javob: B</code> qatori bo'lishi shart.
+                  Ixtiyoriy <code className="bg-[#12213D]/6 px-1 rounded">Qiyinlik: oson/o'rta/qiyin</code>{" "}
+                  qatori adaptiv yo'naltirish uchun ishlatiladi.
                 </p>
                 <textarea
                   value={bulkText}

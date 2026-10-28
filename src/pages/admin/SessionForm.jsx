@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/client";
 import QuestionEditor from "../../components/admin/QuestionEditor";
+import AdaptiveBuilder from "../../components/admin/AdaptiveBuilder";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
 import { LuArrowLeft, LuInfo, LuShieldCheck } from "react-icons/lu";
@@ -125,6 +126,13 @@ export default function SessionForm() {
     }
     if (rwM1.length === 0 && mathM1.length === 0) {
       setError("Kamida bitta bo'limga (Reading&Writing yoki Math) Module 1 savollari qo'shing.");
+      return;
+    }
+    const unreviewed = [rwM1, rwM2E, rwM2H, rwM2Mix, mathM1, mathM2E, mathM2H, mathM2Mix]
+      .flat()
+      .filter((q) => q.aiGenerated && !q.aiReviewed).length;
+    if (unreviewed > 0) {
+      setError(`AI yaratgan ${unreviewed} ta savol hali tekshirilmagan. Modullarda "AI · tekshirish kerak" belgisini bosib, har birini tasdiqlang.`);
       return;
     }
 
@@ -294,6 +302,19 @@ export default function SessionForm() {
             action={durationInput(rwDuration, setRwDuration)}
           />
           <div className="space-y-3 p-5 sm:p-6">
+            <AdaptiveBuilder
+              subject="rw"
+              showPassage
+              domainOptions={RW_DOMAINS}
+              promptTemplates={RW_PROMPT_TEMPLATES}
+              hasModules={rwM1.length + rwM2E.length + rwM2H.length > 0}
+              onApply={({ module1, module2Easy, module2Hard }) => {
+                setRwM1(module1);
+                setRwM2E(module2Easy);
+                setRwM2H(module2Hard);
+                setRwM2Mix([]);
+              }}
+            />
             <QuestionEditor
               title="Module 1"
               questions={rwM1}
@@ -337,6 +358,17 @@ export default function SessionForm() {
         <Card>
           <CardHeader title="Math" subtitle="Bo'lim 2" action={durationInput(mathDuration, setMathDuration)} />
           <div className="space-y-3 p-5 sm:p-6">
+            <AdaptiveBuilder
+              subject="math"
+              domainOptions={MATH_DOMAINS}
+              hasModules={mathM1.length + mathM2E.length + mathM2H.length > 0}
+              onApply={({ module1, module2Easy, module2Hard }) => {
+                setMathM1(module1);
+                setMathM2E(module2Easy);
+                setMathM2H(module2Hard);
+                setMathM2Mix([]);
+              }}
+            />
             <QuestionEditor
               title="Module 1"
               questions={mathM1}

@@ -1,3 +1,5 @@
+import { normalizeDifficulty } from "./bankQuestion";
+
 // Matn ko'rinishida joylashtirilgan (bulk) savollarni parslab,
 // QuestionEditor formatiga o'giradi.
 //
@@ -13,6 +15,7 @@
 //   D) variant matni
 //
 //   Javob: B
+//   Qiyinlik: oson | o'rta | qiyin   (ixtiyoriy, default o'rta)
 //
 //   ---
 //
@@ -47,16 +50,21 @@ export function parseBulkQuestions(raw) {
 
     const choiceRe = /^([A-D])\)\s*(.+)$/;
     const answerRe = /^(javob|answer)\s*:\s*([A-D])/i;
+    const difficultyRe = /^(qiyinlik|difficulty)\s*:\s*(\S+)/i;
 
     const promptLines = [];
     const choices = {};
     let correctAnswer = null;
+    let difficulty = "medium";
 
     for (; cursor < lines.length; cursor++) {
       const line = lines[cursor];
       const choiceMatch = line.trim().match(choiceRe);
       const answerMatch = line.trim().match(answerRe);
-      if (choiceMatch) {
+      const difficultyMatch = line.trim().match(difficultyRe);
+      if (difficultyMatch) {
+        difficulty = normalizeDifficulty(difficultyMatch[2]);
+      } else if (choiceMatch) {
         choices[choiceMatch[1]] = choiceMatch[2].trim();
       } else if (answerMatch) {
         correctAnswer = answerMatch[2].toUpperCase();
@@ -88,6 +96,7 @@ export function parseBulkQuestions(raw) {
       prompt,
       choices: choiceLabels.map((l) => ({ label: l, text: choices[l] })),
       correctAnswer,
+      difficulty,
     });
   });
 
