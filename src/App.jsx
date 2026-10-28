@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import BetaNotice from "./components/BetaNotice";
+import PresencePing from "./components/PresencePing";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
 import { onIdle, prefetchAll } from "./utils/idle";
@@ -64,6 +65,7 @@ export default function App() {
             </Routes>
           </Suspense>
           <BetaNotice />
+          <PresencePing />
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

@@ -39,6 +39,9 @@ const ROUTES = [
   { pattern: /^\/session\/[^/]+\/results$/, key: "session_results", label: "Sessiya natijasi" },
   { pattern: /^\/practice$/, key: "practice", label: "Exam questions" },
   { pattern: /^\/practice\/[^/]+$/, key: "practice_set", label: "Amaliyot to'plami" },
+  { pattern: /^\/forgot-password$/, key: "forgot_password", label: "Parolni tiklash" },
+  { pattern: /^\/(terms|privacy|contact)$/, key: "legal", label: "Huquqiy / Aloqa" },
+  { pattern: /^\/admin(\/|$)/, key: "admin", label: "Admin panel" },
 ];
 
 const LABELS = Object.fromEntries(ROUTES.map((r) => [r.key, r.label]));
