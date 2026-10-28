@@ -29,10 +29,15 @@ router.put("/onboarding", async (req, res) => {
     targets: body.targets,
     completedAt: new Date().toISOString(),
   };
-  const user = await one("UPDATE users SET onboarding = $2 WHERE id = $1 RETURNING *", [
-    req.user.id,
-    onboarding,
-  ]);
+  // Maqsad ball bitta: Study Plan bo'lsa, undagi maqsad ham yangilanadi.
+  const user = await one(
+    `UPDATE users SET onboarding = $2,
+       study_plan = CASE WHEN study_plan ? 'settings'
+         THEN jsonb_set(study_plan, '{settings,targetScore}', to_jsonb($3::int))
+         ELSE study_plan END
+     WHERE id = $1 RETURNING *`,
+    [req.user.id, onboarding, body.targets.sat]
+  );
   res.json({ user: publicUser(user) });
 });
 
@@ -57,9 +62,12 @@ router.put("/study-plan", async (req, res) => {
     `UPDATE users SET study_plan = jsonb_build_object(
         'settings', $2::jsonb,
         'done', COALESCE(study_plan->'done', '{}'::jsonb),
-        'updatedAt', to_jsonb(now()))
+        'updatedAt', to_jsonb(now())),
+       -- Maqsad ball bitta: onboarding'dagi maqsad ham yangilanadi (10 ga yaxlitlab).
+       onboarding = CASE WHEN onboarding IS NULL THEN NULL
+         ELSE jsonb_set(onboarding, '{targets,sat}', to_jsonb(round($3::int / 10.0)::int * 10)) END
      WHERE id = $1 RETURNING *`,
-    [req.user.id, settings]
+    [req.user.id, settings, settings.targetScore]
   );
   res.json({ user: publicUser(user) });
 });
