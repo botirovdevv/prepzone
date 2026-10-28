@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 import { LuArrowLeft, LuCalculator } from "react-icons/lu";
+import { PageLoader } from "../components/ui";
 
 function youtubeEmbedUrl(url) {
   if (!url) return "";
@@ -37,11 +38,7 @@ export default function DesmosTutorial() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-[#12213D]/40">
-        Yuklanmoqda...
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (missing || !tutorial) {

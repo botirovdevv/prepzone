@@ -26,7 +26,7 @@ const AuthedApp = lazy(loadAuthedApp);
 // qilgan holatda ortga (Home'ga) qaytib kira olmasligi shu orqali ta'minlanadi.
 function RootRoute() {
   const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
+  if (loading) return <PageLoader fullscreen />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <Home />;
 }
@@ -49,7 +49,7 @@ export default function App() {
       <Prefetch />
       <BrowserRouter>
         <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageLoader fullscreen />}>
             <Routes>
               <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<Login />} />

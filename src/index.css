@@ -403,3 +403,37 @@ h6 {
 @media (prefers-contrast: more) {
   .pz-field input, .pz-auth-card { border-color: rgba(0, 0, 0, 0.45); }
 }
+
+/* ------------------------------------------------------------------
+   Loader — iOS uslubidagi faollik indikatori (8 ta chiziq navbat bilan
+   xiralashadi). Faqat opacity animatsiya qilinadi. 150ms kechikib paydo
+   bo'ladi — tez yuklanadigan sahifalarda miltillamaydi.
+------------------------------------------------------------------ */
+.pz-loader {
+  animation: pz-fade-in 220ms var(--ease-out) 150ms both;
+}
+.pz-spinner {
+  position: relative;
+  display: inline-block;
+}
+.pz-spinner > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9%;
+  height: 27%;
+  margin-left: -4.5%;
+  margin-top: -13.5%;
+  border-radius: 999px;
+  background: currentColor;
+  transform: rotate(calc(var(--i) * 45deg)) translateY(-118%);
+  animation: pz-spinner-fade 0.8s linear infinite;
+  animation-delay: calc(var(--i) * 0.1s - 0.8s);
+}
+@keyframes pz-spinner-fade {
+  from { opacity: 1; }
+  to { opacity: 0.18; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pz-spinner > span { animation-duration: 1.6s; animation-delay: calc(var(--i) * 0.2s - 1.6s); }
+}

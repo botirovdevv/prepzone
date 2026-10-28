@@ -178,10 +178,33 @@ export function Skeleton({ className }) {
   return <div className={cx("animate-pulse rounded-2xl bg-[#12213D]/[0.05]", className)} />;
 }
 
-export function PageLoader() {
+// iOS uslubidagi faollik indikatori (index.css → .pz-spinner).
+export function Spinner({ size = 28, className }) {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#12213D]/10 border-t-[#087fd1]" />
+    <span aria-hidden="true" className={cx("pz-spinner text-[#12213D]/70", className)} style={{ width: size, height: size }}>
+      {Array.from({ length: 8 }, (_, i) => (
+        <span key={i} style={{ "--i": i }} />
+      ))}
+    </span>
+  );
+}
+
+// Sahifa yuklanmoqda.
+//   fullscreen — butun ekran markazida (layout'dan tashqari: auth tekshiruvi, test sahifalari);
+//   aks holda — DashboardLayout ichida, ko'rinib turgan kontent maydonining markazida
+//   (mobil header 3.5rem hisobga olinadi).
+export function PageLoader({ fullscreen = false, label = "Yuklanmoqda" }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cx(
+        "pz-loader flex flex-col items-center justify-center gap-3",
+        fullscreen ? "fixed inset-0 z-40 bg-[#F6F7FB]" : "min-h-[calc(100dvh-3.5rem)] lg:min-h-[100dvh]"
+      )}
+    >
+      <Spinner />
+      <span className="text-[13px] font-medium tracking-[-0.01em] text-[#12213D]/45">{label}</span>
     </div>
   );
 }

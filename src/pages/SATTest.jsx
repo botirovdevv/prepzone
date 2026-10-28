@@ -26,6 +26,7 @@ import ExitTestModal from "../components/ExitTestModal";
 import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
+import { PageLoader } from "../components/ui";
 
 const MAX_WARNINGS = 3;
 
@@ -381,7 +382,7 @@ export default function SATTest() {
   };
 
   if (loading || !user || phase === null || satTest === undefined) {
-    return <Centered>Yuklanmoqda...</Centered>;
+    return <PageLoader fullscreen />;
   }
 
   if (satTest === null) {
