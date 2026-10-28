@@ -37,25 +37,63 @@ export const QUESTION_SCHEMA = {
   required: ["passage", "prompt", "type", "choices", "correctAnswer", "domain", "difficulty", "confidence"],
 };
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const RETRIABLE = [500, 503, 504];
+
+async function callModel(model, body) {
+  try {
+    const res = await fetch(`${API}/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": config.geminiApiKey },
+      body,
+      signal: AbortSignal.timeout(100_000),
+    });
+    return { res, data: await res.json().catch(() => null) };
+  } catch (err) {
+    // Javob kelmadi (timeout/tarmoq) — band model kabi keyingisiga o'tiladi.
+    if (err.name !== "TimeoutError") console.error("[gemini]", err.message);
+    return { res: { ok: false, status: 504 }, data: null };
+  }
+}
+
+// Model vaqtincha band (500/503) yoki javob bermasa — bir marta qayta urinadi
+// (timeout'da qayta urinmaydi), so'ng zaxira modellarga o'tadi.
+// Limit (429) — darhol foydalanuvchiga aytiladi.
+async function callWithFallback(body) {
+  const fallbacks = config.geminiFallbackModels.filter((m) => m !== config.geminiModel);
+  const queue = [config.geminiModel, ...fallbacks];
+  let last;
+  let retried = false;
+  for (let i = 0; i < queue.length; i++) {
+    last = await callModel(queue[i], body);
+    if (last.res.ok || !RETRIABLE.includes(last.res.status)) return last;
+    console.warn(`[gemini] ${queue[i]} javob bermadi (${last.res.status})`);
+    if (!retried && last.res.status !== 504) {
+      retried = true;
+      await sleep(1500);
+      i -= 1;
+    }
+  }
+  return last;
+}
+
 // parts: [{ text } | { inline_data: { mime_type, data } }]
 export async function generateJson(parts, schema, { temperature = 0.2 } = {}) {
   if (!aiEnabled()) throw new HttpError(503, "ai/disabled", "AI sozlanmagan: serverda GEMINI_API_KEY yo'q.");
 
-  const res = await fetch(`${API}/${encodeURIComponent(config.geminiModel)}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": config.geminiApiKey },
-    body: JSON.stringify({
+  const { res, data } = await callWithFallback(
+    JSON.stringify({
       contents: [{ role: "user", parts }],
       generationConfig: { temperature, responseMimeType: "application/json", responseSchema: schema },
-    }),
-    signal: AbortSignal.timeout(120_000),
-  }).catch((err) => {
-    throw new HttpError(504, "ai/unavailable", `AI javob bermadi: ${err.name === "TimeoutError" ? "vaqt tugadi" : err.message}`);
-  });
+    })
+  );
 
-  const data = await res.json().catch(() => null);
   if (res.status === 429) {
     throw new HttpError(429, "ai/rate-limited", "AI tekin limiti tugadi. Birozdan keyin qayta urinib ko'ring.");
+  }
+  if (RETRIABLE.includes(res.status)) {
+    throw new HttpError(503, "ai/busy", "AI serverlari hozir band. Bir necha daqiqadan keyin qayta urinib ko'ring.");
   }
   if (!res.ok) {
     console.error("[gemini]", res.status, data?.error?.message);

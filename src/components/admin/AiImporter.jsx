@@ -91,6 +91,8 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
     onImport(
       selected.map((q) => ({
         id: newQuestionId(),
+        // AI matematikani <sup>/<sub> bilan yozadi — QuestionPanel HTML sifatida ko'rsatadi.
+        html: true,
         passage: q.passage ? sanitizeRichText(q.passage) : "",
         prompt: q.prompt,
         type: q.type,

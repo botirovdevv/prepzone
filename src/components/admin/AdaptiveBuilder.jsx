@@ -44,7 +44,7 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
         .slice(0, 3)
         .map(({ passage, prompt, choices, correctAnswer }) => ({ passage, prompt, choices, correctAnswer }));
       const { items } = await api.post("/admin/ai/generate-questions", { subject, items: batch, examples });
-      out.push(...items.map((q) => ({ ...q, id: newQuestionId(), image: null, aiReviewed: false })));
+      out.push(...items.map((q) => ({ ...q, id: newQuestionId(), html: true, image: null, aiReviewed: false })));
     }
     return out;
   };

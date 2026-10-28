@@ -68,10 +68,38 @@ function cleanQuestion(raw, subj) {
 
 const LIST_SCHEMA = { type: "ARRAY", items: QUESTION_SCHEMA };
 
+// AI to'g'ri javobni ko'pincha A ga qo'yadi — yaratilgan savollarda variantlar
+// aralashtiriladi (son variantlar real SAT'dagidek o'sish tartibida qoladi).
+function shuffleChoices(q) {
+  if (q.type !== "mcq" || !q.correctAnswer) return q;
+  const texts = q.choices.map((c) => c.text);
+  const correctText = texts[LABELS.indexOf(q.correctAnswer)];
+  const num = (t) => Number(String(t).replace(/[−–]/g, "-").replace(/[,$%\s]/g, ""));
+  let order;
+  if (texts.every((t) => Number.isFinite(num(t)))) order = [...texts].sort((a, b) => num(a) - num(b));
+  else {
+    order = [...texts];
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+  return {
+    ...q,
+    choices: LABELS.map((label, i) => ({ label, text: order[i] })),
+    correctAnswer: LABELS[order.indexOf(correctText)],
+  };
+}
+
+// Sayt LaTeX'ni ko'rsatmaydi — matematika oddiy matn + <sup>/<sub>/<i> bilan.
+const FORMAT_RULE =
+  "Formatting: NEVER use LaTeX, $...$ or \\( \\) delimiters. Write math as plain text with HTML tags: x<sup>2</sup>, a<sub>1</sub>, <i>x</i> for variables, √ for roots, − for minus, ≤ ≥ ≠ π °. Use <u>...</u> for underlined text.";
+
 const subjectRules = (subj) =>
-  subj === "rw"
+  (subj === "rw"
     ? `Section: Digital SAT Reading and Writing. Allowed domain values: ${DOMAINS.rw.join(", ")}.`
-    : `Section: Digital SAT Math. Allowed domain values: ${DOMAINS.math.join(", ")}. Use "spr" type for student-produced (grid-in) answers.`;
+    : `Section: Digital SAT Math. Allowed domain values: ${DOMAINS.math.join(", ")}. Use "spr" type for student-produced (grid-in) answers.`) +
+  `\n${FORMAT_RULE}`;
 
 router.post("/parse-questions", async (req, res) => {
   const body = parseBody(
@@ -91,7 +119,7 @@ router.post("/parse-questions", async (req, res) => {
   const instructions = `You extract SAT practice questions from the provided material for an exam-prep admin panel.
 ${subjectRules(body.subject)}
 Rules:
-- Extract every complete question exactly as written (keep passages verbatim; keep math notation readable, use <sup>/<sub> for exponents/subscripts, <u> for underlined text).
+- Extract every complete question exactly as written (keep passages verbatim; convert any math notation to the formatting rule above).
 - Do not invent questions, passages or choices that are not in the material.
 - correctAnswer: take it from an answer key in the material if present; otherwise solve the question yourself and lower confidence to at most 0.6. If you cannot determine it, return an empty string.
 - difficulty: estimate easy / medium / hard relative to the real Digital SAT.
@@ -153,7 +181,7 @@ Return a JSON array.`;
   const items = (Array.isArray(raw) ? raw : [])
     .slice(0, body.items.length)
     .map((q, i) => ({
-      ...cleanQuestion({ ...q, type: "mcq" }, body.subject),
+      ...shuffleChoices(cleanQuestion({ ...q, type: "mcq" }, body.subject)),
       // So'ralgan spetsifikatsiya ustun: adaptiv yig'ish shu qiyinlikka tayanadi.
       domain: body.items[i].domain,
       difficulty: body.items[i].difficulty,
