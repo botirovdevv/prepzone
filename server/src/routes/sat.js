@@ -114,7 +114,9 @@ router.get("/review", async (req, res) => {
   if (row.session_id) {
     throw new HttpError(400, "invalid-argument", "Sessiya natijalari uchun ko'rib chiqish mavjud emas.");
   }
-  res.json({ keys: reviewKeys(staticTest(row.test_id || "bluebook-1").sections) });
+  // Test saytdan olib tashlangan bo'lsa — kalitlar yo'q (natija ballari qoladi).
+  const data = getStaticSections(row.test_id || "bluebook-1");
+  res.json({ keys: data ? reviewKeys(data.sections) : null });
 });
 
 export default router;

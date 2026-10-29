@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { getModuleQuestions } from "../data/satTest";
 import { useSatTest } from "../hooks/useTestContent";
 import { useDeadline, secondsUntil } from "../hooks/useCountdown";
@@ -56,7 +56,7 @@ export default function SATTest() {
   const navigate = useNavigate();
   const location = useLocation();
   // Qaysi test ochilgani TestSelect sahifasidan state orqali keladi.
-  const requestedId = location.state?.testId || "bluebook-1";
+  const requestedId = location.state?.testId || "";
   const satTest = useSatTest(requestedId);
   const TEST_ID = satTest?.id || requestedId;
 
@@ -381,12 +381,13 @@ export default function SATTest() {
     navigate("/sat/select");
   };
 
-  if (loading || !user || phase === null || satTest === undefined) {
-    return <PageLoader fullscreen />;
+  // Test topilmadi (masalan, olib tashlangan) — testlar ro'yxatiga qaytamiz.
+  if (satTest === null) {
+    return <Navigate to="/sat/select" replace />;
   }
 
-  if (satTest === null) {
-    return <Centered>Testni yuklab bo'lmadi. Sahifani yangilab ko'ring.</Centered>;
+  if (loading || !user || phase === null || satTest === undefined) {
+    return <PageLoader fullscreen />;
   }
 
   if (submitError) {

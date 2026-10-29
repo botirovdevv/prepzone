@@ -11,14 +11,12 @@
 
 const loaders = import.meta.glob("./generated/sat/*.json", { import: "default" });
 
-export const DEFAULT_TEST_ID = "bluebook-1";
-
 const path = (id) => `./generated/sat/${id}.json`;
 
-// Noma'lum yoki eski (testId saqlanmagan) natijalar uchun 1-testga qaytadi.
+// Noma'lum yoki olib tashlangan test — null.
 export function loadSatTest(id) {
-  const load = loaders[path(id)] || loaders[path(DEFAULT_TEST_ID)];
-  return load();
+  const load = loaders[path(id)];
+  return load ? load() : Promise.resolve(null);
 }
 
 // Bo'lim, bosqich va yo'nalish bo'yicha tegishli savollar ro'yxati.

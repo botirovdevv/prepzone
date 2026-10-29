@@ -5,6 +5,7 @@ import { getModuleQuestions } from "../data/satTest";
 import { useSatTest } from "../hooks/useTestContent";
 import { isAnswerCorrect } from "../utils/irtScoring";
 import { api } from "../api/client";
+import { getSatTestTitle } from "../data/testsCatalog";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
@@ -103,6 +104,21 @@ function ReviewQuestion({ item, showPassage }) {
   );
 }
 
+const RETIRED_GROUPS = [
+  { id: "rw", title: "Reading and Writing", type: "rw" },
+  { id: "math", title: "Math", type: "math" },
+];
+
+// Olib tashlangan statik test uchun bo'limlar "qobig'i" (savollarsiz).
+function retiredTest(testId) {
+  const empty = { questions: [] };
+  return {
+    id: testId,
+    testTitle: getSatTestTitle(testId),
+    groups: RETIRED_GROUPS.map((g) => ({ ...g, module1: empty, module2Easy: empty, module2Hard: empty })),
+  };
+}
+
 export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -115,7 +131,10 @@ export default function Results() {
   const [notFound, setNotFound] = useState(false);
   const [keys, setKeys] = useState(null);
   const [keysError, setKeysError] = useState(false);
-  const satTest = useSatTest(testId || "bluebook-1");
+  const loadedTest = useSatTest(testId || "bluebook-1");
+  // Test saytdan olib tashlangan bo'lsa — ballar ko'rinadi, savollar yo'q.
+  const retired = loadedTest === null && !!results;
+  const satTest = retired ? retiredTest(testId) : loadedTest;
 
   useEffect(() => {
     // Agar sahifa /sat/results/:id orqali ochilgan bo'lsa (masalan,
@@ -135,7 +154,7 @@ export default function Results() {
   // To'g'ri javoblar faqat serverda — natija egasiga ko'rib chiqish uchun beriladi.
   const resultId = id || location.state?.resultId;
   useEffect(() => {
-    if (!resultId || !results) return;
+    if (!resultId || !results || retired) return;
     let cancelled = false;
     setKeysError(false);
     api
@@ -148,7 +167,7 @@ export default function Results() {
     return () => {
       cancelled = true;
     };
-  }, [resultId, results]);
+  }, [resultId, results, retired]);
 
   if (loading || (results && satTest === undefined)) return <PageLoader />;
 
@@ -263,7 +282,9 @@ export default function Results() {
 
                 {!keys && (
                   <p className="rounded-xl bg-[#F6F7FB] px-4 py-3 text-sm text-[#12213D]/55">
-                    {keysError
+                    {retired
+                      ? "Bu test saytdan olib tashlangan — savollarni ko'rib chiqib bo'lmaydi."
+                      : keysError
                       ? "Savollarni ko'rib chiqish uchun ma'lumotni yuklab bo'lmadi. Sahifani yangilab ko'ring."
                       : "Savollar va to'g'ri javoblar yuklanmoqda..."}
                   </p>
