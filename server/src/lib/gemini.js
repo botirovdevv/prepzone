@@ -2,9 +2,9 @@ import { config } from "../config.js";
 import { HttpError } from "./errors.js";
 
 // ------------------------------------------------------------------
-// Google Gemini API (structured output). Faqat admin funksiyalari uchun:
-// savollarni PDF/rasm/matndan ajratib olish va adaptiv test uchun yangi
-// savol yaratish. Natija har doim admin ko'rib chiqishidan o'tadi.
+// Google Gemini API (structured output): admin uchun savollarni PDF/rasm/
+// matndan ajratib olish va yangi savol yaratish (natija admin ko'rib
+// chiqishidan o'tadi), hamda Study Plan uchun haftalik reja.
 // ------------------------------------------------------------------
 
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -33,6 +33,11 @@ export const QUESTION_SCHEMA = {
     difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] },
     explanation: { type: "STRING", description: "Short explanation in Uzbek (Latin script)." },
     confidence: { type: "NUMBER", description: "0..1 — how sure you are the question and answer were read correctly." },
+    number: { type: "INTEGER", description: "Question number as printed in the source; 0 if none." },
+    module: { type: "STRING", description: "Module/part the question belongs to as printed (e.g. \"1\", \"2\"); empty if unknown." },
+    section: { type: "STRING", enum: ["rw", "math"], description: "Only for full tests: rw = Reading and Writing, math = Math." },
+    variant: { type: "STRING", description: "\"easy\" / \"hard\" if the module is labelled so; otherwise empty." },
+    hasFigure: { type: "BOOLEAN", description: "True if the question relies on a graph, chart, diagram or picture that text cannot reproduce (tables you transcribe as HTML do not count)." },
   },
   required: ["passage", "prompt", "type", "choices", "correctAnswer", "domain", "difficulty", "confidence"],
 };
@@ -41,13 +46,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const RETRIABLE = [500, 503, 504];
 
-async function callModel(model, body) {
+async function callModel(model, body, timeoutMs) {
   try {
     const res = await fetch(`${API}/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": config.geminiApiKey },
       body,
-      signal: AbortSignal.timeout(100_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     return { res, data: await res.json().catch(() => null) };
   } catch (err) {
@@ -58,16 +63,25 @@ async function callModel(model, body) {
 }
 
 // Model vaqtincha band (500/503) yoki javob bermasa — bir marta qayta urinadi
-// (timeout'da qayta urinmaydi), so'ng zaxira modellarga o'tadi.
-// Limit (429) — darhol foydalanuvchiga aytiladi.
-async function callWithFallback(body) {
-  const fallbacks = config.geminiFallbackModels.filter((m) => m !== config.geminiModel);
-  const queue = [config.geminiModel, ...fallbacks];
+// (timeout'da qayta urinmaydi), so'ng zaxira modellarga o'tadi. Tekin limit
+// (429) har model uchun alohida — u ham keyingi modelga o'tkaziladi; hamma
+// modellar limitda bo'lsa, foydalanuvchiga aytiladi.
+// `maxModels` — navbat uzunligi (PDF bo'laklari uchun qisqa).
+async function callWithFallback(body, { timeoutMs, maxModels, preferLite }) {
+  let fallbacks = config.geminiFallbackModels.filter((m) => m !== config.geminiModel);
+  // Tez rejimda (OCR) yengil "lite" modellar birinchi zaxira — ular tez javob beradi.
+  if (preferLite) fallbacks = [...fallbacks.filter((m) => /lite/.test(m)), ...fallbacks.filter((m) => !/lite/.test(m))];
+  const queue = [config.geminiModel, ...fallbacks].slice(0, maxModels);
   let last;
   let retried = false;
   for (let i = 0; i < queue.length; i++) {
-    last = await callModel(queue[i], body);
-    if (last.res.ok || !RETRIABLE.includes(last.res.status)) return last;
+    last = await callModel(queue[i], body, timeoutMs);
+    if (last.res.ok) return last;
+    if (last.res.status === 429) {
+      console.warn(`[gemini] ${queue[i]} limitda (429)`);
+      continue;
+    }
+    if (!RETRIABLE.includes(last.res.status)) return last;
     console.warn(`[gemini] ${queue[i]} javob bermadi (${last.res.status})`);
     if (!retried && last.res.status !== 504) {
       retried = true;
@@ -79,15 +93,30 @@ async function callWithFallback(body) {
 }
 
 // parts: [{ text } | { inline_data: { mime_type, data } }]
-export async function generateJson(parts, schema, { temperature = 0.2 } = {}) {
+// fast — matnni ko'chirish (OCR) kabi vazifalar: model kam "o'ylaydi",
+// javob bir necha barobar tez keladi. Model buni qo'llamasa (400) —
+// oddiy rejimda qayta yuboriladi.
+export async function generateJson(
+  parts,
+  schema,
+  { temperature = 0.2, timeoutMs = 100_000, maxModels = Infinity, fast = false } = {}
+) {
   if (!aiEnabled()) throw new HttpError(503, "ai/disabled", "AI sozlanmagan: serverda GEMINI_API_KEY yo'q.");
 
-  const { res, data } = await callWithFallback(
+  const body = (thinking) =>
     JSON.stringify({
       contents: [{ role: "user", parts }],
-      generationConfig: { temperature, responseMimeType: "application/json", responseSchema: schema },
-    })
-  );
+      generationConfig: {
+        temperature,
+        responseMimeType: "application/json",
+        responseSchema: schema,
+        ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
+      },
+    });
+  let { res, data } = await callWithFallback(body(fast), { timeoutMs, maxModels, preferLite: fast });
+  if (fast && res.status === 400 && /thinking/i.test(data?.error?.message || "")) {
+    ({ res, data } = await callWithFallback(body(false), { timeoutMs, maxModels, preferLite: fast }));
+  }
 
   if (res.status === 429) {
     throw new HttpError(429, "ai/rate-limited", "AI tekin limiti tugadi. Birozdan keyin qayta urinib ko'ring.");

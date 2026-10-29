@@ -24,7 +24,8 @@ export function cleanAnswers(arr, length) {
 
 // Brauzerga yuboriladigan nusxadan javob kalitlari olib tashlanadi
 // (scripts/build-content.mjs bilan bir xil maydonlar).
-const SECRET_KEYS = ["correctAnswer", "answers", "explanation"];
+// aiNote — admin uchun AI import izohi ("grafik bor" va h.k.), talabaga ko'rsatilmaydi.
+const SECRET_KEYS = ["correctAnswer", "answers", "explanation", "aiNote"];
 const MODULE_KEYS = ["module1", "module2Easy", "module2Hard", "module2Mixed"];
 
 export function stripQuestion(q) {

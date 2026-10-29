@@ -1,38 +1,21 @@
 import { useRef, useState } from "react";
 import { LuFileUp, LuLoaderCircle, LuSparkles, LuTriangleAlert, LuX } from "react-icons/lu";
-import { api } from "../../api/client";
-import { compressImageToDataUrl } from "../../utils/imageCompress";
 import { sanitizeRichText } from "../../utils/sanitizeHtml";
 import { newQuestionId } from "../../utils/questionId";
 import { DIFFICULTIES } from "../../utils/bankQuestion";
+import { checkFileLimits, usePdfImport } from "../../hooks/usePdfImport";
+import { FailedChunks, ImportProgress } from "./ImportProgress";
 
 // ------------------------------------------------------------------
 // AI import: PDF / rasm (skrinshot) yoki joylashtirilgan matndan savollarni
 // Gemini orqali ajratib oladi (server/src/routes/ai.js). Natija avval shu
 // yerda ko'rib chiqiladi: javob kaliti yo'q yoki variantlari to'liq bo'lmagan
 // savolni qo'shib bo'lmaydi, shubhalilari sariq belgilanadi.
+// Katta PDF bo'laklab, parallel o'qiladi (hooks/usePdfImport.js).
 // ------------------------------------------------------------------
-
-const MAX_BYTES = 15 * 1024 * 1024;
 
 const fieldClass =
   "rounded-lg border border-[#12213D]/12 bg-white px-2 py-1 text-xs outline-none focus:border-[#087fd1] focus:ring-2 focus:ring-[#087fd1]/15";
-
-function readBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error(`${file.name} faylini o'qib bo'lmadi.`));
-    reader.onload = () => resolve(String(reader.result).split(",")[1]);
-    reader.readAsDataURL(file);
-  });
-}
-
-// Rasm OCR uchun yetarli aniqlikda siqiladi (savol rasmiga biriktirilmaydi).
-async function toPart(file) {
-  if (file.type === "application/pdf") return { mimeType: file.type, data: await readBase64(file) };
-  const dataUrl = await compressImageToDataUrl(file, { maxWidth: 1800, quality: 0.85 });
-  return { mimeType: "image/jpeg", data: dataUrl.split(",")[1] };
-}
 
 const isBlocked = (q) =>
   q.type === "spr" ? !q.answers?.length : !q.correctAnswer || q.choices.some((c) => !c.text.trim());
@@ -40,40 +23,43 @@ const isBlocked = (q) =>
 export default function AiImporter({ subject, domainOptions, onImport }) {
   const [text, setText] = useState("");
   const [files, setFiles] = useState([]);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [items, setItems] = useState(null);
+  const [moduleFilter, setModuleFilter] = useState("all");
   const fileRef = useRef(null);
+  const { busy, progress, failed, start, retry, reset } = usePdfImport();
 
   const pickFiles = (e) => {
     const picked = [...(e.target.files || [])];
     e.target.value = "";
     const next = [...files, ...picked].slice(0, 10);
-    if (next.reduce((n, f) => n + f.size, 0) > MAX_BYTES) {
-      setError("Fayllar jami 15 MB dan oshmasin. PDF katta bo'lsa, bo'lib yuklang.");
+    const limitError = checkFileLimits(next);
+    if (limitError) {
+      setError(limitError);
       return;
     }
     setError("");
     setFiles(next);
   };
 
+  const show = (found) =>
+    setItems(found.length ? found.map((q) => ({ ...q, key: newQuestionId(), include: !isBlocked(q) })) : null);
+
   const run = async () => {
-    setBusy(true);
     setError("");
+    setModuleFilter("all");
     try {
-      const parts = await Promise.all(files.map(toPart));
-      const { items: found } = await api.post("/admin/ai/parse-questions", {
-        subject,
-        text: text.trim() || undefined,
-        files: parts.length ? parts : undefined,
-      });
+      const found = await start({ subject, files, text });
+      show(found);
       if (!found.length) setError("Materialdan savol topilmadi.");
-      setItems(found.map((q) => ({ ...q, key: newQuestionId(), include: !isBlocked(q) })));
     } catch (err) {
       setError(err.message);
-    } finally {
-      setBusy(false);
     }
+  };
+
+  const retryFailed = async () => {
+    setError("");
+    show(await retry());
   };
 
   const update = (key, patch) =>
@@ -85,7 +71,9 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
       })
     );
 
-  const selected = (items || []).filter((q) => q.include && !isBlocked(q));
+  const modules = [...new Set((items || []).map((q) => q.module).filter(Boolean))].sort();
+  const visible = (items || []).filter((q) => moduleFilter === "all" || q.module === moduleFilter);
+  const selected = visible.filter((q) => q.include && !isBlocked(q));
 
   const addSelected = () => {
     onImport(
@@ -106,9 +94,18 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
         difficulty: q.difficulty,
       }))
     );
+    // Bitta modul qo'shilgan bo'lsa — qolgan modullar savollari keyingi modulga
+    // qo'shish uchun ro'yxatda qoladi.
+    const rest = moduleFilter === "all" ? [] : items.filter((q) => q.module !== moduleFilter);
+    if (rest.length) {
+      setItems(rest);
+      setModuleFilter("all");
+      return;
+    }
     setItems(null);
     setText("");
     setFiles([]);
+    reset();
   };
 
   if (items) {
@@ -116,15 +113,42 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold text-[#12213D]/60">
-            {items.length} ta savol topildi · {selected.length} tasi tanlangan. Har birini tekshiring.
+            {visible.length} ta savol topildi · {selected.length} tasi tanlangan. Har birini tekshiring.
           </p>
-          <button type="button" onClick={() => setItems(null)} className="text-xs font-semibold text-[#12213D]/50 hover:text-[#12213D]">
+          <button
+            type="button"
+            onClick={() => {
+              setItems(null);
+              reset();
+            }}
+            className="text-xs font-semibold text-[#12213D]/50 hover:text-[#12213D]"
+          >
             Bekor qilish
           </button>
         </div>
 
+        {modules.length > 1 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-[#12213D]/45">Modul:</span>
+            {["all", ...modules].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setModuleFilter(m)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  moduleFilter === m ? "bg-[#12213D] text-white" : "bg-[#12213D]/5 text-[#12213D]/60 hover:bg-[#12213D]/10"
+                }`}
+              >
+                {m === "all" ? "Hammasi" : `Module ${m}`} ({m === "all" ? items.length : items.filter((q) => q.module === m).length})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {failed.length > 0 && <FailedChunks failed={failed} busy={busy} progress={progress} onRetry={retryFailed} />}
+
         <div className="max-h-[520px] space-y-2.5 overflow-y-auto pr-1">
-          {items.map((q, i) => {
+          {visible.map((q, i) => {
             const blocked = isBlocked(q);
             return (
               <div
@@ -150,7 +174,7 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
                       />
                     )}
                     <p className="font-medium text-[#12213D]">
-                      {i + 1}. {q.prompt}
+                      {q.number || i + 1}. {q.prompt}
                     </p>
 
                     {q.type === "mcq" ? (
@@ -277,6 +301,10 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
+      {failed.length > 0 && <FailedChunks failed={failed} busy={busy} progress={progress} onRetry={retryFailed} />}
+
+      {busy && progress && <ImportProgress progress={progress} />}
+
       <button
         type="button"
         onClick={run}
@@ -284,7 +312,7 @@ export default function AiImporter({ subject, domainOptions, onImport }) {
         className="flex items-center gap-1.5 rounded-xl bg-[#087fd1] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#066fb8] disabled:opacity-40"
       >
         {busy ? <LuLoaderCircle size={15} className="animate-spin" /> : <LuSparkles size={15} />}
-        {busy ? "AI o'qimoqda... (1 daqiqagacha)" : "AI bilan ajratish"}
+        {busy ? "AI o'qimoqda..." : "AI bilan ajratish"}
       </button>
     </div>
   );

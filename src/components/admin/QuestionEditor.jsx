@@ -201,6 +201,9 @@ export default function QuestionEditor({
                     </div>
                     {reviewId === q.id && (
                       <div className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-white p-2.5">
+                        {q.aiNote && (
+                          <p className="rounded bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">{q.aiNote}</p>
+                        )}
                         {q.passage && (
                           <p
                             className="text-xs leading-relaxed text-[#12213D]/70"
@@ -230,7 +233,7 @@ export default function QuestionEditor({
                         <button
                           type="button"
                           onClick={() => {
-                            patchQuestion(q.id, { aiReviewed: true });
+                            patchQuestion(q.id, { aiReviewed: true, aiNote: undefined });
                             setReviewId(null);
                           }}
                           className="flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-violet-700"

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/client";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import AdaptiveBuilder from "../../components/admin/AdaptiveBuilder";
+import FullTestImporter from "../../components/admin/FullTestImporter";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
 import { LuArrowLeft, LuInfo, LuShieldCheck } from "react-icons/lu";
@@ -278,6 +279,20 @@ export default function SessionForm() {
             )}
           </div>
         </Card>
+
+        <FullTestImporter
+          hasQuestions={[rwM1, rwM2E, rwM2H, rwM2Mix, mathM1, mathM2E, mathM2H, mathM2Mix].some((m) => m.length > 0)}
+          onApply={({ rw, math }) => {
+            setRwM1(rw.module1);
+            setRwM2E(rw.module2Easy);
+            setRwM2H(rw.module2Hard);
+            setRwM2Mix(rw.module2Mixed);
+            setMathM1(math.module1);
+            setMathM2E(math.module2Easy);
+            setMathM2H(math.module2Hard);
+            setMathM2Mix(math.module2Mixed);
+          }}
+        />
 
         <div className="flex items-start gap-3 rounded-2xl border border-[#087fd1]/15 bg-[#087fd1]/[0.04] p-4 text-sm leading-relaxed text-[#12213D]/70">
           <LuInfo size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
