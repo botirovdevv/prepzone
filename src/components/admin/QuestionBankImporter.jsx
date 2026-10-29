@@ -1,17 +1,11 @@
 import { useState } from "react";
 import { LuDatabase, LuLoaderCircle, LuCircleCheck, LuCircleAlert } from "react-icons/lu";
 import { api } from "../../api/client";
-import { newQuestionId } from "../../utils/questionId";
+import { DIFFICULTIES, fromBank } from "../../utils/bankQuestion";
 
 // Har bir fan (subject) uchun JSON fayllar server/question-bank/ ostida
 // joylashgan: masalan "rw-craft-structure.json", "math-algebra.json".
 // Fayl nomi: `${subject}-${domainId}.json`
-
-const DIFFICULTIES = [
-  { id: "easy", label: "Oson" },
-  { id: "medium", label: "O'rta" },
-  { id: "hard", label: "Qiyin" },
-];
 
 export default function QuestionBankImporter({ subject, domainOptions, existingQuestions, onImport }) {
   const [domainId, setDomainId] = useState(domainOptions?.[0]?.id || "");
@@ -72,16 +66,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
         setLoading(false);
         return;
       }
-      const mapped = picked.map((q) => ({
-        id: newQuestionId(),
-        passage: q.passage || "",
-        prompt: q.prompt,
-        choices: q.choices,
-        correctAnswer: q.correctAnswer,
-        image: null,
-        domain: q.domain,
-        sourceId: q.sourceId,
-      }));
+      const mapped = picked.map(fromBank);
       onImport(mapped);
       setLastImported(mapped.length);
       handlePreview(domainId);

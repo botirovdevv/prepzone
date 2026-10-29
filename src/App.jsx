@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
+import BetaNotice from "./components/BetaNotice";
+import PresencePing from "./components/PresencePing";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
 import { onIdle, prefetchAll } from "./utils/idle";
@@ -25,7 +27,7 @@ const AuthedApp = lazy(loadAuthedApp);
 // qilgan holatda ortga (Home'ga) qaytib kira olmasligi shu orqali ta'minlanadi.
 function RootRoute() {
   const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
+  if (loading) return <PageLoader fullscreen />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <Home />;
 }
@@ -48,7 +50,7 @@ export default function App() {
       <Prefetch />
       <BrowserRouter>
         <ErrorBoundary>
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<PageLoader fullscreen />}>
             <Routes>
               <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<Login />} />
@@ -62,6 +64,8 @@ export default function App() {
               <Route path="/*" element={<AuthedApp />} />
             </Routes>
           </Suspense>
+          <BetaNotice />
+          <PresencePing />
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

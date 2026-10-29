@@ -28,7 +28,7 @@ const strictLimiter = rateLimit({
 const email = z.string().trim().toLowerCase().email("Email manzili noto'g'ri.").max(254);
 const password = z
   .string()
-  .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak.")
+  .min(10, "Parol kamida 10 ta belgidan iborat bo'lishi kerak.")
   .max(128, "Parol juda uzun.");
 const displayName = z.string().trim().min(1, "Ismingizni kiriting.").max(80);
 const code = z.string().trim().regex(/^\d{6}$/, "Kod 6 ta raqamdan iborat bo'lishi kerak.");
@@ -217,7 +217,11 @@ router.patch("/profile", requireAuth, async (req, res) => {
   sendUser(res, user);
 });
 
-async function checkCurrentPassword(user, currentPassword) {
+// Xavfli amallarni (hisobni o'chirish, progressni tiklash) tasdiqlash so'zi.
+export const CONFIRM_WORD = "O'CHIRISH";
+
+// Paroli yo'q (faqat Google) foydalanuvchida tekshiruv o'tkazib yuboriladi.
+export async function checkCurrentPassword(user, currentPassword) {
   if (!user.password_hash) return;
   if (!currentPassword || !(await bcrypt.compare(currentPassword, user.password_hash))) {
     throw new HttpError(401, "auth/wrong-password", "Joriy parol noto'g'ri.");
@@ -261,6 +265,84 @@ router.post("/email/change", requireAuth, async (req, res) => {
   );
   await query("DELETE FROM otp_codes WHERE user_id = $1", [user.id]);
   sendUser(res, user);
+});
+
+// Boshqa barcha qurilmalardagi sessiyalarni bekor qilish (shu qurilma qoladi).
+router.post("/sessions/revoke-all", requireAuth, async (req, res) => {
+  const user = await one(
+    "UPDATE users SET token_version = token_version + 1 WHERE id = $1 RETURNING *",
+    [req.user.id]
+  );
+  setSessionCookie(res, user);
+  sendUser(res, user);
+});
+
+// Mavjud hisobga Google'ni ulash (keyin Google orqali ham kirish mumkin).
+router.post("/google/link", strictLimiter, requireAuth, async (req, res) => {
+  const body = parseBody(
+    z.object({ credential: z.string().optional(), accessToken: z.string().optional() }),
+    req.body
+  );
+  const g = await verifyGoogle(body);
+  if (!g.email || !g.emailVerified) {
+    throw new HttpError(401, "auth/invalid-credential", "Google hisobidagi email tasdiqlanmagan.");
+  }
+  const other = await one("SELECT id FROM users WHERE google_id = $1", [g.sub]);
+  if (other && other.id !== req.user.id) {
+    throw new HttpError(
+      409,
+      "auth/credential-already-in-use",
+      "Bu Google hisobi boshqa Prepzone hisobiga ulangan."
+    );
+  }
+  const user = await one("UPDATE users SET google_id = $2 WHERE id = $1 RETURNING *", [
+    req.user.id,
+    g.sub,
+  ]);
+  sendUser(res, user);
+});
+
+// Progressni tiklash: test natijalari, reytingdagi o'rin va Study Plan
+// o'chiriladi. Hisob, onboarding va admin sessiyalari natijalari qoladi.
+router.post("/progress/reset", strictLimiter, requireAuth, async (req, res) => {
+  const body = parseBody(
+    z.object({ currentPassword: z.string().max(128).optional(), confirm: z.literal(CONFIRM_WORD) }),
+    req.body
+  );
+  await checkCurrentPassword(req.user, body.currentPassword);
+  const user = await tx(async (client) => {
+    await client.query("DELETE FROM results WHERE user_id = $1", [req.user.id]);
+    await client.query("DELETE FROM leaderboard WHERE user_id = $1", [req.user.id]);
+    const { rows } = await client.query(
+      "UPDATE users SET study_plan = NULL WHERE id = $1 RETURNING *",
+      [req.user.id]
+    );
+    return rows[0];
+  });
+  res.json({ user: publicUser(user) });
+});
+
+// Hisobni butunlay o'chirish. Barcha bog'liq ma'lumotlar (natijalar,
+// reyting, sessiya ishtiroki...) ON DELETE CASCADE orqali o'chadi.
+router.post("/account/delete", strictLimiter, requireAuth, async (req, res) => {
+  const body = parseBody(
+    z.object({ currentPassword: z.string().max(128).optional(), confirm: z.literal(CONFIRM_WORD) }),
+    req.body
+  );
+  await checkCurrentPassword(req.user, body.currentPassword);
+  if (req.user.is_owner) {
+    const owners = await one("SELECT count(*)::int AS n FROM users WHERE is_owner", []);
+    if (owners.n <= 1) {
+      throw new HttpError(
+        403,
+        "permission-denied",
+        "Siz yagona egasiz. Hisobni o'chirishdan oldin boshqa adminni ega qilib tayinlang."
+      );
+    }
+  }
+  await query("DELETE FROM users WHERE id = $1", [req.user.id]);
+  clearSessionCookie(res);
+  res.json({ ok: true });
 });
 
 export default router;

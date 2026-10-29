@@ -26,6 +26,7 @@ import {
   inputClass,
 } from "../../components/ui";
 import UserAdminActions from "../../components/admin/UserAdminActions";
+import OnlineNow from "../../components/admin/OnlineNow";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
 import { dayKey, routeLabel } from "../../utils/analytics";
 
@@ -241,6 +242,8 @@ export default function Analytics() {
           </>
         }
       />
+
+      {canAnalytics && <OnlineNow />}
 
       {errors.length > 0 && (
         <Card className="mb-6 flex items-start gap-3 border-amber-300 bg-amber-50 p-4 text-[13px] text-amber-800">

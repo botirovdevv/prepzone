@@ -5,6 +5,11 @@
 // ------------------------------------------------------------------
 import { effectivePerms } from "./permissions.js";
 
+// Profil rasmi manzili. `v` — rasm almashganda brauzer keshini yangilash uchun.
+export function avatarUrl(userId, updatedAt) {
+  return updatedAt ? `/api/avatars/${userId}?v=${new Date(updatedAt).getTime()}` : null;
+}
+
 export function publicUser(u) {
   return {
     uid: u.id,
@@ -16,6 +21,7 @@ export function publicUser(u) {
     adminPerms: effectivePerms(u),
     hasPassword: !!u.password_hash,
     hasGoogle: !!u.google_id,
+    avatarUrl: avatarUrl(u.id, u.avatar_updated_at),
     onboarding: u.onboarding || null,
     studyPlan: u.study_plan || null,
     createdAt: u.created_at,
@@ -36,7 +42,14 @@ export function resultDoc(r) {
 }
 
 export function leaderboardDoc(r) {
-  return { id: r.user_id, uid: r.user_id, name: r.name, bestScore: r.best_score, updatedAt: r.updated_at };
+  return {
+    id: r.user_id,
+    uid: r.user_id,
+    name: r.name,
+    bestScore: r.best_score,
+    avatarUrl: avatarUrl(r.user_id, r.avatar_updated_at),
+    updatedAt: r.updated_at,
+  };
 }
 
 // `code` faqat adminga ko'rsatiladi — oddiy foydalanuvchi kodni

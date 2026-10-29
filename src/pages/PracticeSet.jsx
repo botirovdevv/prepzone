@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import { analyzeTopics, buildTopicAdvice } from "../utils/topicAnalysis";
 import { LuCircleCheck, LuTriangleAlert, LuSparkles, LuCircleAlert } from "react-icons/lu";
 import { HighlightsProvider } from "../context/HighlightsContext";
+import { PageLoader } from "../components/ui";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
@@ -94,11 +95,7 @@ export default function PracticeSet() {
   const topicAdvice = useMemo(() => buildTopicAdvice(topicAnalysis), [topicAnalysis]);
 
   if (loading || !user || setLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
+    return <PageLoader fullscreen />;
   }
 
   if (setMissing || !set) {

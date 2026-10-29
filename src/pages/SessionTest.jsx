@@ -25,6 +25,7 @@ import SessionWaitingScreen from "../components/SessionWaitingScreen";
 import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
+import { PageLoader } from "../components/ui";
 
 const MAX_WARNINGS = 3;
 
@@ -524,11 +525,7 @@ export default function SessionTest() {
   // Render
   // ------------------------------------------------------------
   if (loading || !user || sessionLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
+    return <PageLoader fullscreen />;
   }
 
   if (sessionMissing) {
@@ -548,11 +545,7 @@ export default function SessionTest() {
   }
 
   if (phase === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
+    return <PageLoader fullscreen />;
   }
 
   if (phase === "waiting") {

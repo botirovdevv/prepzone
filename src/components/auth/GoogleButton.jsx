@@ -75,7 +75,7 @@ function GoogleButtonView({ onClick, disabled, busy }) {
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
-      className="pz-press flex h-12 w-full items-center justify-center gap-3 rounded-[14px] border border-[#111827]/[0.12] bg-white px-4 text-[16px] font-semibold text-[#111827] shadow-[0_1px_2px_rgba(17,24,39,0.05)] hover:border-[#111827]/20 hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-60"
+      className="pz-press flex h-[52px] w-full items-center justify-center gap-3 rounded-full border border-black/[0.12] bg-white px-4 text-[17px] font-semibold tracking-[-0.01em] text-[#1d1d1f] hover:border-black/20 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
       {busy ? "Ulanmoqda..." : "Google orqali davom etish"}

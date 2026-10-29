@@ -16,6 +16,15 @@ export const config = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   resendApiKey: process.env.RESEND_API_KEY || "",
   fromEmail: process.env.FROM_EMAIL || "Prepzone <verify@mail.prep-zone.uz>",
+  // Google AI Studio kaliti (admin: savollarni PDF/rasm/matndan import qilish va
+  // adaptiv test uchun yangi savol yaratish). Bo'sh bo'lsa AI funksiyalari o'chiq.
+  geminiApiKey: process.env.GEMINI_API_KEY || "",
+  geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash",
+  // Asosiy model band bo'lsa (503) navbat bilan sinaladigan modellar.
+  geminiFallbackModels: (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.8-flash,gemini-3.1-flash-lite")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean),
   // Frontend boshqa domenda bo'lsa (masalan Vercel) — shu yerga uning
   // manzili yoziladi. Caddy orqali bitta domenda ishlasa bo'sh qoladi.
   clientOrigin: process.env.CLIENT_ORIGIN || "",

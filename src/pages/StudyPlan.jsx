@@ -44,8 +44,13 @@ function formatMinutes(m) {
 }
 
 // ---------------- Sozlash formasi ----------------
-function SettingsForm({ initial, onSave, onCancel, saving }) {
-  const [form, setForm] = useState({ ...DEFAULT_SETTINGS, ...initial });
+// `defaultTarget` — onboarding'da kiritilgan maqsad ball (reja hali yo'q bo'lsa).
+function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
+  const [form, setForm] = useState({
+    ...DEFAULT_SETTINGS,
+    ...(defaultTarget ? { targetScore: defaultTarget } : {}),
+    ...initial,
+  });
   const minDate = dayKey(addDays(new Date(), 1));
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -75,7 +80,7 @@ function SettingsForm({ initial, onSave, onCancel, saving }) {
         <Field label={`Maqsad ball: ${form.targetScore}`}>
           <input
             type="range"
-            min={800}
+            min={400}
             max={1600}
             step={10}
             value={form.targetScore}
@@ -284,6 +289,7 @@ export default function StudyPlan() {
         {errorBox}
         <SettingsForm
           initial={plan?.settings}
+          defaultTarget={user?.onboarding?.targets?.sat}
           onSave={saveSettings}
           onCancel={plan ? () => setEditing(false) : null}
           saving={saving}

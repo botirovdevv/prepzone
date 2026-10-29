@@ -6,6 +6,7 @@ import { HttpError, badRequest, forbidden, notFound, parseBody } from "../lib/er
 import { dayKey } from "../lib/limits.js";
 import { ADMIN_PERMS, effectivePerms } from "../lib/permissions.js";
 import { requireOwner, requirePerm } from "../middleware/auth.js";
+import { onlineSnapshot } from "../lib/presence.js";
 
 // ------------------------------------------------------------------
 // Faqat admin (index.js'da requireAdmin bilan ulanadi): sayt analitikasi,
@@ -70,6 +71,42 @@ router.get("/analytics", requirePerm("analytics"), async (req, res) => {
     sources: sources.rows.map((r) => [r.source, r.count]),
     days,
   });
+});
+
+// "Hozir saytda": onlayn userlar (bir nechta tab — bitta qator) va mehmonlar soni.
+router.get("/online", requirePerm("analytics"), async (_req, res) => {
+  const all = onlineSnapshot();
+  const byUser = new Map();
+  let guests = 0;
+  for (const v of all) {
+    if (!v.userId) {
+      guests += 1;
+      continue;
+    }
+    const cur = byUser.get(v.userId);
+    if (!cur) byUser.set(v.userId, { page: v.page, since: v.since, lastSeen: v.lastSeen, tabs: 1 });
+    else {
+      cur.tabs += 1;
+      cur.since = Math.min(cur.since, v.since);
+      if (v.lastSeen > cur.lastSeen) Object.assign(cur, { page: v.page, lastSeen: v.lastSeen });
+    }
+  }
+  const ids = [...byUser.keys()];
+  const { rows } = ids.length
+    ? await query("SELECT id, email, display_name, is_admin, is_owner FROM users WHERE id = ANY($1)", [ids])
+    : { rows: [] };
+  const users = rows
+    .map((u) => ({
+      id: u.id,
+      email: u.email,
+      displayName: u.display_name,
+      isAdmin: u.is_admin || u.is_owner,
+      ...byUser.get(u.id),
+      since: new Date(byUser.get(u.id).since).toISOString(),
+      lastSeen: new Date(byUser.get(u.id).lastSeen).toISOString(),
+    }))
+    .sort((a, b) => a.since.localeCompare(b.since));
+  res.set("Cache-Control", "no-store").json({ total: users.length + guests, users, guests, at: new Date().toISOString() });
 });
 
 const USERS_PAGE = 50;

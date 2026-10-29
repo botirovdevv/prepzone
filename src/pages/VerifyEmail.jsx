@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useOtpVerified } from "../hooks/useOtpVerified";
 import { LuMailCheck, LuRefreshCw, LuLogOut, LuPencil } from "react-icons/lu";
+import { PageLoader } from "../components/ui";
 
 const RESEND_COOLDOWN_S = 60;
 
@@ -114,11 +115,7 @@ export default function VerifyEmail() {
   };
 
   if (loading || !user || !checked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Yuklanmoqda...
-      </div>
-    );
+    return <PageLoader fullscreen />;
   }
 
   return (
