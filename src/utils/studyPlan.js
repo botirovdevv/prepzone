@@ -4,8 +4,9 @@ import { dayKey } from "./date";
 
 // ------------------------------------------------------------------
 // Study Plan: userning sozlamalari va mock natijalaridan kunlik
-// vazifalar ro'yxatini tuzadi. Hammasi deterministik (AI/backend yo'q):
-// bir xil ma'lumot -> bir xil reja.
+// vazifalar ro'yxatini tuzadi. `buildWeek` deterministik (bir xil
+// ma'lumot -> bir xil reja); AI (Gemini) rejasi bo'lsa, `mergeAiWeek`
+// uning kunlarini shu asosga qo'yadi (dam olish/imtihon kunlari o'zgarmaydi).
 //
 // settings: { examDate: "YYYY-MM-DD", targetScore, dailyMinutes,
 //             restDays: [0..6] (Date.getDay), mockDay: 0..6 }
@@ -80,6 +81,7 @@ export function analyzeAttempts(attempts = []) {
     .sort((a, b) => a.accuracy - b.accuracy);
 
   return {
+    latestId: latest?.id ?? null,
     current: latest?.total ?? null,
     rw: latest?.results?.rw?.scaledScore ?? null,
     math: latest?.results?.math?.scaledScore ?? null,
@@ -209,4 +211,35 @@ export function streak(done = {}, restDays = [], today = new Date()) {
     date = addDays(date, -1);
   }
   return count;
+}
+
+// ---------------- AI reja ----------------
+// ai: { generatedAt, startDate, basedOn, summary, days: [{ date, focus, tasks }] }
+const AI_TASK_LINKS = { practice: "/practice", mock: "/sat/select", vocab: "/vocabulary" };
+
+export function mergeAiWeek(week, ai, { latestResultPath } = {}) {
+  const byDate = new Map((ai?.days || []).map((d) => [d.date, d]));
+  return week.map((day) => {
+    const src = byDate.get(day.key);
+    if (!src || day.rest || day.afterExam || day.tasks.some((t) => t.type === "exam")) {
+      return { ...day, source: "auto" };
+    }
+    const tasks = src.tasks.map((t) => {
+      const d = t.domain ? DOMAIN_BY_ID[t.domain] : null;
+      return {
+        ...t,
+        subject: d?.subject,
+        to: t.type === "review" ? latestResultPath || "/sat/history" : AI_TASK_LINKS[t.type],
+      };
+    });
+    return { ...day, tasks, focus: src.focus, source: "ai" };
+  });
+}
+
+// none — AI reja yo'q; stale — yangi mock natijasi bor yoki reja muddati tugagan.
+export function aiStatus(ai, analysis, today = new Date()) {
+  if (!ai?.days?.length) return "none";
+  if ((analysis.latestId || null) !== (ai.basedOn || null)) return "stale";
+  const age = -daysUntil(ai.startDate, today);
+  return age >= 7 ? "none" : age >= 5 ? "stale" : "fresh";
 }

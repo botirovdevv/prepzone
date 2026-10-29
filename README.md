@@ -35,7 +35,7 @@ va reyting yozish faqat backend orqali. To'g'ri javoblar brauzer bundle'iga tush
 | `/api/sessions/*` | Admin sessiyalari: yaratish, kod, qo'shilish, `/:id/route`, `/:id/finish` |
 | `/api/question-sets/*`, `/api/desmos/*` | Amaliyot to'plamlari va Desmos darsliklari |
 | `/api/results`, `/api/leaderboard` | "Mening natijalarim" (sahifalab) va reyting |
-| `/api/me/*` | Onboarding so'rovnomasi, Study Plan |
+| `/api/me/*` | Onboarding so'rovnomasi, Study Plan (`POST /me/study-plan/ai` — Gemini haftalik reja, kuniga 6 ta) |
 | `POST /api/analytics/track` | Sahifa ko'rishlar (faqat login qilganlar) |
 | `/api/admin/*` | Analitika, foydalanuvchilar, savol banki |
 

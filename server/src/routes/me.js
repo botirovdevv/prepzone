@@ -1,8 +1,11 @@
 import { Router } from "express";
+import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { one, tx } from "../db/index.js";
-import { badRequest, parseBody } from "../lib/errors.js";
+import { HttpError, badRequest, parseBody } from "../lib/errors.js";
 import { publicUser } from "../lib/serialize.js";
+import { DOMAINS } from "../lib/gemini.js";
+import { generateStudyPlan } from "../lib/studyPlanAi.js";
 
 // ------------------------------------------------------------------
 // Foydalanuvchining o'z profili: onboarding so'rovnomasi va Study Plan.
@@ -84,6 +87,72 @@ router.patch("/study-plan/done", async (req, res) => {
         ARRAY['done', $2::text], $3::jsonb)
      WHERE id = $1 RETURNING *`,
     [req.user.id, date, JSON.stringify(done)]
+  );
+  res.json({ user: publicUser(user) });
+});
+
+// AI (Gemini) haftalik reja. Sozlamalar DB'dan olinadi; client faqat mock
+// tahlilini (raqamlar va mavzu id'lari) yuboradi. Natija `study_plan.ai` ga
+// yoziladi — sozlamalar o'zgarganda (PUT /study-plan) u tushib qoladi.
+const aiPlanLimit = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 6,
+  keyGenerator: (req) => req.user.id,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: (_req, res) =>
+    res.status(429).json({ code: "ai/rate-limited", message: "Bugungi AI reja limiti tugadi. Ertaga qayta urinib ko'ring." }),
+});
+
+const score = (min, max) => z.number().int().min(min).max(max).nullable();
+
+router.post("/study-plan/ai", aiPlanLimit, async (req, res) => {
+  const body = parseBody(
+    z.object({
+      startDate: dateKey,
+      vocabDue: z.number().int().min(0).max(10_000).default(0),
+      latestId: z.string().max(80).nullable().optional(),
+      analysis: z.object({
+        current: score(0, 1600),
+        rw: score(0, 800),
+        math: score(0, 800),
+        domains: z
+          .array(
+            z.object({
+              id: z.enum([...DOMAINS.rw, ...DOMAINS.math]),
+              correct: z.number().int().min(0).max(10_000),
+              total: z.number().int().min(0).max(10_000),
+            })
+          )
+          .max(8),
+      }),
+    }),
+    req.body
+  );
+
+  const current = await one("SELECT study_plan FROM users WHERE id = $1", [req.user.id]);
+  const settings = current?.study_plan?.settings;
+  if (!settings?.examDate) throw badRequest("failed-precondition", "Avval rejani sozlang.");
+
+  const ai = await generateStudyPlan({
+    settings: {
+      examDate: settings.examDate,
+      targetScore: settings.targetScore,
+      dailyMinutes: Number(settings.dailyMinutes) || 60,
+      restDays: Array.isArray(settings.restDays) ? settings.restDays : [],
+      mockDay: Number.isInteger(settings.mockDay) ? settings.mockDay : 6,
+    },
+    analysis: body.analysis,
+    vocabDue: body.vocabDue,
+    hasLatestResult: !!body.latestId,
+    latestId: body.latestId,
+    startDate: body.startDate,
+  });
+  if (!ai.days.length) throw new HttpError(502, "ai/empty", "AI reja tuza olmadi. Qayta urinib ko'ring.");
+
+  const user = await one(
+    "UPDATE users SET study_plan = COALESCE(study_plan, '{}'::jsonb) || jsonb_build_object('ai', $2::jsonb) WHERE id = $1 RETURNING *",
+    [req.user.id, JSON.stringify(ai)]
   );
   res.json({ user: publicUser(user) });
 });

@@ -91,6 +91,8 @@ export function AuthProvider({ children }) {
   const saveStudyPlan = (settings) => api.put("/me/study-plan", { settings }).then(applyProfile);
   const setStudyPlanDone = (date, done) =>
     api.patch("/me/study-plan/done", { date, done }).then(applyProfile);
+  // AI (Gemini) haftalik reja — natija `user.studyPlan.ai` ga yoziladi.
+  const generateAiStudyPlan = (payload) => api.post("/me/study-plan/ai", payload).then(applyProfile);
 
   // Profil rasmi (data URL — src/utils/imageCompress.js → compressAvatar).
   const uploadAvatar = (dataUrl) => api.put("/me/avatar", { dataUrl }).then(applyProfile);
@@ -145,6 +147,7 @@ export function AuthProvider({ children }) {
     saveOnboarding,
     saveStudyPlan,
     setStudyPlanDone,
+    generateAiStudyPlan,
     uploadAvatar,
     removeAvatar,
     revokeOtherSessions,
