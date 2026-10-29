@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { Router } from "express";
+import { endOtherSessions } from "../lib/session.js";
 import { z } from "zod";
 import { one, query } from "../db/index.js";
 import { HttpError, badRequest, forbidden, notFound, parseBody } from "../lib/errors.js";
@@ -194,6 +195,7 @@ router.patch("/users/:id/block", requirePerm("users"), async (req, res) => {
        WHERE id = $1`,
       [user.id, body.reason || null]
     );
+    await endOtherSessions(user.id);
   } else {
     await query("UPDATE users SET blocked_at = NULL, blocked_reason = NULL WHERE id = $1", [user.id]);
   }

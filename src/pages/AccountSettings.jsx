@@ -11,13 +11,16 @@ import {
   LuTrash2,
   LuLink,
   LuMonitorSmartphone,
+  LuMonitor,
+  LuSmartphone,
+  LuTablet,
   LuRotateCcw,
   LuTriangleAlert,
   LuKeyRound,
   LuCalendar,
 } from "react-icons/lu";
 import { useAuth, CONFIRM_WORD } from "../context/AuthContext";
-import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, inputClass, PageLoader } from "../components/ui";
+import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, Skeleton, inputClass, PageLoader } from "../components/ui";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
 import PasswordStrength from "../components/PasswordStrength";
@@ -29,6 +32,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const SECTIONS = [
   { id: "profil", label: "Profil", icon: LuUser },
   { id: "xavfsizlik", label: "Xavfsizlik", icon: LuLockKeyhole },
+  { id: "seanslar", label: "Faol seanslar", icon: LuMonitorSmartphone },
   { id: "hisoblar", label: "Ulangan hisoblar", icon: LuLink },
   { id: "xavfli-zona", label: "Xavfli zona", icon: LuTriangleAlert },
 ];
@@ -93,6 +97,7 @@ export default function AccountSettings() {
         <div className="space-y-6">
           <ProfileSection user={user} displayName={displayName} />
           <SecuritySection user={user} />
+          <SessionsSection user={user} />
           <AccountsSection user={user} />
           <DangerSection user={user} />
         </div>
@@ -235,10 +240,10 @@ function ProfileSection({ user, displayName }) {
 }
 
 // ------------------------------------------------------------------
-// Xavfsizlik: parol va sessiyalar
+// Xavfsizlik: parol
 // ------------------------------------------------------------------
 function SecuritySection({ user }) {
-  const { changePassword, revokeOtherSessions } = useAuth();
+  const { changePassword } = useAuth();
   const hasPassword = user.hasPassword;
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -247,10 +252,6 @@ function SecuritySection({ user }) {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
   const [pwError, setPwError] = useState("");
-
-  const [revokeBusy, setRevokeBusy] = useState(false);
-  const [revokeDone, setRevokeDone] = useState(false);
-  const [revokeError, setRevokeError] = useState("");
 
   const pwCheck = checkPassword(newPassword, { email: user.email || "", name: user.displayName || "" });
 
@@ -282,20 +283,6 @@ function SecuritySection({ user }) {
       setPwError(mapPasswordError(err.code));
     } finally {
       setPwSaving(false);
-    }
-  };
-
-  const handleRevoke = async () => {
-    setRevokeError("");
-    setRevokeBusy(true);
-    try {
-      await revokeOtherSessions();
-      setRevokeDone(true);
-      setTimeout(() => setRevokeDone(false), 3000);
-    } catch (err) {
-      setRevokeError(err.message || "Xatolik yuz berdi.");
-    } finally {
-      setRevokeBusy(false);
     }
   };
 
@@ -368,26 +355,136 @@ function SecuritySection({ user }) {
           </Button>
         </div>
       </form>
+    </Card>
+  );
+}
 
-      <SettingRow
-        icon={LuMonitorSmartphone}
-        title="Barcha qurilmalardan chiqish"
-        text="Telefon yoki kompyuter yo'qolsa foydali. Boshqa qurilmalardagi kirishlar bekor qilinadi, shu qurilmada qolasiz."
-        error={revokeError}
+// ------------------------------------------------------------------
+// Faol seanslar: qaysi qurilmalarda kirilgan, bittasini yoki hammasini tugatish
+// ------------------------------------------------------------------
+const METHOD_LABELS = {
+  password: "Parol bilan",
+  google: "Google orqali",
+  qr: "QR kod orqali",
+  reset: "Parol tiklangach",
+  legacy: "Avvalgi kirish",
+};
+
+function timeAgo(iso) {
+  const sec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (sec < 5 * 60) return "hozir faol";
+  if (sec < 3600) return `${Math.floor(sec / 60)} daqiqa oldin`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)} soat oldin`;
+  if (sec < 30 * 86400) return `${Math.floor(sec / 86400)} kun oldin`;
+  return new Date(iso).toLocaleDateString("uz-UZ");
+}
+
+function SessionsSection({ user }) {
+  const { listSessions, endSession, revokeOtherSessions } = useAuth();
+  const [sessions, setSessions] = useState(null);
+  const [error, setError] = useState("");
+  const [ending, setEnding] = useState(null); // seans id yoki "all"
+  const listRef = useRef(listSessions);
+  listRef.current = listSessions;
+
+  // Parol almashsa yoki "hammasidan chiqish" bo'lsa user yangilanadi — ro'yxat ham.
+  useEffect(() => {
+    let cancelled = false;
+    listRef
+      .current()
+      .then((items) => !cancelled && setSessions(items))
+      .catch((err) => !cancelled && setError(err.message || "Seanslarni yuklab bo'lmadi."));
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleEnd = async (id) => {
+    setError("");
+    setEnding(id);
+    try {
+      await endSession(id);
+      setSessions((list) => list.filter((s) => s.id !== id));
+    } catch (err) {
+      setError(err.message || "Seansni tugatib bo'lmadi.");
+    } finally {
+      setEnding(null);
+    }
+  };
+
+  const handleEndAll = async () => {
+    setError("");
+    setEnding("all");
+    try {
+      await revokeOtherSessions();
+      setSessions((list) => list.filter((s) => s.current));
+    } catch (err) {
+      setError(err.message || "Xatolik yuz berdi.");
+    } finally {
+      setEnding(null);
+    }
+  };
+
+  const others = sessions ? sessions.filter((s) => !s.current).length : 0;
+
+  return (
+    <Card id="seanslar" className="scroll-mt-6">
+      <CardHeader
+        title="Faol seanslar"
+        subtitle="Hisobingizga kirilgan qurilmalar. Tanimagan qurilmangizni darhol chiqarib yuboring."
         action={
-          <Button type="button" size="sm" variant="outline" onClick={handleRevoke} disabled={revokeBusy || revokeDone}>
-            {revokeDone ? (
-              <>
-                <LuCheck size={14} /> Chiqarildi
-              </>
-            ) : revokeBusy ? (
-              "Bajarilmoqda..."
-            ) : (
-              "Chiqish"
-            )}
-          </Button>
+          others > 0 && (
+            <Button type="button" size="sm" variant="outline" onClick={handleEndAll} disabled={ending !== null}>
+              {ending === "all" ? "Chiqarilmoqda..." : "Hammasini tugatish"}
+            </Button>
+          )
         }
       />
+      <div className="mt-4">
+        {sessions === null && !error && (
+          <div className="space-y-2 border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+          </div>
+        )}
+        {sessions?.map((s) => {
+          const Icon = s.device === "phone" ? LuSmartphone : s.device === "tablet" ? LuTablet : LuMonitor;
+          return (
+            <SettingRow
+              key={s.id}
+              icon={Icon}
+              title={
+                <span className="flex flex-wrap items-center gap-2">
+                  {s.browser} · {s.os}
+                  {s.current && <Badge tone="emerald">Shu qurilma</Badge>}
+                </span>
+              }
+              text={[s.ip && `IP ${s.ip}`, s.current ? "hozir faol" : timeAgo(s.lastSeenAt), METHOD_LABELS[s.method]]
+                .filter(Boolean)
+                .join(" · ")}
+              action={
+                !s.current && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="danger"
+                    onClick={() => handleEnd(s.id)}
+                    disabled={ending !== null}
+                  >
+                    {ending === s.id ? "Tugatilmoqda..." : "Tugatish"}
+                  </Button>
+                )
+              }
+            />
+          );
+        })}
+        {sessions && others === 0 && (
+          <p className="border-t border-[#12213D]/[0.06] px-5 py-4 text-[13px] text-[#12213D]/45 sm:px-6">
+            Boshqa qurilmalarda faol seans yo'q.
+          </p>
+        )}
+        {error && <p className="border-t border-[#12213D]/[0.06] px-5 py-4 text-sm text-red-600 sm:px-6">{error}</p>}
+      </div>
     </Card>
   );
 }

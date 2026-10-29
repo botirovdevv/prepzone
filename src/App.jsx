@@ -20,6 +20,7 @@ const Register = lazy(loadRegister);
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
+const QrApprove = lazy(() => import("./pages/QrApprove"));
 const AuthedApp = lazy(loadAuthedApp);
 
 // "/" manzili: login qilmagan foydalanuvchiga ochiq bosh sahifa (Home),
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/qr" element={<QrApprove />} />
               <Route path="/terms" element={<LegalPage page="terms" />} />
               <Route path="/privacy" element={<LegalPage page="privacy" />} />
               <Route path="/contact" element={<LegalPage page="contact" />} />

@@ -111,6 +111,23 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // Faol seanslar (Sozlamalar sahifasi).
+  const listSessions = () => api.get("/auth/sessions").then((d) => d.items);
+  const endSession = (id) => api.delete(`/auth/sessions/${id}`);
+
+  // QR orqali kirish. Kompyuter: qrStart → qrPoll (tasdiqlangach user
+  // qo'llanadi). Telefon: qrInfo → qrApprove / qrDeny.
+  const qrStart = () => api.post("/auth/qr/start");
+  const qrPoll = async (id, pollSecret) => {
+    const data = await api.post("/auth/qr/poll", { id, pollSecret });
+    if (data.status === "approved" && data.user) apply(data);
+    return data;
+  };
+  const qrInfo = (id, scanCode) =>
+    api.get(`/auth/qr/info?i=${encodeURIComponent(id)}&c=${encodeURIComponent(scanCode)}`);
+  const qrApprove = (id, scanCode) => api.post("/auth/qr/approve", { id, scanCode });
+  const qrDeny = (id, scanCode) => api.post("/auth/qr/deny", { id, scanCode });
+
   const value = {
     user,
     loading,
@@ -134,6 +151,13 @@ export function AuthProvider({ children }) {
     linkGoogle,
     resetProgress,
     deleteAccount,
+    listSessions,
+    endSession,
+    qrStart,
+    qrPoll,
+    qrInfo,
+    qrApprove,
+    qrDeny,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

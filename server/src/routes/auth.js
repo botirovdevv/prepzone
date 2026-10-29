@@ -5,7 +5,14 @@ import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { one, query, tx } from "../db/index.js";
 import { HttpError, badRequest, parseBody, unauthorized } from "../lib/errors.js";
-import { setSessionCookie, clearSessionCookie } from "../lib/session.js";
+import {
+  setSessionCookie,
+  clearSessionCookie,
+  startSession,
+  endSession,
+  endOtherSessions,
+} from "../lib/session.js";
+import { describeUserAgent } from "../lib/userAgent.js";
 import { publicUser } from "../lib/serialize.js";
 import { issueCode, consumeCode } from "../lib/otp.js";
 import { verifyGoogle } from "../lib/google.js";
@@ -66,7 +73,7 @@ router.post("/register", strictLimiter, async (req, res) => {
      VALUES ($1, $2, $3, $4) RETURNING *`,
     [crypto.randomUUID(), body.email, await hashPassword(body.password), body.displayName]
   );
-  setSessionCookie(res, user);
+  await startSession(req, res, user, "password");
   // Tasdiqlash kodi VerifyEmail sahifasi ochilganda (/otp/send) yuboriladi.
   sendUser(res, user, 201);
 });
@@ -85,7 +92,7 @@ router.post("/login", strictLimiter, async (req, res) => {
     throw new HttpError(401, "auth/invalid-credential", "Email yoki parol noto'g'ri.");
   }
   assertNotBlocked(user);
-  setSessionCookie(res, user);
+  await startSession(req, res, user, "password");
   sendUser(res, user);
 });
 
@@ -125,6 +132,9 @@ router.post("/google", strictLimiter, async (req, res) => {
          WHERE id = $1 RETURNING *`,
         [byEmail.rows[0].id, g.sub, g.name]
       );
+      if (!byEmail.rows[0].email_verified) {
+        await client.query("DELETE FROM user_sessions WHERE user_id = $1", [byEmail.rows[0].id]);
+      }
       return linked.rows[0];
     }
 
@@ -137,11 +147,12 @@ router.post("/google", strictLimiter, async (req, res) => {
   });
 
   assertNotBlocked(user);
-  setSessionCookie(res, user);
+  await startSession(req, res, user, "google");
   sendUser(res, user);
 });
 
-router.post("/logout", (_req, res) => {
+router.post("/logout", async (req, res) => {
+  await endSession(req.user?.session_id);
   clearSessionCookie(res);
   res.json({ ok: true });
 });
@@ -199,7 +210,8 @@ router.post("/password/reset", strictLimiter, async (req, res) => {
      WHERE id = $1 RETURNING *`,
     [user.id, await hashPassword(body.password)]
   );
-  setSessionCookie(res, updated);
+  await endOtherSessions(user.id);
+  await startSession(req, res, updated, "reset");
   sendUser(res, updated);
 });
 
@@ -241,8 +253,9 @@ router.post("/password/change", requireAuth, async (req, res) => {
      WHERE id = $1 RETURNING *`,
     [req.user.id, await hashPassword(body.newPassword)]
   );
-  // Boshqa qurilmalardagi sessiyalar bekor bo'ladi, shu qurilmada yangisi beriladi.
-  setSessionCookie(res, user);
+  // Boshqa qurilmalardagi sessiyalar bekor bo'ladi, shu qurilmadagisi qoladi.
+  await endOtherSessions(user.id, req.user.session_id);
+  setSessionCookie(res, user, req.user.session_id);
   sendUser(res, user);
 });
 
@@ -267,13 +280,51 @@ router.post("/email/change", requireAuth, async (req, res) => {
   sendUser(res, user);
 });
 
-// Boshqa barcha qurilmalardagi sessiyalarni bekor qilish (shu qurilma qoladi).
+// ------------------------------------------------------------------
+// Faol seanslar
+// ------------------------------------------------------------------
+
+router.get("/sessions", requireAuth, async (req, res) => {
+  const { rows } = await query(
+    `SELECT id, user_agent, ip, method, created_at, last_seen_at FROM user_sessions
+     WHERE user_id = $1 AND NOT revoked ORDER BY last_seen_at DESC`,
+    [req.user.id]
+  );
+  const items = rows.map((s) => ({
+    id: s.id,
+    ...describeUserAgent(s.user_agent),
+    ip: s.ip,
+    method: s.method,
+    createdAt: s.created_at,
+    lastSeenAt: s.last_seen_at,
+    current: s.id === req.user.session_id,
+  }));
+  items.sort((a, b) => Number(b.current) - Number(a.current));
+  res.json({ items });
+});
+
+router.delete("/sessions/:id", requireAuth, async (req, res) => {
+  if (req.params.id === req.user.session_id) {
+    throw badRequest("invalid-argument", "Joriy seansni tugatish uchun hisobdan chiqing.");
+  }
+  const row = await one("SELECT id FROM user_sessions WHERE id = $1 AND user_id = $2 AND NOT revoked", [
+    req.params.id,
+    req.user.id,
+  ]);
+  if (!row) throw new HttpError(404, "not-found", "Bu seans topilmadi.");
+  await endSession(row.id);
+  res.json({ ok: true });
+});
+
+// Boshqa barcha qurilmalardagi seanslarni bekor qilish (shu qurilma qoladi).
+// token_version ham oshadi — sid'siz eski tokenlar ham bekor bo'ladi.
 router.post("/sessions/revoke-all", requireAuth, async (req, res) => {
   const user = await one(
     "UPDATE users SET token_version = token_version + 1 WHERE id = $1 RETURNING *",
     [req.user.id]
   );
-  setSessionCookie(res, user);
+  await endOtherSessions(user.id, req.user.session_id);
+  setSessionCookie(res, user, req.user.session_id);
   sendUser(res, user);
 });
 

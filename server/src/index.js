@@ -10,6 +10,7 @@ import { HttpError } from "./lib/errors.js";
 import { initRealtime } from "./lib/realtime.js";
 import { loadUser, requireAdmin, requireAuth, requirePerm, requireVerified } from "./middleware/auth.js";
 import authRouter from "./routes/auth.js";
+import qrRouter from "./routes/qr.js";
 import sessionsRouter from "./routes/sessions.js";
 import satRouter from "./routes/sat.js";
 import meRouter from "./routes/me.js";
@@ -41,6 +42,7 @@ app.get("/api/health", async (_req, res) => {
   res.json({ ok: true });
 });
 
+app.use("/api/auth/qr", qrRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/me", requireAuth, meRouter);
 app.use("/api/analytics", requireAuth, analyticsRouter);
