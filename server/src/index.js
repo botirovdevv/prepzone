@@ -17,6 +17,7 @@ import analyticsRouter from "./routes/analytics.js";
 import adminRouter from "./routes/admin.js";
 import aiRouter from "./routes/ai.js";
 import presenceRouter from "./routes/presence.js";
+import avatarsRouter from "./routes/avatars.js";
 import { resultsRouter, leaderboardRouter } from "./routes/results.js";
 import { questionSetsRouter, desmosRouter } from "./routes/content.js";
 
@@ -44,6 +45,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/me", requireAuth, meRouter);
 app.use("/api/analytics", requireAuth, analyticsRouter);
 app.use("/api/presence", presenceRouter);
+app.use("/api/avatars", avatarsRouter);
 app.use("/api/admin/ai", requireAdmin, requirePerm("sessions", "sets"), aiRouter);
 app.use("/api/admin", requireAdmin, adminRouter);
 app.use("/api/sat", requireVerified, satRouter);

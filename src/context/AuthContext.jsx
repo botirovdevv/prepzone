@@ -12,6 +12,9 @@ import { resetSocket } from "../api/socket";
 
 const AuthContext = createContext(null);
 
+// server/src/routes/auth.js → CONFIRM_WORD bilan bir xil.
+export const CONFIRM_WORD = "O'CHIRISH";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +92,25 @@ export function AuthProvider({ children }) {
   const setStudyPlanDone = (date, done) =>
     api.patch("/me/study-plan/done", { date, done }).then(applyProfile);
 
+  // Profil rasmi (data URL — src/utils/imageCompress.js → compressAvatar).
+  const uploadAvatar = (dataUrl) => api.put("/me/avatar", { dataUrl }).then(applyProfile);
+  const removeAvatar = () => api.delete("/me/avatar").then(applyProfile);
+
+  // Boshqa qurilmalardagi sessiyalar bekor bo'ladi, shu qurilmada yangi cookie beriladi.
+  const revokeOtherSessions = () => api.post("/auth/sessions/revoke-all").then(apply);
+
+  const linkGoogle = (accessToken) => api.post("/auth/google/link", { accessToken }).then(applyProfile);
+
+  // Xavfli amallar — `confirm` so'zi server tomonda ham tekshiriladi.
+  const resetProgress = (currentPassword) =>
+    api.post("/auth/progress/reset", { currentPassword, confirm: CONFIRM_WORD }).then(applyProfile);
+
+  const deleteAccount = async (currentPassword) => {
+    await api.post("/auth/account/delete", { currentPassword, confirm: CONFIRM_WORD });
+    resetSocket();
+    setUser(null);
+  };
+
   const value = {
     user,
     loading,
@@ -106,6 +128,12 @@ export function AuthProvider({ children }) {
     saveOnboarding,
     saveStudyPlan,
     setStudyPlanDone,
+    uploadAvatar,
+    removeAvatar,
+    revokeOtherSessions,
+    linkGoogle,
+    resetProgress,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

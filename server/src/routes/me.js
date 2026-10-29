@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { one } from "../db/index.js";
-import { parseBody } from "../lib/errors.js";
+import { one, tx } from "../db/index.js";
+import { badRequest, parseBody } from "../lib/errors.js";
 import { publicUser } from "../lib/serialize.js";
 
 // ------------------------------------------------------------------
@@ -85,6 +85,58 @@ router.patch("/study-plan/done", async (req, res) => {
      WHERE id = $1 RETURNING *`,
     [req.user.id, date, JSON.stringify(done)]
   );
+  res.json({ user: publicUser(user) });
+});
+
+// ------------------------------------------------------------------
+// Profil rasmi. Brauzer rasmni 256x256 JPEG qilib siqib, data URL
+// ko'rinishida yuboradi; serverda haqiqatan rasm ekanini tekshiramiz.
+// ------------------------------------------------------------------
+
+const AVATAR_MAX_BYTES = 300 * 1024;
+
+function decodeAvatar(dataUrl) {
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+  if (!m) throw badRequest("invalid-argument", "Rasm formati noto'g'ri.");
+  const buf = Buffer.from(m[2], "base64");
+  if (buf.length === 0 || buf.length > AVATAR_MAX_BYTES) {
+    throw badRequest("invalid-argument", "Rasm hajmi juda katta.");
+  }
+  const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+  const isPng = buf.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  const isWebp = buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP";
+  const ok = { "image/jpeg": isJpeg, "image/png": isPng, "image/webp": isWebp }[m[1]];
+  if (!ok) throw badRequest("invalid-argument", "Fayl rasm emas.");
+  return { mime: m[1], data: buf };
+}
+
+router.put("/avatar", async (req, res) => {
+  const { dataUrl } = parseBody(z.object({ dataUrl: z.string().max(500_000) }), req.body);
+  const { mime, data } = decodeAvatar(dataUrl);
+  const user = await tx(async (client) => {
+    await client.query(
+      `INSERT INTO user_avatars (user_id, mime, data, updated_at) VALUES ($1, $2, $3, now())
+       ON CONFLICT (user_id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = now()`,
+      [req.user.id, mime, data]
+    );
+    const { rows } = await client.query(
+      "UPDATE users SET avatar_updated_at = now() WHERE id = $1 RETURNING *",
+      [req.user.id]
+    );
+    return rows[0];
+  });
+  res.json({ user: publicUser(user) });
+});
+
+router.delete("/avatar", async (req, res) => {
+  const user = await tx(async (client) => {
+    await client.query("DELETE FROM user_avatars WHERE user_id = $1", [req.user.id]);
+    const { rows } = await client.query(
+      "UPDATE users SET avatar_updated_at = NULL WHERE id = $1 RETURNING *",
+      [req.user.id]
+    );
+    return rows[0];
+  });
   res.json({ user: publicUser(user) });
 });
 

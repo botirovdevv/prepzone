@@ -20,6 +20,7 @@ import {
   LuHouse,
   LuCalculator,
 } from "react-icons/lu";
+import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 const logo = "/Logo.png";
@@ -66,12 +67,6 @@ const ADMIN_ITEMS = [
   { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn, perm: ["analytics", "users"] },
 ];
 
-function initials(nameOrEmail) {
-  const base = nameOrEmail || "?";
-  const parts = base.split(/[\s@.]+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
-}
 
 function NavItem({ item, collapsed, onNavigate }) {
   const Icon = item.icon;
@@ -198,9 +193,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
             isCollapsed ? "flex-col" : ""
           }`}
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#12213D] text-[12px] font-bold text-white">
-            {initials(displayName)}
-          </div>
+          <Avatar user={user} name={displayName} className="h-9 w-9 rounded-xl bg-[#12213D] text-[12px]" />
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-[#12213D]">{displayName}</p>

@@ -42,13 +42,18 @@ export const leaderboardRouter = Router();
 leaderboardRouter.get("/", async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 15, 100);
   const { rows } = await query(
-    "SELECT * FROM leaderboard ORDER BY best_score DESC, updated_at ASC LIMIT $1",
+    `SELECT l.*, u.avatar_updated_at FROM leaderboard l JOIN users u ON u.id = l.user_id
+     ORDER BY l.best_score DESC, l.updated_at ASC LIMIT $1`,
     [limit]
   );
   res.json(rows.map(leaderboardDoc));
 });
 
 leaderboardRouter.get("/me", async (req, res) => {
-  const row = await one("SELECT * FROM leaderboard WHERE user_id = $1", [req.user.id]);
+  const row = await one(
+    `SELECT l.*, u.avatar_updated_at FROM leaderboard l JOIN users u ON u.id = l.user_id
+     WHERE l.user_id = $1`,
+    [req.user.id]
+  );
   res.json(row ? leaderboardDoc(row) : null);
 });
