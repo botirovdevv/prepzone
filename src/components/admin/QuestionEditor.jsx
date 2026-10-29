@@ -114,6 +114,21 @@ export default function QuestionEditor({
   const setDifficulty = (id, difficulty) => patchQuestion(id, { difficulty });
   // AI yaratgan savol admin ko'rib chiqmaguncha sessiyani saqlab bo'lmaydi (SessionForm).
   const [reviewId, setReviewId] = useState(null);
+  // Ko'rib chiqilayotgan savolga rasm (grafik) biriktirish: fayl tanlash yoki
+  // skrinshotni Ctrl+V bilan joylashtirish.
+  const reviewImageRef = useRef(null);
+  const [reviewImageBusy, setReviewImageBusy] = useState(false);
+  const attachReviewImage = async (id, file) => {
+    if (!file?.type?.startsWith("image/")) return;
+    setReviewImageBusy(true);
+    try {
+      patchQuestion(id, { image: await compressImageToDataUrl(file) });
+    } catch {
+      setImageError("Rasmni yuklab bo'lmadi. Qaytadan urinib ko'ring.");
+    } finally {
+      setReviewImageBusy(false);
+    }
+  };
 
   const handleBulkAdd = () => {
     const { items, errors } = parseBulkQuestions(bulkText);
@@ -200,9 +215,56 @@ export default function QuestionEditor({
                       )}
                     </div>
                     {reviewId === q.id && (
-                      <div className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-white p-2.5">
+                      <div
+                        className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-white p-2.5 outline-none"
+                        // Panelni bosgach Ctrl+V shu yerga tushishi uchun fokuslanadi.
+                        tabIndex={-1}
+                        onPaste={(e) => {
+                          const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
+                          if (file) {
+                            e.preventDefault();
+                            attachReviewImage(q.id, file);
+                          }
+                        }}
+                      >
                         {q.aiNote && (
                           <p className="rounded bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">{q.aiNote}</p>
+                        )}
+                        <input
+                          ref={reviewImageRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            attachReviewImage(q.id, file);
+                          }}
+                        />
+                        {q.image ? (
+                          <div className="flex items-center gap-2.5 rounded-lg border border-[#12213D]/10 bg-[#12213D]/[0.02] p-2">
+                            <img src={q.image} alt="Savol rasmi" className="h-20 max-w-[60%] rounded object-contain" />
+                            <button
+                              type="button"
+                              onClick={() => patchQuestion(q.id, { image: null })}
+                              className="flex items-center gap-1 text-[11px] font-semibold text-red-500 hover:text-red-700"
+                            >
+                              <LuImageOff size={13} /> O'chirish
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => reviewImageRef.current?.click()}
+                              disabled={reviewImageBusy}
+                              className="flex items-center gap-1.5 rounded-lg bg-[#087fd1]/8 px-2.5 py-1 text-xs font-semibold text-[#087fd1] hover:bg-[#087fd1]/12 disabled:opacity-60"
+                            >
+                              {reviewImageBusy ? <LuLoaderCircle size={13} className="animate-spin" /> : <LuImage size={13} />}
+                              Rasm biriktirish
+                            </button>
+                            <span className="text-[11px] text-[#12213D]/40">yoki skrinshotni shu yerga Ctrl+V</span>
+                          </div>
                         )}
                         {q.passage && (
                           <p
