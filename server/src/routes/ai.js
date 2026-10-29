@@ -164,7 +164,7 @@ Return a JSON array (possibly empty).`;
   const raw = await generateJson(
     parts,
     LIST_SCHEMA,
-    body.chunk ? { fast: true, timeoutMs: 60_000, maxModels: 3 } : {}
+    body.chunk ? { fast: true, timeoutMs: 90_000, maxModels: 3 } : {}
   );
   const items = (Array.isArray(raw) ? raw : []).slice(0, 150).map((q) => cleanQuestion(q, body.subject)).filter((q) => q.prompt);
   res.json({ items });
@@ -197,7 +197,7 @@ If they contain an answer key, return every entry as { section, module, number, 
 If the key table covers several different tests, include only the FIRST test's columns${body.subject === "auto" ? "" : ` for ${name}`}.
 If there is no answer key, return an empty array.`;
   const parts = [{ text: prompt }, ...body.files.map((f) => ({ inline_data: { mime_type: f.mimeType, data: f.data } }))];
-  const raw = await generateJson(parts, KEY_SCHEMA, { fast: true, timeoutMs: 60_000, maxModels: 3 });
+  const raw = await generateJson(parts, KEY_SCHEMA, { fast: true, timeoutMs: 90_000, maxModels: 3 });
   const keys = (Array.isArray(raw) ? raw : [])
     .map((k) => ({
       section: SECTIONS.includes(k?.section) ? k.section : body.subject === "auto" ? "" : body.subject,

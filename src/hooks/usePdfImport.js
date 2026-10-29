@@ -36,7 +36,8 @@ async function postWithRetry(path, body) {
     try {
       return await api.post(path, body);
     } catch (err) {
-      if (attempt >= 2 || ![429, 503, 504].includes(err.status)) throw err;
+      // Kunlik limit tugagan bo'lsa — kutish foyda bermaydi.
+      if (attempt >= 2 || err.code === "ai/daily-limit" || ![429, 503, 504].includes(err.status)) throw err;
       await sleep(RETRY_DELAY_MS * (attempt + 1));
     }
   }

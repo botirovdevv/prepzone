@@ -62,22 +62,51 @@ async function callModel(model, body, timeoutMs) {
   }
 }
 
+// Kunlik tekin limiti (RPD) tugagan modellar: model -> qayta ochiladigan vaqt.
+// Tekin tarifda ba'zi modellarga kuniga atigi ~20 so'rov beriladi — limit
+// tugagach, har so'rovda ularni sinab vaqt yo'qotmaymiz.
+const exhaustedUntil = new Map();
+
+function noteQuota(model, data) {
+  const details = data?.error?.details || [];
+  const daily = details.some((d) => (d.violations || []).some((v) => /PerDay/i.test(v.quotaId || "")));
+  if (!daily) return;
+  const delay = Number.parseFloat(details.find((d) => d.retryDelay)?.retryDelay) || 3600;
+  exhaustedUntil.set(model, Date.now() + delay * 1000);
+  console.warn(`[gemini] ${model} kunlik limiti tugadi (~${Math.round(delay / 3600)} soatdan keyin ochiladi)`);
+}
+
+const isExhausted = (m) => (exhaustedUntil.get(m) || 0) > Date.now();
+
+// Kunlik limit tugagan bo'lsa — qachon ochilishi (soat), aks holda null.
+function dailyLimitHours(models) {
+  if (!models.length || !models.every(isExhausted)) return null;
+  const soonest = Math.min(...models.map((m) => exhaustedUntil.get(m)));
+  return Math.max(1, Math.round((soonest - Date.now()) / 3_600_000));
+}
+
 // Model vaqtincha band (500/503) yoki javob bermasa — bir marta qayta urinadi
 // (timeout'da qayta urinmaydi), so'ng zaxira modellarga o'tadi. Tekin limit
 // (429) har model uchun alohida — u ham keyingi modelga o'tkaziladi; hamma
 // modellar limitda bo'lsa, foydalanuvchiga aytiladi.
-// `maxModels` — navbat uzunligi (PDF bo'laklari uchun qisqa).
-async function callWithFallback(body, { timeoutMs, maxModels, preferLite }) {
-  let fallbacks = config.geminiFallbackModels.filter((m) => m !== config.geminiModel);
-  // Tez rejimda (OCR) yengil "lite" modellar birinchi zaxira — ular tez javob beradi.
-  if (preferLite) fallbacks = [...fallbacks.filter((m) => /lite/.test(m)), ...fallbacks.filter((m) => !/lite/.test(m))];
-  const queue = [config.geminiModel, ...fallbacks].slice(0, maxModels);
-  let last;
+// `maxModels` — navbat uzunligi. `preferLite` (OCR) — yengil "lite" modellar
+// birinchi: matnni ko'chirishga yetarli, tez va kunlik limiti kattaroq.
+function modelQueue({ maxModels, preferLite }) {
+  let all = [config.geminiModel, ...config.geminiFallbackModels.filter((m) => m !== config.geminiModel)];
+  if (preferLite) all = [...all.filter((m) => /lite/.test(m)), ...all.filter((m) => !/lite/.test(m))];
+  const available = all.filter((m) => !isExhausted(m));
+  return { all, queue: available.slice(0, maxModels) };
+}
+
+async function callWithFallback(body, opts) {
+  const { queue } = modelQueue(opts);
+  let last = { res: { ok: false, status: 429 }, data: null };
   let retried = false;
   for (let i = 0; i < queue.length; i++) {
-    last = await callModel(queue[i], body, timeoutMs);
+    last = await callModel(queue[i], body, opts.timeoutMs);
     if (last.res.ok) return last;
     if (last.res.status === 429) {
+      noteQuota(queue[i], last.data);
       console.warn(`[gemini] ${queue[i]} limitda (429)`);
       continue;
     }
@@ -113,12 +142,21 @@ export async function generateJson(
         ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
       },
     });
-  let { res, data } = await callWithFallback(body(fast), { timeoutMs, maxModels, preferLite: fast });
+  const opts = { timeoutMs, maxModels, preferLite: fast };
+  let { res, data } = await callWithFallback(body(fast), opts);
   if (fast && res.status === 400 && /thinking/i.test(data?.error?.message || "")) {
-    ({ res, data } = await callWithFallback(body(false), { timeoutMs, maxModels, preferLite: fast }));
+    ({ res, data } = await callWithFallback(body(false), opts));
   }
 
   if (res.status === 429) {
+    const hours = dailyLimitHours(modelQueue({ ...opts, maxModels: Infinity }).all);
+    if (hours) {
+      throw new HttpError(
+        429,
+        "ai/daily-limit",
+        `Bugungi tekin AI limiti tugadi (~${hours} soatdan keyin tiklanadi). Doimiy ishlashi uchun Google AI Studio'da to'lovni yoqing.`
+      );
+    }
     throw new HttpError(429, "ai/rate-limited", "AI tekin limiti tugadi. Birozdan keyin qayta urinib ko'ring.");
   }
   if (RETRIABLE.includes(res.status)) {
