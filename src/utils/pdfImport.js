@@ -7,7 +7,8 @@
 
 export const PAGES_PER_CHUNK = 10;
 export const CONCURRENCY = 5;
-const KEY_PAGES = 2;
+// Kalit ba'zan har modul uchun alohida sahifada (RW M1/M2, Math M1/M2).
+const KEY_PAGES = 4;
 
 function toBase64(bytes) {
   if (typeof Buffer !== "undefined") return Buffer.from(bytes).toString("base64");
@@ -50,6 +51,34 @@ export async function runPool(items, limit, worker, onDone) {
     }
   });
   await Promise.all(lanes);
+}
+
+// Bluebook skrinshotlarida modul sarlavhasi bo'lmaydi, raqamlar esa har
+// modulda 1 dan boshlanadi. Savollar sahifa tartibida kelgani uchun modulni
+// raqamlar ketma-ketligidan aniqlaymiz: bo'lim ichida raqam kichraysa
+// (…26, 27 -> 1) — yangi modul. AI sarlavhadan o'qigan modullar ishonchliroq;
+// ular kamroq modul ko'rsatsa (masalan hammasi "1" yoki bo'sh) — almashtiriladi.
+export function inferModules(list) {
+  const inferred = new Map();
+  const state = {};
+  for (const q of list) {
+    if (!q.number) continue;
+    const s = (state[q.section || ""] ||= { module: 1, last: 0 });
+    if (q.number < s.last) s.module += 1;
+    s.last = q.number;
+    inferred.set(q, String(s.module));
+  }
+  const bySection = {};
+  for (const q of list) {
+    const b = (bySection[q.section || ""] ||= { ai: new Set(), guess: new Set() });
+    if (q.module) b.ai.add(q.module);
+    if (inferred.has(q)) b.guess.add(inferred.get(q));
+  }
+  return list.map((q) => {
+    const b = bySection[q.section || ""];
+    if (!inferred.has(q) || b.guess.size <= b.ai.size) return q;
+    return { ...q, module: inferred.get(q) };
+  });
 }
 
 const slot = (x, withModule = true) => `${x.section || ""}|${withModule ? x.module || "" : ""}#${x.number}`;

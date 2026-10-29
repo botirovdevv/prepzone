@@ -146,7 +146,7 @@ Rules:
 - difficulty: estimate easy / medium / hard relative to the real Digital SAT.
 - domain: choose the closest allowed value; skill: the official SAT skill name.
 - explanation: one or two sentences in Uzbek (Latin script).
-- number / module: copy the printed question number and module (e.g. "Module 1", "M2") if visible.
+- number / module: copy the printed question number, and the module (e.g. "Module 1", "M2") only if a module header is actually printed on the page — otherwise leave module empty, do not guess (modules are inferred from the numbering later).
 - hasFigure: true when a graph, chart or picture is needed that you cannot reproduce as text or an HTML table.${
     body.chunk
       ? `

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { api } from "../api/client";
 import { compressImageToDataUrl } from "../utils/imageCompress";
-import { CONCURRENCY, applyAnswerKey, dedupeQuestions, runPool, splitPdf } from "../utils/pdfImport";
+import { CONCURRENCY, applyAnswerKey, dedupeQuestions, inferModules, runPool, splitPdf } from "../utils/pdfImport";
 
 // ------------------------------------------------------------------
 // AI import jarayoni (admin): PDF'lar brauzerda bo'laklarga bo'linib,
@@ -108,7 +108,8 @@ export function usePdfImport() {
   // Hamma bo'laklar natijasi tartib bilan, takrorlarsiz, kalit qo'llangan holda.
   const collect = () => {
     const { results, order, keys } = runRef.current;
-    return applyAnswerKey(dedupeQuestions(order.flatMap((k) => results.get(k) || [])), keys);
+    const merged = inferModules(order.flatMap((k) => results.get(k) || []));
+    return applyAnswerKey(dedupeQuestions(merged), keys);
   };
 
   const runTasks = async (tasks) => {
