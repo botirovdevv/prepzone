@@ -52,9 +52,8 @@ services:
       - --realm=${DOMAIN}
       - --external-ip=${TURN_EXTERNAL_IP:-92.5.135.143}/${TURN_PRIVATE_IP:-10.0.0.212}
       - --fingerprint
+      # TLS/DTLS va CLI 4.18'da sukut bo'yicha o'chiq.
       - --no-tls
-      - --no-dtls
-      - --no-cli
       - --no-multicast-peers
       - --stale-nonce=600
       - --total-quota=200
