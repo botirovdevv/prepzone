@@ -16,7 +16,7 @@ import { useI18n } from "../i18n";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -96,7 +96,9 @@ export default function PracticeSet() {
   const correctCount = questions.filter((q) => answers[q.id] === q.correctAnswer).length;
 
   const topicAnalysis = useMemo(() => analyzeTopics(questions, answers), [questions, answers]);
-  const topicAdvice = useMemo(() => buildTopicAdvice(topicAnalysis), [topicAnalysis]);
+  // lang: maslahat matnlari tanlangan tilda qayta tuziladi.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const topicAdvice = useMemo(() => buildTopicAdvice(topicAnalysis), [topicAnalysis, lang]);
 
   if (loading || !user || setLoading) {
     return <PageLoader fullscreen />;

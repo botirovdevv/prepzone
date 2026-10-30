@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LuArrowLeft } from "react-icons/lu";
 import logo from "../../../public/Logo.png";
+import { LanguageSwitch, useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // Auth sahifalari navbari: chapda logo (bosh sahifaga), o'ngda
@@ -10,20 +11,21 @@ import logo from "../../../public/Logo.png";
 // ------------------------------------------------------------------
 
 const TABS = [
-  { to: "/login", label: "Kirish" },
+  { to: "/login", label: "login" },
   // Telefonda joy tor — qisqa yozuv ko'rsatiladi.
-  { to: "/register", label: "Ro'yxatdan o'tish", short: "Ro'yxat" },
+  { to: "/register", label: "register", short: "registerShort" },
 ];
 
 export default function AuthNavbar() {
   const { pathname } = useLocation();
+  const { t } = useI18n();
   const activeIndex = TABS.findIndex((t) => t.to === pathname);
 
   return (
     <header className="pz-auth-nav sticky top-0 z-20 pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-16 max-w-[1120px] items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-8">
         <div className="flex min-w-0 items-center gap-6">
-          <Link to="/" className="pz-press flex shrink-0 items-center rounded-lg" aria-label="Prepzone — bosh sahifa">
+          <Link to="/" className="pz-press flex shrink-0 items-center rounded-lg" aria-label={t("auth.homeLabel")}>
             <img src={logo} alt="Prepzone" className="h-auto w-[92px] object-contain sm:w-32" />
           </Link>
           <Link
@@ -31,12 +33,15 @@ export default function AuthNavbar() {
             className="pz-press hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-[#6e6e73] transition-colors hover:bg-[#1d1d1f]/[0.04] hover:text-[#1d1d1f] md:inline-flex"
           >
             <LuArrowLeft size={15} aria-hidden="true" />
-            Bosh sahifa
+            {t("auth.home")}
           </Link>
         </div>
 
+        <div className="flex items-center gap-2">
+          <LanguageSwitch className="hidden sm:inline-flex" />
+
         <nav
-          aria-label="Hisob"
+          aria-label={t("auth.account")}
           className="relative grid grid-cols-2 rounded-full bg-black/[0.06] p-1 text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px] sm:tracking-normal"
         >
           {activeIndex >= 0 && (
@@ -60,16 +65,17 @@ export default function AuthNavbar() {
               >
                 {tab.short ? (
                   <>
-                    <span className="sm:hidden">{tab.short}</span>
-                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{t(`auth.tabs.${tab.short}`)}</span>
+                    <span className="hidden sm:inline">{t(`auth.tabs.${tab.label}`)}</span>
                   </>
                 ) : (
-                  tab.label
+                  t(`auth.tabs.${tab.label}`)
                 )}
               </Link>
             );
           })}
         </nav>
+        </div>
       </div>
     </header>
   );

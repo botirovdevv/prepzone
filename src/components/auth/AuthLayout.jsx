@@ -1,5 +1,6 @@
-import { LuCalculator, LuChartLine, LuLayers } from "react-icons/lu";
+import { LuSigma, LuChartLine, LuLayers } from "react-icons/lu";
 import AuthNavbar from "./AuthNavbar";
+import { LanguageSwitch, useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // Login / Register / Parolni tiklash sahifalarining umumiy qobig'i.
@@ -36,21 +37,19 @@ export default function AuthLayout({ eyebrow, title, subtitle, children, footer 
         <Showcase />
       </main>
 
-      <footer className="pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-[#86868b]">
-        &copy; {new Date().getFullYear()} Prepzone
+      <footer className="flex flex-col items-center gap-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-[#86868b]">
+        <LanguageSwitch className="sm:hidden" />
+        <span>&copy; {new Date().getFullYear()} Prepzone</span>
       </footer>
     </div>
   );
 }
 
-const FEATURES = [
-  { icon: LuLayers, title: "Bluebook formatida", text: "Adaptiv modullar va haqiqiy imtihon interfeysi." },
-  { icon: LuCalculator, title: "Desmos ichida", text: "Math bo'limida o'rnatilgan kalkulyator va darsliklar." },
-  { icon: LuChartLine, title: "Natijalar tahlili", text: "Har bir testdan keyin ball va xatolar bo'yicha hisobot." },
-];
+const FEATURE_ICONS = [LuLayers, LuSigma, LuChartLine];
 
 // Faqat lg+ ekranlarda. Raqamlar namuna sifatida belgilangan — real statistika emas.
 function Showcase() {
+  const { t, tr } = useI18n();
   return (
     <aside
       aria-hidden="true"
@@ -59,14 +58,14 @@ function Showcase() {
       <div>
         <p className="text-[13px] font-semibold text-white/60">Prepzone SAT</p>
         <p className="mt-2 max-w-[22ch] font-display text-[34px] font-bold leading-[1.08] tracking-[-0.03em]">
-          Haqiqiy imtihonga o'xshab tayyorlaning.
+          {t("auth.showcase.title")}
         </p>
       </div>
 
       <div className="pz-glass mx-auto my-8 w-full max-w-[340px] rounded-[24px] p-6">
         <div className="flex items-center justify-between">
-          <p className="text-[13px] font-medium text-white/70">Taxminiy ball</p>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">namuna</span>
+          <p className="text-[13px] font-medium text-white/70">{t("auth.showcase.estimate")}</p>
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">{t("auth.showcase.sample")}</span>
         </div>
         <p className="mt-1 font-display text-[56px] font-bold leading-none tracking-[-0.04em] tabular-nums">1480</p>
         <div className="mt-5 space-y-3">
@@ -88,7 +87,9 @@ function Showcase() {
       </div>
 
       <ul className="grid gap-4">
-        {FEATURES.map(({ icon: Icon, title, text }) => (
+        {tr("auth.showcase.features").map(({ title, text }, i) => {
+          const Icon = FEATURE_ICONS[i];
+          return (
           <li key={title} className="flex gap-3.5">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
               <Icon size={18} />
@@ -98,7 +99,8 @@ function Showcase() {
               <p className="text-[14px] leading-[1.45] text-white/65">{text}</p>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </aside>
   );

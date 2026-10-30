@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./i18n";
 import ErrorBoundary from "./components/ErrorBoundary";
-import BetaNotice from "./components/BetaNotice";
 import PresencePing from "./components/PresencePing";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
@@ -68,7 +67,6 @@ export default function App() {
               <Route path="/*" element={<AuthedApp />} />
             </Routes>
           </Suspense>
-          <BetaNotice />
           <PresencePing />
         </ErrorBoundary>
       </BrowserRouter>

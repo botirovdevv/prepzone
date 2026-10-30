@@ -14,6 +14,7 @@ const uz = {
     error: "Xatolik yuz berdi. Qaytadan urinib ko'ring.",
     loadError: "Ma'lumotni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.",
     networkError: "Serverga ulanib bo'lmadi. Internetni tekshiring.",
+    scoreTrend: "Ball dinamikasi",
   },
 
   proctor: {
@@ -34,7 +35,7 @@ const uz = {
         { icon: "fullscreen", title: "To'liq ekran rejimi", text: "Test boshlanishi bilan to'liq ekranga o'tasiz. Undan chiqsangiz (Esc yoki boshqa usul bilan), test darhol yakunlanadi va shu paytgacha bergan javoblaringiz bo'yicha natija hisoblanadi." },
         { icon: "screenshot", title: "Skrinshot taqiqlanadi", text: "Print Screen va Win+Shift+S bloklanadi va ogohlantirish beriladi. Mac'dagi Cmd+Shift+3/4/5 ni brauzer to'liq to'xtata olmaydi, lekin urinishlar kuzatiladi." },
         { icon: "copy", title: "Nusxalash va boshqa oyna", text: "O'ng tugma menyusi, nusxalash/joylashtirish va DevTools o'chirilgan. Boshqa tab yoki oynaga o'tish kuzatiladi. 3 ta ogohlantirishdan keyin test avtomatik yakunlanadi." },
-        { icon: "exit", title: "Exit tugmasi", text: "Davom eta olmasangiz, \"Exit\" tugmasini bosing — holatingiz saqlanadi, lekin testni faqat 30 daqiqadan so'ng davom ettira olasiz." },
+        { icon: "exit", title: "Save and Exit", text: "Davom eta olmasangiz, More (⋮) menyusidagi \"Save and Exit\"ni bosing — holatingiz saqlanadi, lekin testni faqat 30 daqiqadan so'ng davom ettira olasiz." },
       ],
       agree: "Yuqoridagi qoidalarni o'qib chiqdim va roziman.",
       fullscreenError: "To'liq ekran rejimini yoqib bo'lmadi. Brauzeringizda fullscreen ruxsatini tekshirib, qayta urinib ko'ring.",
@@ -89,7 +90,18 @@ const uz = {
     closed: "Bu test yakunlangan.",
     preparing: "Savollar tayyorlanmoqda...",
     contentError: "Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang.",
-    joinErrorHint: "Kodni \"Mock with key\" sahifasida qaytadan kiriting.",
+    joinErrorHint: "Kodni \"Kod bilan mock\" sahifasida qaytadan kiriting.",
+  },
+
+  password: {
+    length: "Kamida {n} ta belgi",
+    upper: "Katta harf (A–Z)",
+    lower: "Kichik harf (a–z)",
+    digit: "Raqam (0–9)",
+    symbol: "Maxsus belgi (!@#$% ...)",
+    common: "Keng tarqalgan yoki oddiy ketma-ketlik emas",
+    personal: "Email yoki ismingizni o'z ichiga olmaydi",
+    strength: ["Juda zaif", "Zaif", "O'rtacha", "Yaxshi", "Kuchli"],
   },
 
   practiceSet: {

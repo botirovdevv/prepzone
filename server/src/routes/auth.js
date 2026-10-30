@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { rateLimit } from "express-rate-limit";
+import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 import { z } from "zod";
 import { one, query, tx } from "../db/index.js";
 import { HttpError, badRequest, parseBody, unauthorized } from "../lib/errors.js";
@@ -20,16 +20,20 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
+const tooManyAttempts = (_req, res) =>
+  res.status(429).json({
+    code: "auth/too-many-requests",
+    message: "Juda ko'p urinish. Birozdan keyin qaytadan urinib ko'ring.",
+  });
+
+// IP bo'yicha umumiy limit. Maktab yoki mobil operator ortidagi ko'p
+// o'quvchi bitta IP'dan chiqadi — limit shuni hisobga olib kengroq.
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  limit: 60,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  handler: (_req, res) =>
-    res.status(429).json({
-      code: "auth/too-many-requests",
-      message: "Juda ko'p urinish. Birozdan keyin qaytadan urinib ko'ring.",
-    }),
+  handler: tooManyAttempts,
 });
 
 const email = z.string().trim().toLowerCase().email("Email manzili noto'g'ri.").max(254);
@@ -78,7 +82,20 @@ router.post("/register", strictLimiter, async (req, res) => {
   sendUser(res, user, 201);
 });
 
-router.post("/login", strictLimiter, async (req, res) => {
+// Parolni taxmin qilishga qarshi: bitta hisobga (IP + email) 15 daqiqada
+// 8 ta noto'g'ri urinish. Muvaffaqiyatli kirish hisobga olinmaydi.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) =>
+    `${ipKeyGenerator(req.ip)}:${String(req.body?.email || "").trim().toLowerCase().slice(0, 254)}`,
+  handler: tooManyAttempts,
+});
+
+router.post("/login", strictLimiter, loginLimiter, async (req, res) => {
   const body = parseBody(z.object({ email, password: z.string().min(1).max(128) }), req.body);
   const user = await findByEmail(body.email);
   if (user && !user.password_hash) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { tx } from "../db/index.js";
 import { parseBody } from "../lib/errors.js";
 import { dayKey } from "../lib/limits.js";
+import { perUserLimit } from "../lib/limiters.js";
 
 // ------------------------------------------------------------------
 // Sayt analitikasi: brauzer sahifa ko'rishlarini xotirada yig'ib, bir
@@ -14,7 +15,8 @@ const router = Router();
 
 const pageKey = z.string().regex(/^[a-z_]{1,40}$/);
 
-router.post("/track", async (req, res) => {
+// Brauzer bir necha daqiqada bir yuboradi — undan ko'pi statistikani sun'iy oshirish.
+router.post("/track", perUserLimit({ windowMs: 10 * 60 * 1000, limit: 30 }), async (req, res) => {
   const { views, pages } = parseBody(
     z.object({
       views: z.number().int().min(1).max(1000),

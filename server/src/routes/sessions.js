@@ -14,6 +14,10 @@ import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
 import { routeFor, scoreAttempt, stripSections } from "../lib/satScoring.js";
 import { requirePerm } from "../middleware/auth.js";
 import { hasPerm } from "../lib/permissions.js";
+import { perUserLimit } from "../lib/limiters.js";
+
+// 6 xonali kodni taxmin qilib topishga qarshi (lookup va join).
+const codeLimit = perUserLimit({ windowMs: 10 * 60 * 1000, limit: 20 });
 
 // ------------------------------------------------------------------
 // Admin tashkil qilgan testlar (kod bilan yoki doimiy ochiq).
@@ -131,7 +135,7 @@ router.get("/", async (req, res) => {
 });
 
 // Kod bo'yicha qidirish (JoinSession sahifasi).
-router.post("/lookup", async (req, res) => {
+router.post("/lookup", codeLimit, async (req, res) => {
   const { code } = parseBody(z.object({ code: z.string().trim().regex(/^\d{6}$/) }), req.body);
   const s = await one("SELECT * FROM test_sessions WHERE code = $1", [code]);
   if (!s) throw notFound("Bunday kod bilan test topilmadi.");
@@ -260,7 +264,7 @@ router.get("/:id/events", requireSessions, async (req, res) => {
 
 // Qo'shilish: kod tekshiriladi, ishtirokchi qatori yaratiladi va
 // savollar (content) darhol qaytariladi.
-router.post("/:id/join", async (req, res) => {
+router.post("/:id/join", codeLimit, async (req, res) => {
   const { code } = parseBody(z.object({ code: z.string().nullable().optional() }), req.body);
   const s = await getSession(req.params.id);
   const isAdmin = hasPerm(req.user, "sessions");

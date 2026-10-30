@@ -1,17 +1,19 @@
 import { LuTriangleAlert } from "react-icons/lu";
 import { Card } from "./ui";
+import { useI18n } from "../i18n";
 
 // Umumiy ball kartasi: katta jami ball + har bir bo'lim uchun 200–800
 // shkaladagi chiziq. Results va SessionResults sahifalarida ishlatiladi.
-export function ScoreSummary({ eyebrow = "Umumiy natija", total, sections, terminated }) {
+export function ScoreSummary({ eyebrow, total, sections, terminated }) {
+  const { t } = useI18n();
   return (
     <>
       {terminated && (
         <div className="mb-6 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <LuTriangleAlert size={18} className="mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold">Test xavfsizlik qoidasi buzilgani uchun avtomatik yakunlandi.</p>
-            <p className="text-red-600/80">Natija shu paytgacha bergan javoblaringiz asosida hisoblandi.</p>
+            <p className="font-semibold">{t("results.summary.terminatedTitle")}</p>
+            <p className="text-red-600/80">{t("results.summary.terminatedText")}</p>
           </div>
         </div>
       )}
@@ -20,11 +22,11 @@ export function ScoreSummary({ eyebrow = "Umumiy natija", total, sections, termi
         <div className="grid md:grid-cols-[1fr_1.4fr]">
           <div className="relative overflow-hidden bg-[#12213D] p-7 text-white sm:p-8">
             <div className="pointer-events-none absolute -bottom-16 -right-10 h-48 w-48 rounded-full bg-[#087fd1]/30 blur-2xl" />
-            <p className="relative text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">{eyebrow}</p>
+            <p className="relative text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">{eyebrow || t("results.summary.eyebrow")}</p>
             <p className="relative mt-3 font-display text-[64px] font-extrabold leading-none tracking-[-0.03em] tabular-nums">
               {total}
             </p>
-            <p className="relative mt-2 text-sm text-white/50">400–1600 shkala bo'yicha</p>
+            <p className="relative mt-2 text-sm text-white/50">{t("results.summary.scale")}</p>
           </div>
           <div className="flex flex-col justify-center gap-5 p-7 sm:p-8">
             {sections.map((s) => {
@@ -53,6 +55,7 @@ export function ScoreSummary({ eyebrow = "Umumiy natija", total, sections, termi
 
 // Modul bo'yicha to'g'ri javoblar jadvali (bo'lim kartasi ichida).
 export function ModuleBreakdown({ rows }) {
+  const { t } = useI18n();
   return (
     <div className="grid gap-2 sm:grid-cols-3">
       {rows.map((row) => (
@@ -63,7 +66,7 @@ export function ModuleBreakdown({ rows }) {
           </p>
           <p className="mt-1 font-display text-lg font-extrabold tabular-nums text-[#12213D]">
             {row.value}
-            <span className="ml-1 text-xs font-medium text-[#12213D]/40">to'g'ri</span>
+            <span className="ml-1 text-xs font-medium text-[#12213D]/40">{t("results.summary.correctSuffix")}</span>
           </p>
         </div>
       ))}

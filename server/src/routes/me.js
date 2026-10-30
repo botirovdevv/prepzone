@@ -110,6 +110,7 @@ router.post("/study-plan/ai", aiPlanLimit, async (req, res) => {
   const body = parseBody(
     z.object({
       startDate: dateKey,
+      lang: z.enum(["uz", "en"]).default("uz"),
       vocabDue: z.number().int().min(0).max(10_000).default(0),
       latestId: z.string().max(80).nullable().optional(),
       analysis: z.object({
@@ -147,6 +148,7 @@ router.post("/study-plan/ai", aiPlanLimit, async (req, res) => {
     hasLatestResult: !!body.latestId,
     latestId: body.latestId,
     startDate: body.startDate,
+    lang: body.lang,
   });
   if (!ai.days.length) throw new HttpError(502, "ai/empty", "AI reja tuza olmadi. Qayta urinib ko'ring.");
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LuTriangleAlert, LuX } from "react-icons/lu";
 import { Button, Field, inputClass } from "./ui";
+import { useI18n } from "../i18n";
 
 // ------------------------------------------------------------------
 // Xavfli amalni tasdiqlash oynasi. `confirmWord` berilsa foydalanuvchi uni
@@ -11,12 +12,13 @@ export default function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Tasdiqlash",
+  confirmLabel,
   confirmWord,
   askPassword = false,
   onConfirm,
   onClose,
 }) {
+  const { t } = useI18n();
   const [typed, setTyped] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,7 +52,7 @@ export default function ConfirmDialog({
     try {
       await onConfirm({ password });
     } catch (err) {
-      setError(err.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      setError(err.message || t("common.error"));
       setBusy(false);
     }
   };
@@ -82,7 +84,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={busy}
-            aria-label="Yopish"
+            aria-label={t("common.close")}
             className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-lg text-[#12213D]/40 hover:bg-[#12213D]/5 hover:text-[#12213D]"
           >
             <LuX size={16} />
@@ -91,7 +93,7 @@ export default function ConfirmDialog({
 
         <div className="space-y-4 px-5 pb-5 sm:px-6">
           {confirmWord && (
-            <Field label={`Tasdiqlash uchun ${confirmWord} deb yozing`}>
+            <Field label={t("confirm.typeWord", { word: confirmWord })}>
               <input
                 autoFocus
                 value={typed}
@@ -103,7 +105,7 @@ export default function ConfirmDialog({
             </Field>
           )}
           {askPassword && (
-            <Field label="Joriy parol">
+            <Field label={t("confirm.currentPassword")}>
               <input
                 type="password"
                 value={password}
@@ -119,10 +121,10 @@ export default function ConfirmDialog({
 
         <div className="flex flex-col-reverse gap-2 border-t border-[#12213D]/[0.06] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
-            Bekor qilish
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={!ready || busy} className="!bg-red-600 !text-white hover:!bg-red-700 !shadow-none">
-            {busy ? "Bajarilmoqda..." : confirmLabel}
+            {busy ? t("confirm.working") : confirmLabel || t("confirm.confirm")}
           </Button>
         </div>
       </form>

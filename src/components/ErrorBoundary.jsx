@@ -1,5 +1,6 @@
 import { Component } from "react";
 import { LuTriangleAlert, LuRotateCw } from "react-icons/lu";
+import { translate as t } from "../i18n";
 
 const RELOAD_KEY = "pz_chunk_reload";
 
@@ -42,25 +43,23 @@ export default class ErrorBoundary extends Component {
           <LuTriangleAlert size={28} />
         </div>
         <h1 className="font-display text-2xl font-extrabold text-[#12213D]">
-          {chunk ? "Sayt yangilandi" : "Nimadir noto'g'ri ketdi"}
+          {chunk ? t("crash.updatedTitle") : t("crash.title")}
         </h1>
         <p className="mt-2 max-w-md text-sm leading-relaxed text-[#12213D]/60">
-          {chunk
-            ? "Saytning yangi versiyasi chiqdi. Davom etish uchun sahifani yangilang."
-            : "Kutilmagan xatolik yuz berdi. Sahifani yangilab ko'ring — muammo takrorlansa, biz bilan bog'laning."}
+          {chunk ? t("crash.updatedText") : t("crash.text")}
         </p>
         <div className="mt-6 flex gap-2">
           <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center gap-2 rounded-xl bg-[#087fd1] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0670b9]"
           >
-            <LuRotateCw size={16} /> Sahifani yangilash
+            <LuRotateCw size={16} /> {t("crash.reload")}
           </button>
           <a
             href="/"
             className="inline-flex items-center rounded-xl border border-[#12213D]/15 bg-white px-5 py-2.5 text-sm font-semibold text-[#12213D]"
           >
-            Bosh sahifa
+            {t("crash.home")}
           </a>
         </div>
       </div>

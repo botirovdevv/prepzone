@@ -6,6 +6,8 @@
 //   fon     #F6F7FB, oq; holatlar uchun amber / emerald / red.
 // ------------------------------------------------------------------
 import { Link } from "react-router-dom";
+import { LuRotateCw, LuTriangleAlert } from "react-icons/lu";
+import { useI18n } from "../i18n";
 
 const cx = (...parts) => parts.filter(Boolean).join(" ");
 
@@ -173,6 +175,25 @@ export function EmptyState({ icon, title, text, action }) {
   );
 }
 
+// ---------------- Xato holati ----------------
+// Ma'lumot yuklanmasa — "bo'sh" deb emas, xato va "Qayta urinish" bilan.
+export function ErrorState({ text, onRetry, className }) {
+  const { t } = useI18n();
+  return (
+    <Card role="alert" className={cx("border-red-200 bg-red-50/40 px-6 py-10 text-center", className)}>
+      <IconTile icon={LuTriangleAlert} tone="red" size="lg" className="mx-auto mb-4" />
+      <p className="mx-auto max-w-sm text-sm text-[#12213D]/70">{text || t("common.loadError")}</p>
+      {onRetry && (
+        <div className="mt-5 flex justify-center">
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            <LuRotateCw size={14} /> {t("common.retry")}
+          </Button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ---------------- Yuklanish holatlari ----------------
 export function Skeleton({ className }) {
   return <div className={cx("animate-pulse rounded-2xl bg-[#12213D]/[0.05]", className)} />;
@@ -193,7 +214,8 @@ export function Spinner({ size = 28, className }) {
 //   fullscreen — butun ekran markazida (layout'dan tashqari: auth tekshiruvi, test sahifalari);
 //   aks holda — DashboardLayout ichida, ko'rinib turgan kontent maydonining markazida
 //   (mobil header 3.5rem hisobga olinadi).
-export function PageLoader({ fullscreen = false, label = "Yuklanmoqda" }) {
+export function PageLoader({ fullscreen = false, label }) {
+  const { t } = useI18n();
   return (
     <div
       role="status"
@@ -204,7 +226,7 @@ export function PageLoader({ fullscreen = false, label = "Yuklanmoqda" }) {
       )}
     >
       <Spinner />
-      <span className="text-[13px] font-medium tracking-[-0.01em] text-[#12213D]/45">{label}</span>
+      <span className="text-[13px] font-medium tracking-[-0.01em] text-[#12213D]/45">{label || t("common.loading")}</span>
     </div>
   );
 }
@@ -232,6 +254,7 @@ export function Field({ label, hint, children }) {
 // ---------------- Ball dinamikasi grafigi ----------------
 // scores: [{ value, label }] — eski natijadan yangisiga qarab.
 export function ScoreTrend({ scores, height = 150, min = 400, max = 1600 }) {
+  const { t } = useI18n();
   if (!scores || scores.length === 0) return null;
   const w = 600;
   const h = height;
@@ -245,7 +268,7 @@ export function ScoreTrend({ scores, height = 150, min = 400, max = 1600 }) {
   const ticks = [min, (min + max) / 2, max];
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label="Ball dinamikasi">
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label={t("common.scoreTrend")}>
       <defs>
         <linearGradient id="pz-trend-fill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#087fd1" stopOpacity="0.18" />

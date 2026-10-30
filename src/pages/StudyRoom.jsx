@@ -25,6 +25,7 @@ import Whiteboard from "../components/studyRoom/Whiteboard";
 import { QualityPanel } from "../components/studyRoom/QualitySettings";
 import { cameraConstraints, useQualitySettings } from "../components/studyRoom/quality";
 import useP2PCall from "../components/studyRoom/useP2PCall";
+import { translate, useI18n } from "../i18n";
 
 // ------------------------------------------------------------------
 // Study Room — ikki talaba uchun video dars xonasi.
@@ -73,6 +74,7 @@ function useMediaRef(stream) {
 
 // ---------------- Kirishdan oldin: kamera/mikrofon tekshiruvi ----------------
 function PreJoin({ code, onJoin, joining, error }) {
+  const { t } = useI18n();
   const videoRef = useRef(null);
   const [device] = useState(deviceInfo);
   const [camOn, setCamOn] = useState(true);
@@ -92,7 +94,7 @@ function PreJoin({ code, onJoin, joining, error }) {
         if (videoRef.current) videoRef.current.srcObject = s;
       })
       .catch(() => {
-        setMediaError("Kameraga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering yoki kamerasiz kiring.");
+        setMediaError(translate("studyRoom.cameraDenied"));
         setCamOn(false);
       });
     return () => {
@@ -108,7 +110,7 @@ function PreJoin({ code, onJoin, joining, error }) {
           to="/study-room"
           className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#12213D]/55 hover:text-[#12213D]"
         >
-          <LuArrowLeft size={16} /> Orqaga
+          <LuArrowLeft size={16} /> {t("studyRoom.back")}
         </Link>
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
           {/* Telefonda oldindan ko'rish ham tik (9:16) — yuboriladigan kadrning o'zi. */}
@@ -123,10 +125,10 @@ function PreJoin({ code, onJoin, joining, error }) {
               </div>
             )}
             <div className="absolute inset-x-0 bottom-4 flex justify-center gap-3">
-              <RoundButton active={micOn} onClick={() => setMicOn((v) => !v)} title="Mikrofon">
+              <RoundButton active={micOn} onClick={() => setMicOn((v) => !v)} title={t("studyRoom.mic")}>
                 {micOn ? <LuMic size={20} /> : <LuMicOff size={20} />}
               </RoundButton>
-              <RoundButton active={camOn} onClick={() => setCamOn((v) => !v)} title="Kamera">
+              <RoundButton active={camOn} onClick={() => setCamOn((v) => !v)} title={t("studyRoom.camera")}>
                 {camOn ? <LuVideo size={20} /> : <LuVideoOff size={20} />}
               </RoundButton>
             </div>
@@ -134,15 +136,15 @@ function PreJoin({ code, onJoin, joining, error }) {
           <div className="p-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#087fd1]">Study Room</p>
             <h1 className="mt-1 font-display text-2xl font-extrabold text-[#12213D]">
-              Xona <span className="font-mono tracking-[0.12em]">{code}</span>
+              {t("studyRoom.room")} <span className="font-mono tracking-[0.12em]">{code}</span>
             </h1>
-            <p className="mt-1 text-sm text-[#12213D]/55">Kamera va mikrofonni tekshirib, xonaga kiring.</p>
+            <p className="mt-1 text-sm text-[#12213D]/55">{t("studyRoom.checkDevices")}</p>
             {(mediaError || error) && (
               <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error || mediaError}</p>
             )}
             <Button className="mt-5 w-full" size="lg" onClick={() => onJoin({ camOn, micOn })} disabled={joining}>
               {joining ? <LuLoaderCircle size={18} className="animate-spin" /> : <LuUsers size={18} />}
-              {joining ? "Ulanmoqda…" : "Xonaga kirish"}
+              {joining ? t("studyRoom.connecting") : t("studyRoom.enterRoom")}
             </Button>
           </div>
         </div>
@@ -178,7 +180,7 @@ function QualityBars({ quality }) {
   const level = quality === "excellent" ? 3 : quality === "good" ? 2 : quality === "poor" ? 1 : 0;
   const color = level >= 2 ? "bg-emerald-400" : level === 1 ? "bg-amber-400" : "bg-white/40";
   return (
-    <span className="flex items-end gap-[2px]" title="Aloqa sifati">
+    <span className="flex items-end gap-[2px]" title={translate("studyRoom.connectionQuality")}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={`w-[3px] rounded-sm ${i <= level ? color : "bg-white/30"}`} style={{ height: 3 + i * 3 }} />
       ))}
@@ -217,6 +219,7 @@ function useVideoFit() {
 // tile: { stream, name, isLocal, isScreen, cam, mic, quality, speaking }
 // compact — kichik suzuvchi oyna; forceCover — kadrni doim to'ldiradi.
 function ParticipantTile({ tile, className = "", compact = false, forceCover = false }) {
+  const { t } = useI18n();
   const { stream, name, isLocal, isScreen, cam, mic, quality, speaking } = tile;
   const videoRef = useMediaRef(stream);
   const { boxRef, onVideoSize, cover } = useVideoFit();
@@ -259,8 +262,8 @@ function ParticipantTile({ tile, className = "", compact = false, forceCover = f
         >
           {!isScreen && !mic && <LuMicOff size={12} className="shrink-0 text-red-300" />}
           <span className="truncate">
-            {isScreen ? `${name} — ekran` : name}
-            {isLocal && name !== "Siz" && " (siz)"}
+            {isScreen ? t("studyRoom.screenSuffix", { name }) : name}
+            {isLocal && name !== t("studyRoom.you") && t("studyRoom.youSuffix")}
           </span>
         </span>
         {!isScreen && !compact && (
@@ -274,6 +277,7 @@ function ParticipantTile({ tile, className = "", compact = false, forceCover = f
 }
 
 function WaitingTile({ className = "" }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -289,13 +293,13 @@ function WaitingTile({ className = "" }) {
       className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/15 p-4 text-center ${className}`}
     >
       <LuUsers size={26} className="text-white/40" />
-      <p className="text-sm font-semibold text-white/70">Sherigingiz kutilmoqda</p>
+      <p className="text-sm font-semibold text-white/70">{t("studyRoom.waiting")}</p>
       <button
         type="button"
         onClick={copy}
         className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20"
       >
-        {copied ? <LuCheck size={14} /> : <LuCopy size={14} />} {copied ? "Nusxalandi" : "Linkni nusxalash"}
+        {copied ? <LuCheck size={14} /> : <LuCopy size={14} />} {copied ? t("studyRoom.copied") : t("studyRoom.copyLink")}
       </button>
     </div>
   );
@@ -327,7 +331,7 @@ function TimeLeft({ endsAt }) {
   const warn = remaining <= WARN_MS;
   return (
     <span
-      title="Dars uchun qolgan vaqt"
+      title={translate("studyRoom.timeLeft")}
       className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums ${
         warn ? "bg-amber-400 text-[#12213D]" : "bg-white/10 text-white"
       }`}
@@ -342,8 +346,7 @@ function TimeWarning({ endsAt, limitMinutes }) {
   if (remaining <= 0 || remaining > WARN_MS) return null;
   return (
     <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
-      Dars vaqti ({limitMinutes} daqiqa) tugashiga {Math.ceil(remaining / 60_000)} daqiqa qoldi. Doskani saqlab
-      qo'ying.
+      {translate("studyRoom.timeWarning", { limit: limitMinutes, n: Math.ceil(remaining / 60_000) })}
     </div>
   );
 }
@@ -355,7 +358,7 @@ function FloatingTile({ tile, onClick, wide = false, className = "" }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="Videoni almashtirish"
+      aria-label={translate("studyRoom.swapVideo")}
       className={`absolute z-20 overflow-hidden rounded-2xl shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20 ${
         wide ? "aspect-video w-[240px]" : "aspect-[9/16] w-[28vw] max-w-[132px]"
       } ${className}`}
@@ -402,28 +405,29 @@ function useSustained(flag) {
 }
 
 function NetworkNotices({ stats, peerName, cameraOn, outgoing, onCameraOff, onLowerQuality }) {
+  const { t } = useI18n();
   const localBad = useSustained(stats.local === "poor");
   const remoteBad = useSustained(Boolean(peerName) && stats.remote === "poor");
   return (
     <>
       {localBad && (
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
-          <span>Internetingiz sekin — video qotishi yoki xiralashishi mumkin.</span>
+          <span>{t("studyRoom.slowInternet")}</span>
           {cameraOn && outgoing !== "low" && (
             <button type="button" onClick={onLowerQuality} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
-              Sifatni pasaytirish
+              {t("studyRoom.lowerQuality")}
             </button>
           )}
           {cameraOn && (
             <button type="button" onClick={onCameraOff} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
-              Kamerani o'chirish
+              {t("studyRoom.cameraOff")}
             </button>
           )}
         </div>
       )}
       {remoteBad && !localBad && (
         <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
-          {peerName}ning interneti sekin — uning videosi qotishi mumkin.
+          {t("studyRoom.peerSlow", { name: peerName })}
         </div>
       )}
     </>
@@ -450,7 +454,7 @@ function RemoteAudio({ stream }) {
           onClick={() => ref.current?.play().then(() => setBlocked(false), () => {})}
           className="fixed bottom-24 left-1/2 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-xl bg-[#087fd1] px-4 py-2 text-sm font-semibold text-white shadow-lg"
         >
-          <LuVolume2 size={16} /> Ovozni yoqish
+          <LuVolume2 size={16} /> {translate("studyRoom.enableSound")}
         </button>
       )}
     </>
@@ -462,6 +466,7 @@ function RemoteAudio({ stream }) {
 const TILE_CLASS = "aspect-video w-full shrink-0";
 
 function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
+  const { t } = useI18n();
   const isDesktop = useIsDesktop();
   const [device] = useState(deviceInfo);
   const [constraints] = useState(() => cameraConstraints(device));
@@ -487,7 +492,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
   const [view, setView] = useState("video");
   const videoView = view === "video";
   const screenStream = call.remoteScreen || call.localScreen;
-  const screenOwner = call.remoteScreen ? peer?.name : "Siz";
+  const screenOwner = call.remoteScreen ? peer?.name : t("studyRoom.you");
 
   // Ekran ulashilsa — o'sha ko'rinishga o'tamiz; tugasa videoga qaytamiz.
   const hasScreen = Boolean(screenStream);
@@ -526,7 +531,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
 
   const localTile = {
     stream: call.localStream,
-    name: "Siz",
+    name: t("studyRoom.you"),
     isLocal: true,
     cam: call.cam,
     mic: call.mic,
@@ -588,28 +593,26 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
           className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20"
         >
           {copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
-          <span className="hidden sm:inline">{copied ? "Nusxalandi" : "Taklif linki"}</span>
+          <span className="hidden sm:inline">{copied ? t("studyRoom.copied") : t("studyRoom.inviteLink")}</span>
         </button>
         {clock && <TimeLeft endsAt={clock.endsAt} />}
         {route && (
           <span
             title={
-              route === "direct"
-                ? "Video to'g'ridan-to'g'ri sherigingizga boradi (eng tez yo'l)"
-                : "To'g'ridan-to'g'ri ulanib bo'lmadi — video server orqali boradi"
+              route === "direct" ? t("studyRoom.directTitle") : t("studyRoom.viaServerTitle")
             }
             className={`hidden items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold md:inline-flex ${
               route === "direct" ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-400/15 text-amber-300"
             }`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${route === "direct" ? "bg-emerald-400" : "bg-amber-400"}`} />
-            {route === "direct" ? "To'g'ridan-to'g'ri" : "Server orqali"}
+            {route === "direct" ? t("studyRoom.direct") : t("studyRoom.viaServer")}
           </span>
         )}
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
           {tab("video", `Video · ${peer ? 2 : 1}`, LuVideo)}
-          {tab("board", "Doska", LuPencilLine)}
-          {screenTile && tab("screen", "Ekran", LuMonitorUp)}
+          {tab("board", t("studyRoom.board"), LuPencilLine)}
+          {screenTile && tab("screen", t("studyRoom.screen"), LuMonitorUp)}
         </div>
       </header>
 
@@ -624,12 +627,12 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
       />
       {connection === "reconnecting" && (
         <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
-          Aloqa uzildi — qayta ulanmoqda…
+          {t("studyRoom.reconnecting")}
         </div>
       )}
       {peer && connection === "connecting" && (
         <div className="bg-white/10 px-4 py-1.5 text-center text-xs font-semibold text-white/80">
-          {peer.name} bilan ulanmoqda…
+          {t("studyRoom.connectingWith", { name: peer.name })}
         </div>
       )}
 
@@ -656,14 +659,14 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
         <RoundButton
           active={call.mic}
           onClick={call.toggleMic}
-          title={call.mic ? "Mikrofonni o'chirish" : "Mikrofonni yoqish"}
+          title={call.mic ? t("studyRoom.micOff") : t("studyRoom.micOn")}
         >
           {call.mic ? <LuMic size={20} /> : <LuMicOff size={20} />}
         </RoundButton>
         <RoundButton
           active={call.cam}
           onClick={() => run(call.toggleCam)}
-          title={call.cam ? "Kamerani o'chirish" : "Kamerani yoqish"}
+          title={call.cam ? t("studyRoom.camOff") : t("studyRoom.camOn")}
         >
           {call.cam ? <LuVideo size={20} /> : <LuVideoOff size={20} />}
         </RoundButton>
@@ -672,13 +675,13 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
             active
             onClick={() => run(call.toggleScreen)}
             disabled={Boolean(call.remoteScreen)}
-            title={call.screenOn ? "Ulashishni to'xtatish" : "Ekranni ulashish"}
+            title={call.screenOn ? t("studyRoom.stopShare") : t("studyRoom.share")}
           >
             {call.screenOn ? <LuMonitorX size={20} className="text-sky-300" /> : <LuMonitorUp size={20} />}
           </RoundButton>
         )}
         <div className="relative">
-          <RoundButton active data-quality-toggle onClick={() => setQualityOpen((v) => !v)} title="Video sifati">
+          <RoundButton active data-quality-toggle onClick={() => setQualityOpen((v) => !v)} title={t("studyRoom.quality")}>
             <LuSettings2 size={20} className={qualityOpen ? "text-sky-300" : ""} />
           </RoundButton>
           {qualityOpen && (
@@ -692,7 +695,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
             />
           )}
         </div>
-        <RoundButton danger onClick={leave} title="Chiqish">
+        <RoundButton danger onClick={leave} title={t("studyRoom.leave")}>
           <LuPhoneOff size={20} />
         </RoundButton>
       </footer>
@@ -704,6 +707,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
 
 // ---------------- Dars tugadi / xonaga kirib bo'lmadi ----------------
 function EndScreen({ title, message }) {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
@@ -713,7 +717,7 @@ function EndScreen({ title, message }) {
         <h1 className="mt-4 font-display text-2xl font-extrabold text-[#12213D]">{title}</h1>
         <p className="mt-2 text-sm text-[#12213D]/55">{message}</p>
         <Button to="/study-room" className="mt-6 w-full">
-          Study Room'ga qaytish
+          {t("studyRoom.backToLobby")}
         </Button>
       </div>
     </div>
@@ -721,10 +725,10 @@ function EndScreen({ title, message }) {
 }
 
 const END_TEXT = {
-  "time-up": (min) => ["Dars vaqti tugadi", `Bitta dars ${min || 40} daqiqa davom etadi. Davom ettirish uchun yangi xona oching.`],
-  replaced: () => ["Boshqa oynada ochildi", "Bu xona boshqa oyna yoki qurilmada ochildi."],
-  full: () => ["Xona to'la", "Bu xonada allaqachon 2 kishi bor."],
-  "not-found": () => ["Xona topilmadi", "Bunday xona yo'q yoki muddati tugagan."],
+  "time-up": (min) => [translate("studyRoom.end.timeUp"), translate("studyRoom.end.timeUpText", { min: min || 40 })],
+  replaced: () => [translate("studyRoom.end.replaced"), translate("studyRoom.end.replacedText")],
+  full: () => [translate("studyRoom.end.full"), translate("studyRoom.end.fullText")],
+  "not-found": () => [translate("studyRoom.end.notFound"), translate("studyRoom.end.notFoundText")],
 };
 
 // ---------------- Sahifa ----------------
@@ -745,7 +749,9 @@ export default function StudyRoom() {
       const { iceServers } = await api.post(`/study-room/${code}/join`);
       setConn({ iceServers, camOn, micOn });
     } catch (err) {
-      if (err.code === "study-room/time-up") setEnd(["Dars vaqti tugadi", `${err.message} Yangi xona oching.`]);
+      if (err.code === "study-room/time-up") {
+        setEnd([translate("studyRoom.end.timeUp"), `${err.message} ${translate("studyRoom.end.timeUpSuffix")}`]);
+      }
       setError(err.message);
     } finally {
       setJoining(false);

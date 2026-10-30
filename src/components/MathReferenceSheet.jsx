@@ -72,28 +72,28 @@ function ReferenceFigure() {
         <tspan fontStyle="italic">c</tspan>² = <tspan fontStyle="italic">a</tspan>² + <tspan fontStyle="italic">b</tspan>²
       </Formula>
 
-      {/* 30°-60°-90° */}
-      <path d="M514 120 L583 120 L514 80 Z" {...S} />
-      <RightAngle x={514} y={120} />
-      <text x="503" y="105" {...VAR}>x</text>
-      <text x="536" y="138" {...VAR}>
+      {/* 30°-60°-90° (qisqa katet x, uzun katet x√3, gipotenuza 2x) */}
+      <path d="M505 128 L616 128 L505 64 Z" {...S} />
+      <RightAngle x={505} y={128} />
+      <text x="491" y="101" {...VAR}>x</text>
+      <text x="544" y="147" {...VAR}>
         x<tspan fontStyle="normal">√3</tspan>
       </text>
-      <text x="552" y="92" {...VAR}>2x</text>
-      <text x="518" y="94" {...SMALL}>60°</text>
-      <text x="557" y="116" {...SMALL}>30°</text>
+      <text x="566" y="88" {...VAR}>2x</text>
+      <text x="509" y="84" {...SMALL}>60°</text>
+      <text x="580" y="123" {...SMALL}>30°</text>
 
       {/* 45°-45°-90° */}
-      <path d="M640 120 L700 120 L640 60 Z" {...S} />
-      <RightAngle x={640} y={120} />
-      <text x="628" y="96" {...VAR}>s</text>
-      <text x="666" y="138" {...VAR}>s</text>
-      <text x="673" y="84" {...VAR}>
+      <path d="M648 128 L712 128 L648 64 Z" {...S} />
+      <RightAngle x={648} y={128} />
+      <text x="635" y="101" {...VAR}>s</text>
+      <text x="676" y="147" {...VAR}>s</text>
+      <text x="684" y="90" {...VAR}>
         s<tspan fontStyle="normal">√2</tspan>
       </text>
-      <text x="644" y="78" {...SMALL}>45°</text>
-      <text x="674" y="116" {...SMALL}>45°</text>
-      <text x="610" y="162" {...FORMULA} fontSize={13}>
+      <text x="652" y="84" {...SMALL}>45°</text>
+      <text x="684" y="123" {...SMALL}>45°</text>
+      <text x="608" y="172" {...FORMULA} fontSize={13}>
         Special Right Triangles
       </text>
 

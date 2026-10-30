@@ -6,6 +6,7 @@ import AuthLayout from "../components/auth/AuthLayout";
 import TextField from "../components/auth/TextField";
 import GoogleButton from "../components/auth/GoogleButton";
 import { FormAlert, OrDivider, PrimaryButton } from "../components/auth/FormParts";
+import { useI18n } from "../i18n";
 // QR kutubxonasi faqat "QR kod" tabi ochilganda yuklanadi.
 const QrLogin = lazy(() => import("../components/auth/QrLogin"));
 
@@ -16,12 +17,13 @@ function safeFrom(from) {
 }
 
 const TABS = [
-  { id: "email", label: "Email yoki Google", icon: LuMail },
-  { id: "qr", label: "QR kod", icon: LuQrCode },
+  { id: "email", label: "tabEmail", icon: LuMail },
+  { id: "qr", label: "tabQr", icon: LuQrCode },
 ];
 
 export default function Login() {
   const { user, loading: authLoading, login } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const from = safeFrom(location.state?.from);
@@ -58,14 +60,14 @@ export default function Login() {
 
   return (
     <AuthLayout
-      eyebrow="Xush kelibsiz"
-      title="Hisobingizga kiring"
-      subtitle="SAT mock testlari va natijalaringiz sizni kutmoqda."
+      eyebrow={t("auth.login.eyebrow")}
+      title={t("auth.login.title")}
+      subtitle={t("auth.login.subtitle")}
       footer={
         <>
-          Hisobingiz yo'qmi?{" "}
+          {t("auth.login.noAccount")}{" "}
           <Link to="/register" className="font-semibold text-[#087fd1] hover:underline">
-            Ro'yxatdan o'ting
+            {t("auth.login.signUp")}
           </Link>
         </>
       }
@@ -87,7 +89,7 @@ export default function Login() {
                 tab === id ? "bg-white text-[#1d1d1f] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
               }`}
             >
-              <Icon size={15} /> {label}
+              <Icon size={15} /> {t(`auth.login.${label}`)}
             </button>
           ))}
         </div>
@@ -105,7 +107,7 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <TextField
-              label="Email"
+              label={t("auth.email")}
               type="email"
               name="email"
               autoComplete="email"
@@ -113,10 +115,10 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nomingiz@email.com"
+              placeholder={t("auth.emailPlaceholder")}
             />
             <TextField
-              label="Parol"
+              label={t("auth.password")}
               type="password"
               name="password"
               autoComplete="current-password"
@@ -130,7 +132,7 @@ export default function Login() {
                   state={{ email }}
                   className="text-[13px] font-medium text-[#087fd1] hover:underline"
                 >
-                  Parolni unutdingizmi?
+                  {t("auth.login.forgot")}
                 </Link>
               }
             />
@@ -142,15 +144,15 @@ export default function Login() {
                   <>
                     {" "}
                     <Link to="/forgot-password" state={{ email }} className="font-semibold underline">
-                      Parol o'rnatish
+                      {t("auth.login.setPassword")}
                     </Link>
                   </>
                 )}
               </FormAlert>
             )}
 
-            <PrimaryButton loading={loading} loadingText="Kirilmoqda..." className="!mt-6">
-              Kirish
+            <PrimaryButton loading={loading} loadingText={t("auth.login.submitting")} className="!mt-6">
+              {t("auth.login.submit")}
             </PrimaryButton>
           </form>
         </>

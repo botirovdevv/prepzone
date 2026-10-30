@@ -5,30 +5,28 @@ import AuthLayout from "../components/auth/AuthLayout";
 import TextField from "../components/auth/TextField";
 import GoogleButton from "../components/auth/GoogleButton";
 import { FormAlert, OrDivider, PrimaryButton } from "../components/auth/FormParts";
+import { useI18n } from "../i18n";
+import { MIN_PASSWORD_LENGTH } from "../utils/passwordPolicy";
 
 // Parol kuchi: uzunlik + belgilar xilma-xilligi (0–4).
 function passwordScore(pw) {
   if (!pw) return 0;
   let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
+  if (pw.length >= MIN_PASSWORD_LENGTH) score++;
+  if (pw.length >= 14) score++;
   if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
   if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
   else if (/\d/.test(pw) || /[^A-Za-z0-9]/.test(pw)) score += 0.5;
   return Math.min(4, Math.floor(score));
 }
 
-const STRENGTH = [
-  { label: "Juda qisqa", color: "#e5484d" },
-  { label: "Zaif", color: "#e5484d" },
-  { label: "O'rtacha", color: "#f5a524" },
-  { label: "Yaxshi", color: "#30a46c" },
-  { label: "Kuchli", color: "#30a46c" },
-];
+const STRENGTH_COLORS = ["#e5484d", "#e5484d", "#f5a524", "#30a46c", "#30a46c"];
 
 function StrengthMeter({ password }) {
-  const score = password.length < 8 ? 0 : Math.max(1, passwordScore(password));
-  const { label, color } = STRENGTH[score];
+  const { tr } = useI18n();
+  const score = password.length < MIN_PASSWORD_LENGTH ? 0 : Math.max(1, passwordScore(password));
+  const color = STRENGTH_COLORS[score];
+  const label = tr("auth.register.strength")[score];
   return (
     <div className="flex items-center gap-3" aria-live="polite">
       <div className="flex flex-1 gap-1">
@@ -49,6 +47,7 @@ function StrengthMeter({ password }) {
 
 export default function Register() {
   const { user, loading: authLoading, register } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState("");
@@ -65,13 +64,13 @@ export default function Register() {
 
   // Inline tekshiruv — xato yuborishdan oldin, maydonning o'zida ko'rinadi.
   const confirmError =
-    touchedConfirm && confirm && confirm !== password ? "Parollar mos kelmadi." : "";
+    touchedConfirm && confirm && confirm !== password ? t("auth.register.mismatch") : "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password.length < 8) {
-      setError("Parol kamida 8 ta belgidan iborat bo'lishi kerak.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(t("auth.passwordTooShort", { n: MIN_PASSWORD_LENGTH }));
       return;
     }
     if (password !== confirm) {
@@ -91,14 +90,14 @@ export default function Register() {
 
   return (
     <AuthLayout
-      eyebrow="Boshlash uchun"
-      title="Hisob yarating"
-      subtitle="Bir daqiqada ro'yxatdan o'ting va birinchi SAT mock testingizni boshlang."
+      eyebrow={t("auth.register.eyebrow")}
+      title={t("auth.register.title")}
+      subtitle={t("auth.register.subtitle")}
       footer={
         <>
-          Hisobingiz bormi?{" "}
+          {t("auth.register.haveAccount")}{" "}
           <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
-            Kirish
+            {t("auth.register.login")}
           </Link>
         </>
       }
@@ -114,17 +113,17 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <TextField
-          label="To'liq ism"
+          label={t("auth.register.fullName")}
           name="name"
           autoComplete="name"
           required
           maxLength={80}
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          placeholder="Ism Familiya"
+          placeholder={t("auth.register.fullNamePlaceholder")}
         />
         <TextField
-          label="Email"
+          label={t("auth.email")}
           type="email"
           name="email"
           autoComplete="email"
@@ -132,22 +131,22 @@ export default function Register() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nomingiz@email.com"
+          placeholder={t("auth.emailPlaceholder")}
         />
         <TextField
-          label="Parol"
+          label={t("auth.password")}
           type="password"
           name="new-password"
           autoComplete="new-password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Kamida 8 ta belgi"
-          hint={password ? <StrengthMeter password={password} /> : "Kamida 8 ta belgi"}
+          placeholder={t("auth.minChars", { n: MIN_PASSWORD_LENGTH })}
+          hint={password ? <StrengthMeter password={password} /> : t("auth.minChars", { n: MIN_PASSWORD_LENGTH })}
         />
         <TextField
-          label="Parolni tasdiqlang"
+          label={t("auth.register.confirm")}
           type="password"
           name="confirm-password"
           autoComplete="new-password"
@@ -161,12 +160,12 @@ export default function Register() {
 
         <FormAlert>{error}</FormAlert>
 
-        <PrimaryButton loading={loading} loadingText="Yaratilmoqda..." className="!mt-6">
-          Ro'yxatdan o'tish
+        <PrimaryButton loading={loading} loadingText={t("auth.register.submitting")} className="!mt-6">
+          {t("auth.register.submit")}
         </PrimaryButton>
 
         <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
-          Emailingizga 6 xonali tasdiqlash kodi yuboramiz.
+          {t("auth.register.codeNote")}
         </p>
       </form>
     </AuthLayout>

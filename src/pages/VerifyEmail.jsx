@@ -4,12 +4,14 @@ import { useAuth } from "../context/AuthContext";
 import { useOtpVerified } from "../hooks/useOtpVerified";
 import { LuMailCheck, LuRefreshCw, LuLogOut, LuPencil } from "react-icons/lu";
 import { PageLoader } from "../components/ui";
+import { LanguageSwitch, useI18n } from "../i18n";
 
 const RESEND_COOLDOWN_S = 60;
 
 export default function VerifyEmail() {
   const { user, loading, logout, changeEmail, sendVerificationCode, verifyEmailCode } = useAuth();
   const { verified, checked } = useOtpVerified();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [code, setCode] = useState("");
@@ -68,7 +70,7 @@ export default function VerifyEmail() {
         return;
       }
       console.error(err);
-      setError(err.message || "Kodni yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      setError(err.message || t("auth.verify.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -83,7 +85,7 @@ export default function VerifyEmail() {
       await verifyEmailCode(code.trim());
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.");
+      setError(err.message || t("auth.verify.wrongCode"));
     } finally {
       setVerifying(false);
     }
@@ -104,10 +106,10 @@ export default function VerifyEmail() {
     } catch (err) {
       setFixError(
         err.code === "auth/wrong-password"
-          ? "Parol noto'g'ri."
+          ? t("auth.verify.wrongPassword")
           : err.code === "auth/email-already-in-use"
-          ? "Bu email allaqachon band."
-          : err.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring."
+          ? t("auth.verify.emailTaken")
+          : err.message || t("common.error")
       );
     } finally {
       setFixLoading(false);
@@ -119,14 +121,14 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-[#F6F7FB]">
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center bg-[#F6F7FB]">
+      <LanguageSwitch className="absolute right-5 top-5" />
       <div className="w-16 h-16 rounded-full bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center mb-6">
         <LuMailCheck size={28} />
       </div>
-      <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">Emailingizni tasdiqlang</h1>
+      <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">{t("auth.verify.title")}</h1>
       <p className="text-[#12213D]/55 max-w-md mb-8">
-        <span className="font-semibold text-[#12213D]">{user.email}</span> manziliga 6 xonali kod
-        yuborildi (10 daqiqa amal qiladi). Kodni pastga kiriting.
+        <span className="font-semibold text-[#12213D]">{user.email}</span> {t("auth.verify.sentTo")}
       </p>
 
       <form onSubmit={handleVerify} className="w-full max-w-xs space-y-3">
@@ -136,6 +138,7 @@ export default function VerifyEmail() {
           inputMode="numeric"
           autoFocus
           placeholder="000000"
+          aria-label={t("auth.verify.codeLabel")}
           className="w-full text-center tracking-[0.5em] text-2xl font-black font-mono rounded-xl border border-[#12213D]/15 py-3.5 outline-none focus:border-[#087fd1]"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -144,7 +147,7 @@ export default function VerifyEmail() {
           disabled={verifying || code.length !== 6}
           className="w-full bg-[#087fd1] text-white font-semibold py-3 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
         >
-          {verifying ? "Tekshirilmoqda..." : "Tasdiqlash"}
+          {verifying ? t("auth.verify.verifying") : t("auth.verify.verify")}
         </button>
       </form>
 
@@ -155,19 +158,19 @@ export default function VerifyEmail() {
       >
         <LuRefreshCw size={14} className={sending ? "animate-spin" : ""} />
         {cooldown > 0
-          ? `Qayta yuborish (${cooldown}s)`
+          ? t("auth.verify.resendIn", { s: cooldown })
           : sending
-          ? "Yuborilmoqda..."
+          ? t("auth.verify.sending")
           : sentOnce
-          ? "Qayta yuborish"
-          : "Kodni yuborish"}
+          ? t("auth.verify.resend")
+          : t("auth.verify.send")}
       </button>
 
       <button
         onClick={() => setShowFix((s) => !s)}
         className="flex items-center gap-1.5 text-sm text-[#12213D]/45 hover:text-[#12213D] mt-3"
       >
-        <LuPencil size={14} /> Email manzilini noto'g'ri kiritdingizmi?
+        <LuPencil size={14} /> {t("auth.verify.wrongEmail")}
       </button>
 
       {showFix && (
@@ -177,7 +180,7 @@ export default function VerifyEmail() {
         >
           <div>
             <label className="block text-xs font-semibold text-[#12213D]/50 mb-1">
-              Joriy parolingiz
+              {t("auth.verify.currentPassword")}
             </label>
             <input
               type="password"
@@ -189,7 +192,7 @@ export default function VerifyEmail() {
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#12213D]/50 mb-1">
-              To'g'ri email manzil
+              {t("auth.verify.correctEmail")}
             </label>
             <input
               type="email"
@@ -205,7 +208,7 @@ export default function VerifyEmail() {
             disabled={fixLoading}
             className="w-full bg-[#12213D] text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-[#1a2f52] disabled:opacity-60"
           >
-            {fixLoading ? "Yangilanmoqda..." : "Emailni yangilash va yangi kod yuborish"}
+            {fixLoading ? t("auth.verify.updating") : t("auth.verify.update")}
           </button>
         </form>
       )}
@@ -214,7 +217,7 @@ export default function VerifyEmail() {
         onClick={logout}
         className="flex items-center gap-1.5 text-sm text-[#12213D]/40 hover:text-[#12213D] mt-8"
       >
-        <LuLogOut size={14} /> Chiqish
+        <LuLogOut size={14} /> {t("auth.verify.logout")}
       </button>
     </div>
   );

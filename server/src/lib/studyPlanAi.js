@@ -14,17 +14,20 @@ const TASK_TYPES = ["mock", "review", "practice", "vocab"];
 const ALL_DOMAINS = [...DOMAINS.rw, ...DOMAINS.math];
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const PLAN_SCHEMA = {
+// Reja matni foydalanuvchi tanlagan tilda yoziladi.
+const LANGUAGE_NAMES = { uz: "Uzbek (Latin script)", en: "English" };
+
+const planSchema = (language) => ({
   type: "OBJECT",
   properties: {
-    summary: { type: "STRING", description: "2-3 sentences in Uzbek (Latin): this week's focus and why." },
+    summary: { type: "STRING", description: `2-3 sentences in ${language}: this week's focus and why.` },
     days: {
       type: "ARRAY",
       items: {
         type: "OBJECT",
         properties: {
           date: { type: "STRING", description: "YYYY-MM-DD" },
-          focus: { type: "STRING", description: "Short theme of the day in Uzbek (max ~8 words)." },
+          focus: { type: "STRING", description: `Short theme of the day in ${language} (max ~8 words).` },
           tasks: {
             type: "ARRAY",
             items: {
@@ -32,8 +35,8 @@ const PLAN_SCHEMA = {
               properties: {
                 type: { type: "STRING", enum: TASK_TYPES },
                 domain: { type: "STRING", description: `For practice: one of ${ALL_DOMAINS.join(", ")}; otherwise empty.` },
-                title: { type: "STRING", description: "Concrete task title in Uzbek." },
-                detail: { type: "STRING", description: "One sentence: exactly what to do, in Uzbek." },
+                title: { type: "STRING", description: `Concrete task title in ${language}.` },
+                detail: { type: "STRING", description: `One sentence: exactly what to do, in ${language}.` },
                 minutes: { type: "INTEGER" },
               },
               required: ["type", "domain", "title", "detail", "minutes"],
@@ -45,7 +48,7 @@ const PLAN_SCHEMA = {
     },
   },
   required: ["summary", "days"],
-};
+});
 
 const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -67,7 +70,7 @@ function planDays(settings, startDate) {
   });
 }
 
-function buildPrompt({ settings, analysis, vocabDue, hasLatestResult, days, startDate }) {
+function buildPrompt({ settings, analysis, vocabDue, hasLatestResult, days, startDate, language }) {
   const daysLeft = diffDays(startDate, settings.examDate);
   const domainLines = analysis.domains.length
     ? analysis.domains
@@ -103,8 +106,8 @@ RULES
 - Every study day ends with a ${VOCAB_MINUTES}-minute "vocab" task.
 - Non-mock days: total minutes ≈ ${settings.dailyMinutes}. Spend most practice time on the weakest domains (accuracy below 70%), but keep some variety and alternate Math and Reading & Writing.
 - If there is no mock data, plan a full diagnostic mock as early as possible and balance all domains.
-- Titles and details must be specific and actionable (e.g. which skill to drill, how many questions), in Uzbek (Latin script). Keep SAT domain names in English and write them readably ("Advanced Math", "Craft and Structure"), never as ids like advanced-math.
-- "summary": 2-3 encouraging, concrete sentences in Uzbek explaining the week's priorities based on the data.`;
+- Titles and details must be specific and actionable (e.g. which skill to drill, how many questions), in ${language}. Keep SAT domain names in English and write them readably ("Advanced Math", "Craft and Structure"), never as ids like advanced-math.
+- "summary": 2-3 encouraging, concrete sentences in ${language} explaining the week's priorities based on the data.`;
 }
 
 function cleanTask(raw, key, i, settings) {
@@ -126,11 +129,12 @@ function cleanTask(raw, key, i, settings) {
   };
 }
 
-export async function generateStudyPlan({ settings, analysis, vocabDue, hasLatestResult, latestId, startDate }) {
+export async function generateStudyPlan({ settings, analysis, vocabDue, hasLatestResult, latestId, startDate, lang = "uz" }) {
   const days = planDays(settings, startDate);
+  const language = LANGUAGE_NAMES[lang] || LANGUAGE_NAMES.uz;
   const raw = await generateJson(
-    [{ text: buildPrompt({ settings, analysis, vocabDue, hasLatestResult, days, startDate }) }],
-    PLAN_SCHEMA,
+    [{ text: buildPrompt({ settings, analysis, vocabDue, hasLatestResult, days, startDate, language }) }],
+    planSchema(language),
     { temperature: 0.5 }
   );
 

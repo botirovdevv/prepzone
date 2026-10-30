@@ -7,6 +7,7 @@ import { config } from "./config.js";
 import { pool } from "./db/index.js";
 import { migrate } from "./db/migrate.js";
 import { HttpError } from "./lib/errors.js";
+import { localizeErrors } from "./lib/i18n.js";
 import { initRealtime } from "./lib/realtime.js";
 import { loadUser, requireAdmin, requireAuth, requirePerm, requireVerified } from "./middleware/auth.js";
 import authRouter from "./routes/auth.js";
@@ -33,6 +34,8 @@ app.use(helmet());
 if (config.clientOrigin) {
   app.use(cors({ origin: config.clientOrigin, credentials: true }));
 }
+// Xato xabarlari brauzer tilida (X-Lang) — body parser xatolari ham.
+app.use(localizeErrors);
 // Savollarda siqilgan rasmlar (base64) bo'lishi mumkin — limit katta.
 app.use(express.json({ limit: "25mb" }));
 app.use(cookieParser());

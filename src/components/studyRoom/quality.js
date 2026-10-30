@@ -9,9 +9,9 @@ import { useState } from "react";
 // ------------------------------------------------------------------
 
 export const QUALITY_OPTIONS = [
-  { id: "auto", label: "Avto" },
-  { id: "medium", label: "O'rta" },
-  { id: "low", label: "Past" },
+  { id: "auto" },
+  { id: "medium" },
+  { id: "low" },
 ];
 
 // Kameradan so'raladigan kadr. aspectRatio majburlanmaydi: aks holda tik

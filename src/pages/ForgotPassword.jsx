@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import TextField from "../components/auth/TextField";
 import { FormAlert, PrimaryButton } from "../components/auth/FormParts";
+import { useI18n } from "../i18n";
+import { MIN_PASSWORD_LENGTH } from "../utils/passwordPolicy";
 
 const RESEND_COOLDOWN_S = 45;
 
@@ -14,6 +16,7 @@ const RESEND_COOLDOWN_S = 45;
 // ------------------------------------------------------------------
 export default function ForgotPassword() {
   const { requestPasswordReset, resetPassword } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -53,8 +56,8 @@ export default function ForgotPassword() {
   const handleResetSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password.length < 8) {
-      setError("Parol kamida 8 ta belgidan iborat bo'lishi kerak.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(t("auth.passwordTooShort", { n: MIN_PASSWORD_LENGTH }));
       return;
     }
     setLoading(true);
@@ -70,21 +73,21 @@ export default function ForgotPassword() {
 
   const footer = (
     <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
-      Kirish sahifasiga qaytish
+      {t("auth.forgot.back")}
     </Link>
   );
 
   if (step === "email") {
     return (
       <AuthLayout
-        eyebrow="Parolni tiklash"
-        title="Parolni unutdingizmi?"
-        subtitle="Emailingizni kiriting — yangi parol o'rnatish uchun 6 xonali kod yuboramiz."
+        eyebrow={t("auth.forgot.eyebrow")}
+        title={t("auth.forgot.title")}
+        subtitle={t("auth.forgot.subtitle")}
         footer={footer}
       >
         <form onSubmit={handleEmailSubmit} className="space-y-4">
           <TextField
-            label="Email"
+            label={t("auth.email")}
             type="email"
             name="email"
             autoComplete="email"
@@ -93,11 +96,11 @@ export default function ForgotPassword() {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="nomingiz@email.com"
+            placeholder={t("auth.emailPlaceholder")}
           />
           <FormAlert>{error}</FormAlert>
-          <PrimaryButton loading={loading} loadingText="Yuborilmoqda..." className="!mt-6">
-            Kod yuborish
+          <PrimaryButton loading={loading} loadingText={t("auth.forgot.sending")} className="!mt-6">
+            {t("auth.forgot.send")}
           </PrimaryButton>
         </form>
       </AuthLayout>
@@ -106,19 +109,19 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
-      eyebrow="Parolni tiklash"
-      title="Yangi parol o'rnating"
+      eyebrow={t("auth.forgot.eyebrow")}
+      title={t("auth.forgot.resetTitle")}
       subtitle={
         <>
-          Agar <span className="font-semibold text-[#111827]">{email}</span> ro'yxatdan o'tgan
-          bo'lsa, unga 6 xonali kod yuborildi (10 daqiqa amal qiladi).
+          {t("auth.forgot.resetSubtitleBefore")} <span className="font-semibold text-[#111827]">{email}</span>{" "}
+          {t("auth.forgot.resetSubtitleAfter")}
         </>
       }
       footer={footer}
     >
       <form onSubmit={handleResetSubmit} className="space-y-4">
         <TextField
-          label="Tasdiqlash kodi"
+          label={t("auth.forgot.code")}
           name="one-time-code"
           autoComplete="one-time-code"
           inputMode="numeric"
@@ -135,29 +138,29 @@ export default function ForgotPassword() {
               disabled={cooldown > 0 || loading}
               className="text-[13px] font-medium text-[#087fd1] hover:underline disabled:text-[#98a2b3] disabled:no-underline"
             >
-              {cooldown > 0 ? `Qayta yuborish (${cooldown}s)` : "Qayta yuborish"}
+              {cooldown > 0 ? t("auth.forgot.resendIn", { s: cooldown }) : t("auth.forgot.resend")}
             </button>
           }
         />
         <TextField
-          label="Yangi parol"
+          label={t("auth.forgot.newPassword")}
           type="password"
           name="new-password"
           autoComplete="new-password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Kamida 8 ta belgi"
+          placeholder={t("auth.minChars", { n: MIN_PASSWORD_LENGTH })}
         />
         <FormAlert>{error}</FormAlert>
         <PrimaryButton
           loading={loading}
-          loadingText="Saqlanmoqda..."
+          loadingText={t("auth.forgot.saving")}
           disabled={code.length !== 6}
           className="!mt-6"
         >
-          Parolni saqlash va kirish
+          {t("auth.forgot.save")}
         </PrimaryButton>
         <button
           type="button"
@@ -167,7 +170,7 @@ export default function ForgotPassword() {
           }}
           className="pz-press w-full rounded-[14px] py-2 text-[14px] font-medium text-[#566176] hover:text-[#111827]"
         >
-          Boshqa email kiritish
+          {t("auth.forgot.otherEmail")}
         </button>
       </form>
     </AuthLayout>

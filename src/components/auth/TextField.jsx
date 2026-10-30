@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { LuEye, LuEyeOff } from "react-icons/lu";
+import { useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // Auth formalari uchun input: label maydon ichida turadi va fokus yoki
@@ -11,6 +12,7 @@ import { LuEye, LuEyeOff } from "react-icons/lu";
 export default function TextField({ label, type = "text", error, hint, action, className = "", ...props }) {
   const id = useId();
   const [reveal, setReveal] = useState(false);
+  const { t } = useI18n();
   const isPassword = type === "password";
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
@@ -32,7 +34,7 @@ export default function TextField({ label, type = "text", error, hint, action, c
           <button
             type="button"
             onClick={() => setReveal((r) => !r)}
-            aria-label={reveal ? "Parolni yashirish" : "Parolni ko'rsatish"}
+            aria-label={reveal ? t("auth.hidePassword") : t("auth.showPassword")}
             aria-pressed={reveal}
             className="pz-press absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.05] hover:text-[#1d1d1f]"
           >

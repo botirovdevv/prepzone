@@ -1,0 +1,63 @@
+// Mock testlar ro'yxati va kod bilan qo'shilish.
+export default {
+  uz: {
+    tests: {
+      eyebrow: "Mock testlar",
+      title: "Qaysi testni topshirasiz?",
+      subtitle:
+        "Har bir test to'liq, moslashuvchan (adaptiv) Reading & Writing va Math bo'limlaridan iborat. Boshlagach vaqt hisobi yuritiladi.",
+      count: "{n} ta test",
+      openCount: "{n} ta doimiy ochiq",
+      emptyTitle: "Hozircha mock test mavjud emas",
+      emptyText: "Yangi to'liq mock testlar qo'shilishi bilan ular shu yerda paydo bo'ladi.",
+      paused: "Pauzada",
+      open: "Ochiq",
+      bluebook: "Bluebook formati",
+      questionsTime: "{n} ta savol · {time}",
+      hours: "{h} soat",
+      minutes: "{m} daqiqa",
+      resumeIn: "{time} dan keyin davom ettirish mumkin",
+      start: "Boshlash",
+    },
+    join: {
+      title: "Kirish kodi bilan test",
+      text: "O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiriting.",
+      codeLabel: "Kirish kodi",
+      badLength: "Kod 6 ta raqamdan iborat bo'lishi kerak.",
+      notFound: "Bunday kod bilan test topilmadi.",
+      closed: "Bu test allaqachon yakunlangan.",
+      checking: "Tekshirilmoqda...",
+      continue: "Davom etish",
+    },
+  },
+  en: {
+    tests: {
+      eyebrow: "Mock tests",
+      title: "Which test will you take?",
+      subtitle:
+        "Each test is a full, adaptive Reading & Writing and Math exam. The timer starts as soon as you begin.",
+      count: "{n} tests",
+      openCount: "{n} always open",
+      emptyTitle: "No mock tests yet",
+      emptyText: "New full mock tests will appear here as soon as they're added.",
+      paused: "Paused",
+      open: "Open",
+      bluebook: "Bluebook format",
+      questionsTime: "{n} questions · {time}",
+      hours: "{h} h",
+      minutes: "{m} min",
+      resumeIn: "You can resume in {time}",
+      start: "Start",
+    },
+    join: {
+      title: "Test with an access code",
+      text: "Enter the 6-digit code from your teacher or the organizer.",
+      codeLabel: "Access code",
+      badLength: "The code must be 6 digits.",
+      notFound: "No test was found with this code.",
+      closed: "This test has already ended.",
+      checking: "Checking...",
+      continue: "Continue",
+    },
+  },
+};

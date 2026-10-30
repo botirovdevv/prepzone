@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import { FormAlert, PrimaryButton } from "../components/auth/FormParts";
 import { PageLoader } from "../components/ui";
+import { formatDate, useI18n } from "../i18n";
 
 // ------------------------------------------------------------------
 // Telefonda ochiladi: kompyuterdagi QR skanerlanganda shu sahifaga
@@ -13,7 +14,7 @@ import { PageLoader } from "../components/ui";
 // ------------------------------------------------------------------
 
 function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" });
+  return formatDate(iso, { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function QrApprove() {
@@ -34,6 +35,7 @@ export default function QrApprove() {
 
 function Approve({ qrId, scanCode }) {
   const { qrInfo, qrApprove, qrDeny } = useAuth();
+  const { t } = useI18n();
   const [info, setInfo] = useState(null);
   const [state, setState] = useState("loading"); // loading | ask | approved | denied | expired | invalid
   const [busy, setBusy] = useState(false);
@@ -69,7 +71,7 @@ function Approve({ qrId, scanCode }) {
         setState("denied");
       }
     } catch (err) {
-      setError(err.message || "Xatolik yuz berdi.");
+      setError(err.message || t("common.error"));
     } finally {
       setBusy(false);
     }
@@ -81,11 +83,11 @@ function Approve({ qrId, scanCode }) {
 
   return (
     <AuthLayout
-      eyebrow="QR orqali kirish"
-      title={state === "ask" ? "Kompyuterga kirasizmi?" : "QR orqali kirish"}
+      eyebrow={t("qrApprove.eyebrow")}
+      title={state === "ask" ? t("qrApprove.askTitle") : t("qrApprove.title")}
       footer={
         <Link to="/dashboard" className="font-semibold text-[#087fd1] hover:underline">
-          Bosh sahifaga qaytish
+          {t("qrApprove.back")}
         </Link>
       }
     >
@@ -100,15 +102,14 @@ function Approve({ qrId, scanCode }) {
                 {info.browser} · {info.os}
               </p>
               <p className="mt-0.5 truncate text-[13px] text-[#6e6e73]">
-                IP {info.ip || "noma'lum"} · {formatTime(info.createdAt)} da so'ralgan
+                IP {info.ip || t("qrApprove.unknown")} · {t("qrApprove.requestedAt", { time: formatTime(info.createdAt) })}
               </p>
             </div>
           </div>
 
           <p className="mt-4 flex items-start gap-2 rounded-[14px] bg-[#fff8e6] px-4 py-3 text-[13px] leading-[1.45] text-[#8a5a00]">
             <LuTriangleAlert size={16} className="mt-px shrink-0" />
-            Faqat hozir o'zingiz oldida turgan kompyuterdagi QR kodni tasdiqlang. Kimdir sizga QR yuborgan bo'lsa — rad
-            eting.
+            {t("qrApprove.warning")}
           </p>
 
           {error && (
@@ -118,8 +119,8 @@ function Approve({ qrId, scanCode }) {
           )}
 
           <div className="mt-5 space-y-2.5">
-            <PrimaryButton type="button" onClick={() => decide(true)} loading={busy} loadingText="Tasdiqlanmoqda...">
-              Ha, kirish
+            <PrimaryButton type="button" onClick={() => decide(true)} loading={busy} loadingText={t("qrApprove.approving")}>
+              {t("qrApprove.yes")}
             </PrimaryButton>
             <button
               type="button"
@@ -127,7 +128,7 @@ function Approve({ qrId, scanCode }) {
               disabled={busy}
               className="pz-press flex h-[52px] w-full items-center justify-center rounded-full border border-black/[0.12] bg-white text-[17px] font-semibold text-[#1d1d1f] hover:bg-[#fafafa] disabled:opacity-60"
             >
-              Yo'q, bu men emas
+              {t("qrApprove.no")}
             </button>
           </div>
         </>
@@ -139,34 +140,16 @@ function Approve({ qrId, scanCode }) {
 }
 
 const RESULTS = {
-  approved: {
-    icon: LuCircleCheck,
-    tone: "text-emerald-600",
-    title: "Kompyuterda kirildi",
-    text: "Kompyuter ekranini tekshiring. Bu seansni istalgan vaqtda Sozlamalar → Faol seanslar bo'limidan tugatishingiz mumkin.",
-  },
-  denied: {
-    icon: LuCircleX,
-    tone: "text-[#c4252b]",
-    title: "So'rov rad etildi",
-    text: "Kompyuter hisobingizga kira olmaydi.",
-  },
-  expired: {
-    icon: LuTriangleAlert,
-    tone: "text-[#8a5a00]",
-    title: "QR kod eskirgan",
-    text: "Kompyuterda yangi QR kodni oching va qaytadan skanerlang.",
-  },
-  invalid: {
-    icon: LuTriangleAlert,
-    tone: "text-[#c4252b]",
-    title: "QR kod yaroqsiz",
-    text: "Havola noto'g'ri yoki eskirgan. Kompyuterdagi QR kodni qaytadan skanerlang.",
-  },
+  approved: { icon: LuCircleCheck, tone: "text-emerald-600" },
+  denied: { icon: LuCircleX, tone: "text-[#c4252b]" },
+  expired: { icon: LuTriangleAlert, tone: "text-[#8a5a00]" },
+  invalid: { icon: LuTriangleAlert, tone: "text-[#c4252b]" },
 };
 
 function Result({ state }) {
-  const r = RESULTS[state] || RESULTS.invalid;
+  const { tr } = useI18n();
+  const key = RESULTS[state] ? state : "invalid";
+  const r = { ...RESULTS[key], ...tr(`qrApprove.results.${key}`) };
   const Icon = r.icon;
   return (
     <div className="py-4 text-center">

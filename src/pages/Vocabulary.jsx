@@ -19,15 +19,17 @@ import {
   isMastered,
 } from "../utils/vocabProgress";
 import { Page, PageHeader, Card, StatTile, Badge, Button } from "../components/ui";
+import { useI18n } from "../i18n";
 
 // ---------------- Flashcard ----------------
 function Flashcard({ word, flipped, onFlip }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
       onClick={onFlip}
       className="block w-full [perspective:1200px] focus:outline-none"
-      aria-label={flipped ? "Show word" : "Show definition"}
+      aria-label={flipped ? t("vocab.showWord") : t("vocab.showDefinition")}
     >
       <div
         className="relative h-[300px] w-full transition-transform duration-500 [transform-style:preserve-3d] sm:h-[320px]"
@@ -39,7 +41,7 @@ function Flashcard({ word, flipped, onFlip }) {
           <p className="mt-4 font-display text-[34px] font-extrabold tracking-[-0.02em] text-[#12213D] sm:text-[42px]">
             {word.word}
           </p>
-          <p className="mt-6 text-[13px] text-[#12213D]/40">Tap or press Space to reveal</p>
+          <p className="mt-6 text-[13px] text-[#12213D]/40">{t("vocab.reveal")}</p>
         </Card>
 
         {/* Orqa tomon */}
@@ -61,6 +63,7 @@ function Flashcard({ word, flipped, onFlip }) {
 
 // ---------------- Mashq sessiyasi ----------------
 function StudySession({ title, words, onGrade, onExit }) {
+  const { t } = useI18n();
   const [queue] = useState(words);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -104,10 +107,8 @@ function StudySession({ title, words, onGrade, onExit }) {
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#087fd1]/10 text-[#087fd1]">
           <LuTrophy size={26} />
         </span>
-        <p className="mt-4 font-display text-[24px] font-extrabold text-[#12213D]">Session complete</p>
-        <p className="mt-1 text-sm text-[#12213D]/55">
-          You knew <b className="text-emerald-600">{knownCount}</b> of {queue.length} words.
-        </p>
+        <p className="mt-4 font-display text-[24px] font-extrabold text-[#12213D]">{t("vocab.complete")}</p>
+        <p className="mt-1 text-sm text-[#12213D]/55">{t("vocab.knew", { known: knownCount, total: queue.length })}</p>
         {missed.length > 0 && (
           <div className="mx-auto mt-6 flex max-w-md flex-wrap justify-center gap-1.5">
             {missed.map((w) => (
@@ -118,7 +119,7 @@ function StudySession({ title, words, onGrade, onExit }) {
           </div>
         )}
         <div className="mt-8 flex justify-center">
-          <Button onClick={onExit}>Back to sets</Button>
+          <Button onClick={onExit}>{t("vocab.backToSets")}</Button>
         </div>
       </Card>
     );
@@ -130,7 +131,7 @@ function StudySession({ title, words, onGrade, onExit }) {
     <div>
       <div className="mb-5 flex items-center justify-between gap-4">
         <Button variant="ghost" size="sm" onClick={onExit}>
-          <LuArrowLeft size={15} /> Back
+          <LuArrowLeft size={15} /> {t("vocab.back")}
         </Button>
         <p className="truncate text-sm font-semibold text-[#12213D]/60">{title}</p>
         <p className="text-sm font-bold tabular-nums text-[#12213D]">
@@ -145,14 +146,14 @@ function StudySession({ title, words, onGrade, onExit }) {
 
       <div className="mt-6 grid grid-cols-2 gap-3">
         <Button variant="outline" size="lg" onClick={() => grade(false)}>
-          <LuRotateCcw size={17} /> Still learning
+          <LuRotateCcw size={17} /> {t("vocab.stillLearning")}
         </Button>
         <Button size="lg" onClick={() => grade(true)}>
-          <LuCheck size={17} /> I know it
+          <LuCheck size={17} /> {t("vocab.know")}
         </Button>
       </div>
       <p className="mt-4 hidden text-center text-xs text-[#12213D]/40 sm:block">
-        Space — flip · ← still learning · → I know it
+        {t("vocab.shortcuts")}
       </p>
     </div>
   );
@@ -161,6 +162,7 @@ function StudySession({ title, words, onGrade, onExit }) {
 // ---------------- Sahifa ----------------
 export default function Vocabulary() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const uid = user?.uid || "guest";
   const [progress, setProgress] = useState(() => loadVocabProgress(uid));
   const [session, setSession] = useState(null); // { key, title, words }
@@ -198,7 +200,7 @@ export default function Vocabulary() {
   };
 
   const startDue = () =>
-    setSession({ key: `due-${Date.now()}`, title: "Due review", words: stats.due });
+    setSession({ key: `due-${Date.now()}`, title: t("vocab.dueTitle"), words: stats.due });
 
   if (session) {
     return (
@@ -217,22 +219,23 @@ export default function Vocabulary() {
   return (
     <Page width="narrow">
       <PageHeader
-        eyebrow="Learn"
+        eyebrow={t("vocab.eyebrow")}
         icon={LuBookOpen}
-        title="Academic Vocabulary"
-        subtitle="High-frequency academic words for the SAT, with flashcards. Words you miss come back sooner; words you know come back later."
+        title={t("vocab.title")}
+        subtitle={t("vocab.subtitle")}
         actions={
           <Button onClick={startDue} disabled={stats.due.length === 0}>
-            <LuClock size={16} /> Review due ({stats.due.length})
+            <LuClock size={16} /> {t("vocab.reviewDue", { n: stats.due.length })}
           </Button>
         }
       />
 
-      <div className="mb-8 grid gap-3 sm:grid-cols-3">
-        <StatTile icon={LuTrophy} tone="emerald" label="Mastered" value={stats.mastered} />
-        <StatTile icon={LuClock} tone="amber" label="Due today" value={stats.due.length} />
-        <StatTile icon={LuLayers} label="Total words" value={ALL_WORDS.length} />
+      <div className="mb-3 grid gap-3 sm:grid-cols-3">
+        <StatTile icon={LuTrophy} tone="emerald" label={t("vocab.mastered")} value={stats.mastered} />
+        <StatTile icon={LuClock} tone="amber" label={t("vocab.dueToday")} value={stats.due.length} />
+        <StatTile icon={LuLayers} label={t("vocab.totalWords")} value={ALL_WORDS.length} />
       </div>
+      <p className="mb-8 text-[13px] text-[#12213D]/45">{t("vocab.localNote")}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {VOCAB_SETS.map((set) => {
@@ -252,7 +255,7 @@ export default function Vocabulary() {
                 <div className="min-w-0">
                   <h3 className="truncate font-display text-[16px] font-bold text-[#12213D]">{set.title}</h3>
                   <p className="mt-0.5 text-[13px] text-[#12213D]/45">
-                    {set.words.length} words · {seen} studied
+                    {t("vocab.setMeta", { n: set.words.length, seen })}
                   </p>
                 </div>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/25 transition group-hover:bg-[#087fd1] group-hover:text-white">

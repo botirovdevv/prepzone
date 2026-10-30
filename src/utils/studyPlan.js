@@ -1,6 +1,7 @@
 import { MATH_DOMAINS } from "../data/mathDomains";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { dayKey } from "./date";
+import { translate } from "../i18n";
 
 // ------------------------------------------------------------------
 // Study Plan: userning sozlamalari va mock natijalaridan kunlik
@@ -103,7 +104,7 @@ function practiceTask(date, slot, domainId, minutes) {
     id: `${dayKey(date)}:practice${slot}`,
     type: "practice",
     title: `${d.subject === "math" ? "Math" : "Reading & Writing"}: ${d.label}`,
-    detail: d.hint,
+    detail: d.subject === "math" ? translate(`studyPlan.hints.${d.id}`) : d.hint,
     minutes,
     to: "/practice",
   };
@@ -136,7 +137,16 @@ export function buildWeek({ settings, analysis, vocabDue = 0, startDate = new Da
     if (exam && key === s.examDate) {
       days.push({
         ...base,
-        tasks: [{ id: `${key}:exam`, type: "exam", title: "SAT imtihoni", detail: "Omad! Yaxshi dam oling va vaqtida boring.", minutes: 0, to: null }],
+        tasks: [
+          {
+            id: `${key}:exam`,
+            type: "exam",
+            title: translate("studyPlan.tasks.examTitle"),
+            detail: translate("studyPlan.tasks.examDetail"),
+            minutes: 0,
+            to: null,
+          },
+        ],
       });
       continue;
     }
@@ -153,8 +163,8 @@ export function buildWeek({ settings, analysis, vocabDue = 0, startDate = new Da
       tasks.push({
         id: `${key}:mock`,
         type: "mock",
-        title: "To'liq mock test",
-        detail: "Real imtihon sharoitida, to'xtamasdan yeching.",
+        title: translate("studyPlan.tasks.mockTitle"),
+        detail: translate("studyPlan.tasks.mockDetail"),
         minutes: MOCK_MINUTES,
         to: "/sat/select",
       });
@@ -166,8 +176,8 @@ export function buildWeek({ settings, analysis, vocabDue = 0, startDate = new Da
         tasks.push({
           id: `${key}:review`,
           type: "review",
-          title: "Mock xatolari tahlili",
-          detail: "Oxirgi testdagi noto'g'ri javoblarni ko'rib chiqing va sababini yozing.",
+          title: translate("studyPlan.tasks.reviewTitle"),
+          detail: translate("studyPlan.tasks.reviewDetail"),
           minutes: Math.min(30, study),
           to: analysis.latestResultPath,
         });
@@ -186,8 +196,11 @@ export function buildWeek({ settings, analysis, vocabDue = 0, startDate = new Da
     tasks.push({
       id: `${key}:vocab`,
       type: "vocab",
-      title: "Vocabulary takrorlash",
-      detail: i === 0 && vocabDue > 0 ? `${vocabDue} ta so'z takrorlashni kutyapti` : "Yangi set yoki takrorlash",
+      title: translate("studyPlan.tasks.vocabTitle"),
+      detail:
+        i === 0 && vocabDue > 0
+          ? translate("studyPlan.tasks.vocabDue", { n: vocabDue })
+          : translate("studyPlan.tasks.vocabNew"),
       minutes: VOCAB_MINUTES,
       to: "/vocabulary",
     });

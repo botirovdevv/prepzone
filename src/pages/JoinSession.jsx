@@ -3,11 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { LuKeyRound, LuArrowRight, LuCircleAlert } from "react-icons/lu";
 import { api } from "../api/client";
 import { Page, Card, Button, IconTile } from "../components/ui";
+import { useI18n } from "../i18n";
 
 const CODE_LENGTH = 6;
 
 export default function JoinSession() {
   const location = useLocation();
+  const { t } = useI18n();
   const [code, setCode] = useState(location.state?.prefillCode || "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ export default function JoinSession() {
     e.preventDefault();
     setError("");
     if (code.trim().length !== CODE_LENGTH) {
-      setError("Kod 6 ta raqamdan iborat bo'lishi kerak.");
+      setError(t("join.badLength"));
       return;
     }
     setLoading(true);
@@ -29,17 +31,17 @@ export default function JoinSession() {
         throw err;
       });
       if (!session) {
-        setError("Bunday kod bilan test topilmadi.");
+        setError(t("join.notFound"));
         return;
       }
       if (session.status === "closed") {
-        setError("Bu test allaqachon yakunlangan.");
+        setError(t("join.closed"));
         return;
       }
       navigate(`/session/${session.id}/test`, { state: { code: code.trim() } });
     } catch (err) {
-      console.error(err);
-      setError("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      // Masalan, juda ko'p urinish (429) — server xabari tilga moslangan.
+      setError(err.message || t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -51,11 +53,9 @@ export default function JoinSession() {
         <Card className="p-7 sm:p-9">
           <IconTile icon={LuKeyRound} tone="dark" size="lg" className="mx-auto" />
           <h1 className="mt-5 text-center font-display text-2xl font-extrabold tracking-[-0.01em] text-[#12213D]">
-            Kirish kodi bilan test
+            {t("join.title")}
           </h1>
-          <p className="mt-1.5 text-center text-sm text-[#12213D]/50">
-            O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiriting.
-          </p>
+          <p className="mt-1.5 text-center text-sm text-[#12213D]/50">{t("join.text")}</p>
 
           <form onSubmit={handleSubmit} className="mt-7">
             {/* Ko'rinadigan 6 ta katak — haqiqiy kiritish yashirin input orqali */}
@@ -72,7 +72,7 @@ export default function JoinSession() {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 autoFocus
-                aria-label="Kirish kodi"
+                aria-label={t("join.codeLabel")}
                 className="absolute inset-0 h-full w-full cursor-text opacity-0"
               />
               <div className="grid grid-cols-6 gap-2">
@@ -105,7 +105,7 @@ export default function JoinSession() {
             )}
 
             <Button type="submit" size="lg" disabled={loading} className="mt-6 w-full">
-              {loading ? "Tekshirilmoqda..." : "Davom etish"}
+              {loading ? t("join.checking") : t("join.continue")}
               {!loading && <LuArrowRight size={18} />}
             </Button>
           </form>

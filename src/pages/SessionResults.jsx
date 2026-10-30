@@ -5,9 +5,11 @@ import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, EmptyState, PageLoader } from "../components/ui";
 import { ScoreSummary, ModuleBreakdown } from "../components/ScoreSummary";
+import { useI18n } from "../i18n";
 
 export default function SessionResults() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const { id: sessionId } = useParams();
@@ -41,9 +43,9 @@ export default function SessionResults() {
       <Page width="narrow">
         <EmptyState
           icon={LuSearchX}
-          title="Natija topilmadi"
-          text="Bu natija mavjud emas yoki hali saqlanmagan."
-          action={<Button to="/dashboard">Bosh sahifa</Button>}
+          title={t("results.notFoundTitle")}
+          text={t("results.notSavedText")}
+          action={<Button to="/dashboard">{t("results.home")}</Button>}
         />
       </Page>
     );
@@ -59,13 +61,13 @@ export default function SessionResults() {
   return (
     <Page width="narrow">
       <PageHeader
-        eyebrow="Test natijasi"
+        eyebrow={t("results.eyebrow")}
         icon={LuChartColumn}
         title={sessionTitle || "Mock test"}
-        subtitle="Bo'limlar bo'yicha ball va to'g'ri javoblar soni."
+        subtitle={t("results.sessionSubtitle")}
         actions={
           <Button onClick={() => navigate("/sat/history")}>
-            Barcha natijalarim <LuArrowRight size={16} />
+            {t("results.allResults")} <LuArrowRight size={16} />
           </Button>
         }
       />
@@ -81,25 +83,25 @@ export default function SessionResults() {
           const totalCorrect = (r.module1Correct || 0) + (r.module2Correct || 0);
           const totalQ = (r.module1Total || 0) + (r.module2Total || 0);
           const rows = r.singleModule
-            ? [{ label: "Savollar", value: `${r.module1Correct}/${r.module1Total}` }]
+            ? [{ label: t("results.questions"), value: `${r.module1Correct}/${r.module1Total}` }]
             : [
                 { label: "Module 1", value: `${r.module1Correct}/${r.module1Total}` },
                 {
                   label: "Module 2",
                   tag: (
                     <Badge tone={r.route === "hard" ? "red" : r.route === "mixed" ? "ink" : "emerald"}>
-                      {r.route === "hard" ? "Qiyin" : r.route === "mixed" ? "Aralash" : "Oson"}
+                      {r.route === "hard" ? t("results.hard") : r.route === "mixed" ? t("results.mixed") : t("results.easy")}
                     </Badge>
                   ),
                   value: `${r.module2Correct}/${r.module2Total}`,
                 },
-                { label: "Jami", value: `${totalCorrect}/${totalQ}` },
+                { label: t("results.total"), value: `${totalCorrect}/${totalQ}` },
               ];
           return (
             <Card key={meta.id}>
               <CardHeader
                 title={meta.title}
-                subtitle={r.incomplete ? "Bu bo'lim to'liq tugallanmagan — test muddatidan oldin yakunlangan." : undefined}
+                subtitle={r.incomplete ? t("results.incomplete") : undefined}
                 action={
                   <span className="font-display text-3xl font-extrabold tabular-nums text-[#087fd1]">{r.scaledScore}</span>
                 }
@@ -114,7 +116,7 @@ export default function SessionResults() {
 
       <div className="mt-8 flex justify-center">
         <Button variant="outline" to="/dashboard">
-          Bosh sahifa
+          {t("results.home")}
         </Button>
       </div>
     </Page>

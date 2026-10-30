@@ -19,7 +19,8 @@ import {
   LuKeyRound,
   LuCalendar,
 } from "react-icons/lu";
-import { useAuth, CONFIRM_WORD } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { LanguageSwitch, formatDate, translate, useI18n } from "../i18n";
 import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, Skeleton, inputClass, PageLoader } from "../components/ui";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -30,20 +31,21 @@ import { compressAvatar } from "../utils/imageCompress";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 const SECTIONS = [
-  { id: "profil", label: "Profil", icon: LuUser },
-  { id: "xavfsizlik", label: "Xavfsizlik", icon: LuLockKeyhole },
-  { id: "seanslar", label: "Faol seanslar", icon: LuMonitorSmartphone },
-  { id: "hisoblar", label: "Ulangan hisoblar", icon: LuLink },
-  { id: "xavfli-zona", label: "Xavfli zona", icon: LuTriangleAlert },
+  { id: "profil", icon: LuUser },
+  { id: "xavfsizlik", icon: LuLockKeyhole },
+  { id: "seanslar", icon: LuMonitorSmartphone },
+  { id: "hisoblar", icon: LuLink },
+  { id: "xavfli-zona", icon: LuTriangleAlert },
 ];
 
 function formatJoined(iso) {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString("uz-UZ", { year: "numeric", month: "long", day: "numeric" });
+  return formatDate(iso, { year: "numeric", month: "long", day: "numeric" });
 }
 
 export default function AccountSettings() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,15 +54,15 @@ export default function AccountSettings() {
 
   if (loading || !user) return <PageLoader />;
 
-  const displayName = user.displayName || user.email?.split("@")[0] || "Foydalanuvchi";
+  const displayName = user.displayName || user.email?.split("@")[0] || t("nav.userFallback");
 
   return (
     <Page>
       <PageHeader
-        eyebrow="Hisob"
+        eyebrow={t("account.eyebrow")}
         icon={LuSettings}
-        title="Sozlamalar"
-        subtitle="Profil, xavfsizlik va hisobingizga oid barcha sozlamalar shu yerda."
+        title={t("account.title")}
+        subtitle={t("account.subtitle")}
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[240px_1fr]">
@@ -72,12 +74,12 @@ export default function AccountSettings() {
             <p className="mt-0.5 truncate text-[13px] text-[#12213D]/50">{user.email}</p>
             {user.createdAt && (
               <p className="mt-3 flex items-center gap-1.5 text-xs text-[#12213D]/40">
-                <LuCalendar size={12} /> {formatJoined(user.createdAt)} dan beri
+                <LuCalendar size={12} /> {t("account.since", { date: formatJoined(user.createdAt) })}
               </p>
             )}
           </Card>
           <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-0.5 lg:px-0">
-            {SECTIONS.map(({ id, label, icon: Icon }) => (
+            {SECTIONS.map(({ id, icon: Icon }) => (
               <button
                 type="button"
                 key={id}
@@ -88,7 +90,7 @@ export default function AccountSettings() {
                     : "bg-white text-[#12213D]/60 ring-1 ring-[#12213D]/[0.07] hover:text-[#12213D] lg:bg-transparent lg:ring-0 lg:hover:bg-white"
                 }`}
               >
-                <Icon size={15} /> {label}
+                <Icon size={15} /> {t(`account.sections.${id}`)}
               </button>
             ))}
           </nav>
@@ -111,6 +113,7 @@ export default function AccountSettings() {
 // ------------------------------------------------------------------
 function ProfileSection({ user, displayName }) {
   const { updateDisplayName, uploadAvatar, removeAvatar } = useAuth();
+  const { t } = useI18n();
   const fileRef = useRef(null);
 
   const [name, setName] = useState(user.displayName || "");
@@ -126,7 +129,7 @@ function ProfileSection({ user, displayName }) {
     setNameError("");
     setNameSaved(false);
     if (!name.trim()) {
-      setNameError("Ism bo'sh bo'lishi mumkin emas.");
+      setNameError(t("account.profile.nameEmpty"));
       return;
     }
     setNameSaving(true);
@@ -135,7 +138,7 @@ function ProfileSection({ user, displayName }) {
       setNameSaved(true);
       setTimeout(() => setNameSaved(false), 2500);
     } catch {
-      setNameError("Xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      setNameError(t("common.error"));
     } finally {
       setNameSaving(false);
     }
@@ -147,14 +150,14 @@ function ProfileSection({ user, displayName }) {
     if (!file) return;
     setPhotoError("");
     if (file.size > 15 * 1024 * 1024) {
-      setPhotoError("Rasm hajmi 15 MB dan oshmasligi kerak.");
+      setPhotoError(t("account.profile.photoTooBig"));
       return;
     }
     setPhotoBusy(true);
     try {
       await uploadAvatar(await compressAvatar(file));
     } catch (err) {
-      setPhotoError(err.message || "Rasmni yuklab bo'lmadi.");
+      setPhotoError(err.message || t("account.profile.uploadFailed"));
     } finally {
       setPhotoBusy(false);
     }
@@ -166,7 +169,7 @@ function ProfileSection({ user, displayName }) {
     try {
       await removeAvatar();
     } catch (err) {
-      setPhotoError(err.message || "Rasmni o'chirib bo'lmadi.");
+      setPhotoError(err.message || t("account.profile.removeFailed"));
     } finally {
       setPhotoBusy(false);
     }
@@ -174,7 +177,7 @@ function ProfileSection({ user, displayName }) {
 
   return (
     <Card as="form" id="profil" onSubmit={handleNameSubmit} className="scroll-mt-6">
-      <CardHeader title="Profil" subtitle="Ismingiz va rasmingiz reyting va natijalarda ko'rinadi." />
+      <CardHeader title={t("account.profile.title")} subtitle={t("account.profile.subtitle")} />
       <div className="space-y-5 p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative w-fit">
@@ -183,22 +186,22 @@ function ProfileSection({ user, displayName }) {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={photoBusy}
-              aria-label="Rasm yuklash"
+              aria-label={t("account.profile.uploadPhoto")}
               className="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-[#087fd1] text-white transition hover:bg-[#066fb8] disabled:opacity-60"
             >
               <LuCamera size={15} />
             </button>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#12213D]">Profil rasmi</p>
-            <p className="mt-0.5 text-[13px] text-[#12213D]/50">JPG, PNG yoki WEBP. Kvadrat shaklda kesiladi.</p>
+            <p className="text-sm font-semibold text-[#12213D]">{t("account.profile.photo")}</p>
+            <p className="mt-0.5 text-[13px] text-[#12213D]/50">{t("account.profile.photoHint")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={photoBusy}>
-                <LuCamera size={14} /> {photoBusy ? "Yuklanmoqda..." : user.avatarUrl ? "Almashtirish" : "Rasm yuklash"}
+                <LuCamera size={14} /> {photoBusy ? t("account.profile.uploading") : user.avatarUrl ? t("account.profile.replace") : t("account.profile.uploadPhoto")}
               </Button>
               {user.avatarUrl && (
                 <Button type="button" size="sm" variant="ghost" onClick={handleRemove} disabled={photoBusy}>
-                  <LuTrash2 size={14} /> O'chirish
+                  <LuTrash2 size={14} /> {t("account.profile.remove")}
                 </Button>
               )}
             </div>
@@ -210,10 +213,10 @@ function ProfileSection({ user, displayName }) {
         <div className="h-px bg-[#12213D]/[0.06]" />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="To'liq ism">
+          <Field label={t("account.profile.fullName")}>
             <input type="text" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </Field>
-          <Field label="Email" hint="Email manzilni o'zgartirib bo'lmaydi.">
+          <Field label={t("account.profile.email")} hint={t("account.profile.emailHint")}>
             <div className="relative">
               <LuMail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#12213D]/30" />
               <input type="email" value={user.email || ""} disabled className={`${inputClass} cursor-not-allowed pl-10`} />
@@ -221,17 +224,27 @@ function ProfileSection({ user, displayName }) {
           </Field>
         </div>
         {nameError && <p className="text-sm text-red-600">{nameError}</p>}
+
+        <div className="h-px bg-[#12213D]/[0.06]" />
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#12213D]">{t("account.profile.language")}</p>
+            <p className="mt-0.5 text-[13px] text-[#12213D]/50">{t("account.profile.languageHint")}</p>
+          </div>
+          <LanguageSwitch />
+        </div>
       </div>
       <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
         <Button type="submit" disabled={nameSaving || name.trim() === (user.displayName || "")}>
           {nameSaved ? (
             <>
-              <LuCheck size={16} /> Saqlandi
+              <LuCheck size={16} /> {t("account.profile.saved")}
             </>
           ) : nameSaving ? (
-            "Saqlanmoqda..."
+            t("account.profile.saving")
           ) : (
-            "Saqlash"
+            t("account.profile.save")
           )}
         </Button>
       </div>
@@ -244,6 +257,7 @@ function ProfileSection({ user, displayName }) {
 // ------------------------------------------------------------------
 function SecuritySection({ user }) {
   const { changePassword } = useAuth();
+  const { t } = useI18n();
   const hasPassword = user.hasPassword;
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -260,15 +274,15 @@ function SecuritySection({ user }) {
     setPwError("");
     setPwSaved(false);
     if (!pwCheck.valid) {
-      setPwError("Yangi parol xavfsizlik talablariga javob bermaydi.");
+      setPwError(t("account.security.weak"));
       return;
     }
     if (hasPassword && newPassword === currentPassword) {
-      setPwError("Yangi parol joriy paroldan farq qilishi kerak.");
+      setPwError(t("account.security.same"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwError("Yangi parollar mos kelmadi.");
+      setPwError(t("account.security.mismatch"));
       return;
     }
     setPwSaving(true);
@@ -280,7 +294,7 @@ function SecuritySection({ user }) {
       setConfirmPassword("");
       setTimeout(() => setPwSaved(false), 2500);
     } catch (err) {
-      setPwError(mapPasswordError(err.code));
+      setPwError(mapPasswordError(err.code) || err.message || translate("common.error"));
     } finally {
       setPwSaving(false);
     }
@@ -290,17 +304,13 @@ function SecuritySection({ user }) {
     <Card id="xavfsizlik" className="scroll-mt-6">
       <form onSubmit={handlePasswordSubmit}>
         <CardHeader
-          title={hasPassword ? "Parolni almashtirish" : "Parol o'rnatish"}
-          subtitle={
-            hasPassword
-              ? "Kamida 10 ta belgi: katta va kichik harf, raqam va maxsus belgi."
-              : "Siz Google orqali kirgansiz. Parol o'rnatsangiz, email va parol bilan ham kira olasiz."
-          }
+          title={hasPassword ? t("account.security.change") : t("account.security.set")}
+          subtitle={hasPassword ? t("account.security.changeHint") : t("account.security.setHint")}
           action={<LuKeyRound size={18} className="text-[#12213D]/30" />}
         />
         <div className="space-y-4 p-5 sm:p-6">
           {hasPassword && (
-            <Field label="Joriy parol">
+            <Field label={t("account.security.current")}>
               <input
                 type="password"
                 required
@@ -313,7 +323,7 @@ function SecuritySection({ user }) {
             </Field>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Yangi parol">
+            <Field label={t("account.security.new")}>
               <input
                 type="password"
                 required
@@ -321,10 +331,10 @@ function SecuritySection({ user }) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className={inputClass}
-                placeholder="Kamida 10 ta belgi"
+                placeholder={t("account.security.newPlaceholder")}
               />
             </Field>
-            <Field label="Yangi parolni tasdiqlang">
+            <Field label={t("account.security.confirm")}>
               <input
                 type="password"
                 required
@@ -343,14 +353,14 @@ function SecuritySection({ user }) {
           <Button type="submit" variant="dark" disabled={pwSaving || !pwCheck.valid || newPassword !== confirmPassword}>
             {pwSaved ? (
               <>
-                <LuCheck size={16} /> Saqlandi
+                <LuCheck size={16} /> {t("account.profile.saved")}
               </>
             ) : pwSaving ? (
-              "Saqlanmoqda..."
+              t("account.profile.saving")
             ) : hasPassword ? (
-              "Parolni yangilash"
+              t("account.security.update")
             ) : (
-              "Parol o'rnatish"
+              t("account.security.set")
             )}
           </Button>
         </div>
@@ -362,25 +372,18 @@ function SecuritySection({ user }) {
 // ------------------------------------------------------------------
 // Faol seanslar: qaysi qurilmalarda kirilgan, bittasini yoki hammasini tugatish
 // ------------------------------------------------------------------
-const METHOD_LABELS = {
-  password: "Parol bilan",
-  google: "Google orqali",
-  qr: "QR kod orqali",
-  reset: "Parol tiklangach",
-  legacy: "Avvalgi kirish",
-};
-
 function timeAgo(iso) {
   const sec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (sec < 5 * 60) return "hozir faol";
-  if (sec < 3600) return `${Math.floor(sec / 60)} daqiqa oldin`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} soat oldin`;
-  if (sec < 30 * 86400) return `${Math.floor(sec / 86400)} kun oldin`;
-  return new Date(iso).toLocaleDateString("uz-UZ");
+  if (sec < 5 * 60) return translate("account.sessions.activeNow");
+  if (sec < 3600) return translate("account.sessions.minutesAgo", { n: Math.floor(sec / 60) });
+  if (sec < 86400) return translate("account.sessions.hoursAgo", { n: Math.floor(sec / 3600) });
+  if (sec < 30 * 86400) return translate("account.sessions.daysAgo", { n: Math.floor(sec / 86400) });
+  return formatDate(iso, { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function SessionsSection({ user }) {
   const { listSessions, endSession, revokeOtherSessions } = useAuth();
+  const { t } = useI18n();
   const [sessions, setSessions] = useState(null);
   const [error, setError] = useState("");
   const [ending, setEnding] = useState(null); // seans id yoki "all"
@@ -393,7 +396,7 @@ function SessionsSection({ user }) {
     listRef
       .current()
       .then((items) => !cancelled && setSessions(items))
-      .catch((err) => !cancelled && setError(err.message || "Seanslarni yuklab bo'lmadi."));
+      .catch((err) => !cancelled && setError(err.message || translate("account.sessions.loadFailed")));
     return () => {
       cancelled = true;
     };
@@ -406,7 +409,7 @@ function SessionsSection({ user }) {
       await endSession(id);
       setSessions((list) => list.filter((s) => s.id !== id));
     } catch (err) {
-      setError(err.message || "Seansni tugatib bo'lmadi.");
+      setError(err.message || t("account.sessions.endFailed"));
     } finally {
       setEnding(null);
     }
@@ -419,7 +422,7 @@ function SessionsSection({ user }) {
       await revokeOtherSessions();
       setSessions((list) => list.filter((s) => s.current));
     } catch (err) {
-      setError(err.message || "Xatolik yuz berdi.");
+      setError(err.message || t("common.error"));
     } finally {
       setEnding(null);
     }
@@ -430,12 +433,12 @@ function SessionsSection({ user }) {
   return (
     <Card id="seanslar" className="scroll-mt-6">
       <CardHeader
-        title="Faol seanslar"
-        subtitle="Hisobingizga kirilgan qurilmalar. Tanimagan qurilmangizni darhol chiqarib yuboring."
+        title={t("account.sessions.title")}
+        subtitle={t("account.sessions.subtitle")}
         action={
           others > 0 && (
             <Button type="button" size="sm" variant="outline" onClick={handleEndAll} disabled={ending !== null}>
-              {ending === "all" ? "Chiqarilmoqda..." : "Hammasini tugatish"}
+              {ending === "all" ? t("account.sessions.endingAll") : t("account.sessions.endAll")}
             </Button>
           )
         }
@@ -456,10 +459,14 @@ function SessionsSection({ user }) {
               title={
                 <span className="flex flex-wrap items-center gap-2">
                   {s.browser} · {s.os}
-                  {s.current && <Badge tone="emerald">Shu qurilma</Badge>}
+                  {s.current && <Badge tone="emerald">{t("account.sessions.thisDevice")}</Badge>}
                 </span>
               }
-              text={[s.ip && `IP ${s.ip}`, s.current ? "hozir faol" : timeAgo(s.lastSeenAt), METHOD_LABELS[s.method]]
+              text={[
+                s.ip && `IP ${s.ip}`,
+                s.current ? t("account.sessions.activeNow") : timeAgo(s.lastSeenAt),
+                s.method && t(`account.sessions.methods.${s.method}`),
+              ]
                 .filter(Boolean)
                 .join(" · ")}
               action={
@@ -471,7 +478,7 @@ function SessionsSection({ user }) {
                     onClick={() => handleEnd(s.id)}
                     disabled={ending !== null}
                   >
-                    {ending === s.id ? "Tugatilmoqda..." : "Tugatish"}
+                    {ending === s.id ? t("account.sessions.ending") : t("account.sessions.end")}
                   </Button>
                 )
               }
@@ -480,7 +487,7 @@ function SessionsSection({ user }) {
         })}
         {sessions && others === 0 && (
           <p className="border-t border-[#12213D]/[0.06] px-5 py-4 text-[13px] text-[#12213D]/45 sm:px-6">
-            Boshqa qurilmalarda faol seans yo'q.
+            {t("account.sessions.none")}
           </p>
         )}
         {error && <p className="border-t border-[#12213D]/[0.06] px-5 py-4 text-sm text-red-600 sm:px-6">{error}</p>}
@@ -493,41 +500,42 @@ function SessionsSection({ user }) {
 // Ulangan hisoblar: Google va email/parol
 // ------------------------------------------------------------------
 function AccountsSection({ user }) {
+  const { t } = useI18n();
   const [error, setError] = useState("");
 
   return (
     <Card id="hisoblar" className="scroll-mt-6">
-      <CardHeader title="Ulangan hisoblar" subtitle="Hisobingizga qaysi usullar bilan kirish mumkin." />
+      <CardHeader title={t("account.accounts.title")} subtitle={t("account.accounts.subtitle")} />
       <div className="mt-4">
         <SettingRow
           icon={GoogleIcon}
           title="Google"
-          text={user.hasGoogle ? "Google hisobingiz orqali bir bosishda kirasiz." : "Google hisobini ulab, tezroq kiring."}
+          text={user.hasGoogle ? t("account.accounts.googleOn") : t("account.accounts.googleOff")}
           action={
             user.hasGoogle ? (
               <Badge tone="emerald" icon={LuCheck}>
-                Ulangan
+                {t("account.accounts.connected")}
               </Badge>
             ) : GOOGLE_CLIENT_ID ? (
               <LinkGoogleButton onError={setError} />
             ) : (
-              <Badge tone="ink">Ulanmagan</Badge>
+              <Badge tone="ink">{t("account.accounts.notConnected")}</Badge>
             )
           }
           error={error}
         />
         <SettingRow
           icon={LuMail}
-          title="Email va parol"
+          title={t("account.accounts.emailPassword")}
           text={user.email}
           action={
             user.hasPassword ? (
               <Badge tone="emerald" icon={LuCheck}>
-                O'rnatilgan
+                {t("account.accounts.passwordSet")}
               </Badge>
             ) : (
               <Button size="sm" variant="outline" type="button" onClick={() => scrollTo("xavfsizlik")}>
-                Parol o'rnatish
+                {t("account.accounts.setPassword")}
               </Button>
             )
           }
@@ -539,6 +547,7 @@ function AccountsSection({ user }) {
 
 function LinkGoogleButton({ onError }) {
   const { linkGoogle } = useAuth();
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
 
   const start = useGoogleLogin({
@@ -549,19 +558,19 @@ function LinkGoogleButton({ onError }) {
         await linkGoogle(tokenResponse.access_token);
         onError("");
       } catch (err) {
-        onError(err.message || "Google'ni ulab bo'lmadi.");
+        onError(err.message || t("account.accounts.linkFailed"));
       } finally {
         setBusy(false);
       }
     },
     onError: () => {
       setBusy(false);
-      onError("Google'ni ulab bo'lmadi. Qaytadan urinib ko'ring.");
+      onError(t("account.accounts.linkFailed"));
     },
     onNonOAuthError: (err) => {
       setBusy(false);
       if (err?.type === "popup_failed_to_open") {
-        onError("Brauzer Google oynasini ochishga ruxsat bermadi. Popup'larga ruxsat bering.");
+        onError(t("account.accounts.popupBlocked"));
       }
     },
   });
@@ -577,7 +586,7 @@ function LinkGoogleButton({ onError }) {
         start();
       }}
     >
-      <LuLink size={14} /> {busy ? "Ulanmoqda..." : "Ulash"}
+      <LuLink size={14} /> {busy ? t("account.accounts.linking") : t("account.accounts.link")}
     </Button>
   );
 }
@@ -587,27 +596,30 @@ function LinkGoogleButton({ onError }) {
 // ------------------------------------------------------------------
 function DangerSection({ user }) {
   const { resetProgress, deleteAccount } = useAuth();
+  const { t } = useI18n();
+  // Faqat brauzerda tekshiriladi — serverga AuthContext doim CONFIRM_WORD yuboradi.
+  const confirmWord = t("account.danger.confirmWord");
   const navigate = useNavigate();
   const [dialog, setDialog] = useState(null); // "reset" | "delete" | null
   const [resetDone, setResetDone] = useState(false);
 
   return (
     <Card id="xavfli-zona" className="scroll-mt-6 border-red-200">
-      <CardHeader title="Xavfli zona" subtitle="Bu amallarni ortga qaytarib bo'lmaydi." />
+      <CardHeader title={t("account.danger.title")} subtitle={t("account.danger.subtitle")} />
       <div className="mt-4">
         <SettingRow
           icon={LuRotateCcw}
           tone="red"
-          title="Progressni tiklash"
-          text="Barcha test natijalari, reytingdagi o'rningiz va Study Plan o'chiriladi. Hisobingiz qoladi."
+          title={t("account.danger.resetTitle")}
+          text={t("account.danger.resetText")}
           action={
             <Button type="button" size="sm" variant="danger" onClick={() => setDialog("reset")} disabled={resetDone}>
               {resetDone ? (
                 <>
-                  <LuCheck size={14} /> Tiklandi
+                  <LuCheck size={14} /> {t("account.danger.resetDone")}
                 </>
               ) : (
-                "Tiklash"
+                t("account.danger.reset")
               )}
             </Button>
           }
@@ -615,11 +627,11 @@ function DangerSection({ user }) {
         <SettingRow
           icon={LuTrash2}
           tone="red"
-          title="Hisobni o'chirish"
-          text="Hisobingiz va unga tegishli barcha ma'lumotlar butunlay o'chiriladi."
+          title={t("account.danger.deleteTitle")}
+          text={t("account.danger.deleteText")}
           action={
             <Button type="button" size="sm" variant="danger" onClick={() => setDialog("delete")}>
-              O'chirish
+              {t("account.danger.delete")}
             </Button>
           }
         />
@@ -627,10 +639,10 @@ function DangerSection({ user }) {
 
       <ConfirmDialog
         open={dialog === "reset"}
-        title="Progressni tiklaysizmi?"
-        description="Barcha test natijalaringiz, reytingdagi o'rningiz va Study Plan o'chiriladi. Buni ortga qaytarib bo'lmaydi."
-        confirmLabel="Progressni tiklash"
-        confirmWord={CONFIRM_WORD}
+        title={t("account.danger.resetConfirmTitle")}
+        description={t("account.danger.resetConfirmText")}
+        confirmLabel={t("account.danger.resetTitle")}
+        confirmWord={confirmWord}
         askPassword={user.hasPassword}
         onClose={() => setDialog(null)}
         onConfirm={async ({ password }) => {
@@ -641,10 +653,10 @@ function DangerSection({ user }) {
       />
       <ConfirmDialog
         open={dialog === "delete"}
-        title="Hisobni o'chirasizmi?"
-        description="Hisobingiz, natijalaringiz va barcha sozlamalaringiz butunlay o'chiriladi. Buni ortga qaytarib bo'lmaydi."
-        confirmLabel="Hisobni o'chirish"
-        confirmWord={CONFIRM_WORD}
+        title={t("account.danger.deleteConfirmTitle")}
+        description={t("account.danger.deleteConfirmText")}
+        confirmLabel={t("account.danger.deleteTitle")}
+        confirmWord={confirmWord}
         askPassword={user.hasPassword}
         onClose={() => setDialog(null)}
         onConfirm={async ({ password }) => {
@@ -702,13 +714,13 @@ function mapPasswordError(code) {
   switch (code) {
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Joriy parol noto'g'ri.";
+      return translate("account.security.wrongCurrent");
     case "auth/too-many-requests":
-      return "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.";
+      return translate("account.security.tooMany");
     case "auth/weak-password":
     case "auth/password-does-not-meet-requirements":
-      return "Yangi parol xavfsizlik talablariga javob bermaydi.";
+      return translate("account.security.weak");
     default:
-      return "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
+      return null;
   }
 }

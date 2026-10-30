@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../i18n";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
@@ -21,11 +22,12 @@ function GoogleIcon() {
 // tekshiradi va foydalanuvchini darhol tasdiqlangan holda yaratadi/topadi.
 // ------------------------------------------------------------------
 export default function GoogleButton(props) {
+  const { t } = useI18n();
   // Client ID sozlanmagan bo'lsa Google kutubxonasini umuman ishga
   // tushirmaymiz (aks holda u xato tashlab sahifani yiqitadi).
   if (!GOOGLE_CLIENT_ID) {
     const notConfigured = () =>
-      props.onError?.("Google orqali kirish hali sozlanmagan (VITE_GOOGLE_CLIENT_ID).");
+      props.onError?.(t("auth.google.notConfigured"));
     return <GoogleButtonView onClick={notConfigured} disabled={props.disabled} />;
   }
   return <ConfiguredGoogleButton {...props} />;
@@ -33,6 +35,7 @@ export default function GoogleButton(props) {
 
 function ConfiguredGoogleButton({ onSuccess, onError, disabled }) {
   const { googleLogin } = useAuth();
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
 
   const start = useGoogleLogin({
@@ -43,20 +46,20 @@ function ConfiguredGoogleButton({ onSuccess, onError, disabled }) {
         const user = await googleLogin(tokenResponse.access_token);
         onSuccess?.(user);
       } catch (err) {
-        onError?.(err.message || "Google orqali kirishda xatolik yuz berdi.");
+        onError?.(err.message || t("auth.google.failed"));
       } finally {
         setBusy(false);
       }
     },
     onError: () => {
       setBusy(false);
-      onError?.("Google orqali kirishda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      onError?.(t("auth.google.failed"));
     },
     // Foydalanuvchi popup'ni yopsa — xato emas, shunchaki bekor qilindi.
     onNonOAuthError: (err) => {
       setBusy(false);
       if (err?.type === "popup_failed_to_open") {
-        onError?.("Brauzer Google oynasini ochishga ruxsat bermadi. Popup'larga ruxsat bering.");
+        onError?.(t("auth.google.popupBlocked"));
       }
     },
   });
@@ -70,6 +73,7 @@ function ConfiguredGoogleButton({ onSuccess, onError, disabled }) {
 }
 
 function GoogleButtonView({ onClick, disabled, busy }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
@@ -78,7 +82,7 @@ function GoogleButtonView({ onClick, disabled, busy }) {
       className="pz-press flex h-[52px] w-full items-center justify-center gap-3 rounded-full border border-black/[0.12] bg-white px-4 text-[17px] font-semibold tracking-[-0.01em] text-[#1d1d1f] hover:border-black/20 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
-      {busy ? "Ulanmoqda..." : "Google orqali davom etish"}
+      {busy ? t("auth.google.connecting") : t("auth.google.continue")}
     </button>
   );
 }

@@ -15,7 +15,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { testsCatalog } from "../data/testsCatalog";
 import { loadLocalProgress, getCooldownRemainingMs } from "../utils/testProgress";
-import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, PageLoader } from "../components/ui";
+import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, ErrorState, PageLoader } from "../components/ui";
+import { translate, useI18n } from "../i18n";
 
 function formatRemaining(ms) {
   const totalSec = Math.ceil(ms / 1000);
@@ -30,15 +31,21 @@ function sessionMeta(session) {
   const totalQuestions = sections.reduce((sum, sec) => sum + (sec.questionCount || 0), 0);
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
-  const timeLabel = hours > 0 ? `${hours} soat${mins ? ` ${mins} daqiqa` : ""}` : `${mins} daqiqa`;
+  const h = translate("tests.hours", { h: hours });
+  const m = translate("tests.minutes", { m: mins });
+  const timeLabel = hours > 0 ? `${h}${mins ? ` ${m}` : ""}` : m;
   return { totalMinutes, totalQuestions, timeLabel };
 }
 
 export default function TestSelect() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [lockRemaining, setLockRemaining] = useState({});
-  const [openSessions, setOpenSessions] = useState([]);
+  // null — yuklanmoqda; xato bo'lsa "test yo'q" emas, xato ko'rsatiladi.
+  const [openSessions, setOpenSessions] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -48,17 +55,22 @@ export default function TestSelect() {
     // Faqat "doimiy ochiq" va yopilmagan testlar (admin uchun server hammasini
     // qaytaradi — shu yerda filtrlaymiz).
     let cancelled = false;
+    setLoadError(false);
     api
       .get("/sessions")
       .then(
         (list) =>
           !cancelled && setOpenSessions(list.filter((s) => s.accessType === "open" && s.status !== "closed"))
       )
-      .catch(() => !cancelled && setOpenSessions([]));
+      .catch(() => {
+        if (cancelled) return;
+        setOpenSessions([]);
+        setLoadError(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     if (!user) return;
@@ -71,7 +83,7 @@ export default function TestSelect() {
           if (remaining > 0) next[t.id] = remaining;
         }
       });
-      openSessions.forEach((s) => {
+      (openSessions || []).forEach((s) => {
         const saved = loadLocalProgress(user.uid, `session:${s.id}`);
         if (saved && saved.reason === "paused") {
           const remaining = getCooldownRemainingMs(saved.pausedAt);
@@ -85,7 +97,7 @@ export default function TestSelect() {
     return () => clearInterval(interval);
   }, [user, openSessions]);
 
-  if (loading || !user) return <PageLoader />;
+  if (loading || !user || openSessions === null) return <PageLoader />;
 
   // Statik va admin tomonidan qo'shilgan "doimiy ochiq" testlarni bitta
   // ro'yxatga birlashtiramiz — foydalanuvchi uchun ular bir xil toifa:
@@ -107,7 +119,7 @@ export default function TestSelect() {
         title: s.title,
         description:
           meta.totalQuestions > 0
-            ? `${meta.totalQuestions} ta savol · ${meta.timeLabel}`
+            ? t("tests.questionsTime", { n: meta.totalQuestions, time: meta.timeLabel })
             : "Reading&Writing + Math",
         go: () => navigate(`/session/${s.id}/test`),
         kind: "open",
@@ -118,30 +130,33 @@ export default function TestSelect() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Mock testlar"
+        eyebrow={t("tests.eyebrow")}
         icon={LuListChecks}
-        title="Qaysi testni topshirasiz?"
-        subtitle="Har bir test to'liq, moslashuvchan (adaptiv) Reading & Writing va Math bo'limlaridan iborat. Boshlagach vaqt hisobi yuritiladi."
+        title={t("tests.title")}
+        subtitle={t("tests.subtitle")}
         actions={
           <>
             <Badge tone="blue" icon={LuNotebookPen}>
-              {papers.length} ta test
+              {t("tests.count", { n: papers.length })}
             </Badge>
             {openSessions.length > 0 && (
               <Badge tone="emerald" icon={LuGlobe}>
-                {openSessions.length} ta doimiy ochiq
+                {t("tests.openCount", { n: openSessions.length })}
               </Badge>
             )}
           </>
         }
       />
 
-      {papers.length === 0 ? (
-        <EmptyState
-          icon={LuLayers}
-          title="Hozircha mock test mavjud emas"
-          text="Yangi to'liq mock testlar qo'shilishi bilan ular shu yerda paydo bo'ladi."
+      {loadError ? (
+        <ErrorState
+          onRetry={() => {
+            setOpenSessions(null);
+            setReloadKey((k) => k + 1);
+          }}
         />
+      ) : papers.length === 0 ? (
+        <EmptyState icon={LuLayers} title={t("tests.emptyTitle")} text={t("tests.emptyText")} />
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {papers.map((p) => {
@@ -156,12 +171,12 @@ export default function TestSelect() {
                   />
                   {locked ? (
                     <Badge tone="amber" icon={LuClock}>
-                      Pauzada
+                      {t("tests.paused")}
                     </Badge>
                   ) : p.kind === "open" ? (
-                    <Badge tone="emerald">Ochiq</Badge>
+                    <Badge tone="emerald">{t("tests.open")}</Badge>
                   ) : (
-                    <Badge tone="blue">Bluebook formati</Badge>
+                    <Badge tone="blue">{t("tests.bluebook")}</Badge>
                   )}
                 </div>
 
@@ -183,11 +198,11 @@ export default function TestSelect() {
                   {locked ? (
                     <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#12213D]/[0.04] px-3 text-center text-sm font-semibold text-[#12213D]/55">
                       <LuClock size={15} className="shrink-0" />
-                      {formatRemaining(lockRemaining[p.lockKey])} dan keyin davom ettirish mumkin
+                      {t("tests.resumeIn", { time: formatRemaining(lockRemaining[p.lockKey]) })}
                     </div>
                   ) : (
                     <Button className="w-full" onClick={p.go}>
-                      Boshlash <LuArrowRight size={17} />
+                      {t("tests.start")} <LuArrowRight size={17} />
                     </Button>
                   )}
                 </div>

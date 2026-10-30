@@ -1,5 +1,5 @@
 import { LuCheck, LuX } from "react-icons/lu";
-import { STRENGTH_LABELS } from "../utils/passwordPolicy";
+import { strengthLabel } from "../utils/passwordPolicy";
 
 const BAR_COLORS = ["bg-red-500", "bg-red-500", "bg-amber-500", "bg-emerald-500", "bg-emerald-600"];
 const TEXT_COLORS = ["text-red-600", "text-red-600", "text-amber-600", "text-emerald-600", "text-emerald-700"];
@@ -19,7 +19,7 @@ export default function PasswordStrength({ check, show }) {
             />
           ))}
         </div>
-        <span className={`text-[12px] font-semibold ${TEXT_COLORS[score]}`}>{STRENGTH_LABELS[score]}</span>
+        <span className={`text-[12px] font-semibold ${TEXT_COLORS[score]}`}>{strengthLabel(score)}</span>
       </div>
       <ul className="mt-2 grid gap-1 sm:grid-cols-2">
         {rules.map((r) => (

@@ -14,6 +14,7 @@ const en = {
     error: "Something went wrong. Please try again.",
     loadError: "Couldn't load the data. Check your internet connection and try again.",
     networkError: "Couldn't reach the server. Check your internet connection.",
+    scoreTrend: "Score trend",
   },
 
   proctor: {
@@ -34,7 +35,7 @@ const en = {
         { icon: "fullscreen", title: "Full-screen mode", text: "The test switches to full screen when it starts. If you leave full screen (Esc or any other way), the test ends immediately and is scored on the answers you have given so far." },
         { icon: "screenshot", title: "No screenshots", text: "Print Screen and Win+Shift+S are blocked and trigger a warning. Browsers can't fully block Cmd+Shift+3/4/5 on a Mac, but attempts are tracked." },
         { icon: "copy", title: "Copying and other windows", text: "Right-click, copy/paste and DevTools are disabled. Switching to another tab or window is tracked. After 3 warnings the test ends automatically." },
-        { icon: "exit", title: "Exit button", text: "If you can't continue, press \"Exit\" — your progress is saved, but you can only resume the test after 30 minutes." },
+        { icon: "exit", title: "Save and Exit", text: "If you can't continue, choose \"Save and Exit\" in the More (⋮) menu — your progress is saved, but you can only resume the test after 30 minutes." },
       ],
       agree: "I have read the rules above and agree to them.",
       fullscreenError: "Couldn't switch to full screen. Check the full-screen permission in your browser and try again.",
@@ -90,6 +91,17 @@ const en = {
     preparing: "Preparing the questions...",
     contentError: "Couldn't load the questions. Check your internet connection and reload the page.",
     joinErrorHint: "Enter the code again on the \"Mock with key\" page.",
+  },
+
+  password: {
+    length: "At least {n} characters",
+    upper: "An uppercase letter (A–Z)",
+    lower: "A lowercase letter (a–z)",
+    digit: "A number (0–9)",
+    symbol: "A symbol (!@#$% ...)",
+    common: "Not a common password or simple sequence",
+    personal: "Doesn't contain your email or name",
+    strength: ["Very weak", "Weak", "Fair", "Good", "Strong"],
   },
 
   practiceSet: {

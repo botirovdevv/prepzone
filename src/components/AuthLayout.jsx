@@ -1,23 +1,25 @@
 import { Link } from "react-router-dom";
+import { useI18n } from "../i18n";
 
 const logo = "/Logo.png";
 
 // Login/Register/ForgotPassword va huquqiy sahifalar uchun umumiy footer.
 export function AuthFooter() {
+  const { t } = useI18n();
   return (
     <footer className="relative z-10 flex flex-col items-center gap-2 py-6 text-center text-xs text-[#566176]">
       <nav className="flex gap-4">
         <Link to="/terms" className="hover:text-[#111827]">
-          Foydalanish shartlari
+          {t("legal.footer.terms")}
         </Link>
         <Link to="/privacy" className="hover:text-[#111827]">
-          Maxfiylik siyosati
+          {t("legal.footer.privacy")}
         </Link>
         <Link to="/contact" className="hover:text-[#111827]">
-          Aloqa
+          {t("legal.footer.contact")}
         </Link>
       </nav>
-      <p>&copy; {new Date().getFullYear()} Prepzone. Barcha huquqlar himoyalangan.</p>
+      <p>&copy; {new Date().getFullYear()} Prepzone. {t("legal.footer.rights")}</p>
     </footer>
   );
 }

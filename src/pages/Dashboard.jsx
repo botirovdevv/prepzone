@@ -20,32 +20,34 @@ import {
   LuClock,
 } from "react-icons/lu";
 import TestCountdown from "../components/TestCountdown";
-import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton } from "../components/ui";
+import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton, ErrorState } from "../components/ui";
+import { useI18n } from "../i18n";
 
-function greeting() {
+function greetingKey() {
   const h = new Date().getHours();
-  if (h < 6) return "Xayrli tun";
-  if (h < 12) return "Xayrli tong";
-  if (h < 17) return "Xayrli kun";
-  return "Xayrli kech";
-}
-
-function formatDate(ts) {
-  const d = toDate(ts);
-  if (!d) return "—";
-  return d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" });
+  if (h < 6) return "night";
+  if (h < 12) return "morning";
+  if (h < 17) return "day";
+  return "evening";
 }
 
 const QUICK_LINKS = [
-  { to: "/sat/select", icon: LuNotebookPen, title: "Mock testlar", text: "To'liq adaptiv SAT", tone: "blue" },
-  { to: "/practice", icon: LuLayers, title: "Amaliyot", text: "Vaqtsiz, darhol javob", tone: "emerald" },
-  { to: "/sat/history", icon: LuHistory, title: "Natijalarim", text: "Barcha urinishlar", tone: "ink" },
-  { to: "/leaderboard", icon: LuTrophy, title: "Reyting", text: "TOP-15 natija", tone: "amber" },
+  { to: "/sat/select", icon: LuNotebookPen, tone: "blue" },
+  { to: "/practice", icon: LuLayers, tone: "emerald" },
+  { to: "/sat/history", icon: LuHistory, tone: "ink" },
+  { to: "/leaderboard", icon: LuTrophy, tone: "amber" },
 ];
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { t, tr, fmtDate } = useI18n();
+  const formatDate = (ts) => {
+    const d = toDate(ts);
+    return d ? fmtDate(d, { day: "2-digit", month: "short" }) : "—";
+  };
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const navigate = useNavigate();
   // null — yuklanmoqda, [] — natija yo'q
   const [attempts, setAttempts] = useState(null);
@@ -53,15 +55,19 @@ export default function Dashboard() {
   const [totalCount, setTotalCount] = useState(null);
   const [code, setCode] = useState("");
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Foydalanuvchi";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || t("nav.userFallback");
 
   useEffect(() => {
     if (!user) return;
+    setLoadError(false);
     // Faqat oxirgi 12 ta natija (trend va ro'yxat uchun) + jami soni.
     api
       .get("/results?limit=12")
       .then(({ items }) => setAttempts(items))
-      .catch(() => setAttempts([]));
+      .catch(() => {
+        setAttempts([]);
+        setLoadError(true);
+      });
     api
       .get("/results/count")
       .then(({ count }) => setTotalCount(count))
@@ -71,7 +77,7 @@ export default function Dashboard() {
       .get("/leaderboard/me")
       .then((entry) => setBestScore(entry ? entry.bestScore : null))
       .catch(() => setBestScore(null));
-  }, [user]);
+  }, [user, reloadKey]);
 
   const handleJoin = (e) => {
     e.preventDefault();
@@ -90,28 +96,38 @@ export default function Dashboard() {
   return (
     <Page>
       <PageHeader
-        eyebrow={greeting()}
+        eyebrow={t(`dashboard.greet.${greetingKey()}`)}
         title={
           <span className="flex items-center gap-3">
-            Salom, {displayName}
+            {t("dashboard.hello", { name: displayName })}
             <img src={HandIcon} alt="" className="h-8 w-8 object-contain" />
           </span>
         }
-        subtitle="Bugun qayerdan davom etamiz? Mock test yechib, natijangizni kuzatib boring."
+        subtitle={t("dashboard.subtitle")}
         actions={
           <Button to="/sat/select" size="lg">
-            Mock testni boshlash <LuArrowRight size={18} />
+            {t("dashboard.startMock")} <LuArrowRight size={18} />
           </Button>
         }
       />
 
       <TestCountdown />
 
+      {loadError && (
+        <ErrorState
+          className="mb-6"
+          onRetry={() => {
+            setAttempts(null);
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      )}
+
       {/* Statistika */}
       <section className="grid gap-4 sm:grid-cols-3 mb-6">
-        <StatTile icon={LuChartLine} label="Oxirgi ball" value={recent?.total} hint={recent ? formatDate(recent.createdAt) : "Hali test yo'q"} />
-        <StatTile icon={LuTrophy} tone="amber" label="Eng yaxshi" value={best} hint="400–1600 shkala" />
-        <StatTile icon={LuClipboardCheck} tone="emerald" label="Topshirilgan" value={totalCount ?? (attempts ? attempts.length : null)} hint="to'liq mock test" />
+        <StatTile icon={LuChartLine} label={t("dashboard.lastScore")} value={recent?.total} hint={recent ? formatDate(recent.createdAt) : t("dashboard.noTestYet")} />
+        <StatTile icon={LuTrophy} tone="amber" label={t("dashboard.best")} value={best} hint={t("dashboard.scale")} />
+        <StatTile icon={LuClipboardCheck} tone="emerald" label={t("dashboard.taken")} value={totalCount ?? (attempts ? attempts.length : null)} hint={t("dashboard.fullMocks")} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
@@ -119,11 +135,11 @@ export default function Dashboard() {
         <div className="space-y-6 lg:col-span-2">
           <Card>
             <CardHeader
-              title="Ball dinamikasi"
-              subtitle="Oxirgi 10 ta urinish"
+              title={t("dashboard.trendTitle")}
+              subtitle={t("dashboard.trendSubtitle")}
               action={
                 <Link to="/sat/history" className="flex items-center gap-1 text-sm font-semibold text-[#087fd1] hover:text-[#066fb8]">
-                  Hammasi <LuArrowUpRight size={15} />
+                  {t("dashboard.all")} <LuArrowUpRight size={15} />
                 </Link>
               }
             />
@@ -134,15 +150,15 @@ export default function Dashboard() {
                 <ScoreTrend scores={trend} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <p className="font-semibold text-[#12213D]/70">Hali ma'lumot yo'q</p>
-                  <p className="mt-1 text-sm text-[#12213D]/45">Birinchi mock testni yeching — grafik shu yerda paydo bo'ladi.</p>
+                  <p className="font-semibold text-[#12213D]/70">{t("dashboard.noData")}</p>
+                  <p className="mt-1 text-sm text-[#12213D]/45">{t("dashboard.noDataHint")}</p>
                 </div>
               )}
             </div>
           </Card>
 
           <Card>
-            <CardHeader title="Oxirgi natijalar" />
+            <CardHeader title={t("dashboard.recent")} />
             <div className="mt-3 divide-y divide-[#12213D]/[0.06]">
               {loadingAttempts ? (
                 <div className="space-y-2 px-5 pb-5">
@@ -150,7 +166,7 @@ export default function Dashboard() {
                   <Skeleton className="h-12" />
                 </div>
               ) : attempts.length === 0 ? (
-                <p className="px-6 pb-6 text-sm text-[#12213D]/50">Hali birorta test topshirmagansiz.</p>
+                <p className="px-6 pb-6 text-sm text-[#12213D]/50">{t("dashboard.noAttempts")}</p>
               ) : (
                 attempts.slice(0, 4).map((a) => (
                   <Link
@@ -162,7 +178,7 @@ export default function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-[#12213D]">
                         {a.sessionTitle || getSatTestTitle(a.testId)}
-                        {a.terminated && <span className="font-normal text-red-500"> · to'xtatilgan</span>}
+                        {a.terminated && <span className="font-normal text-red-500"> · {t("dashboard.stopped")}</span>}
                       </p>
                       <p className="text-xs text-[#12213D]/45">{formatDate(a.createdAt)}</p>
                     </div>
@@ -182,28 +198,26 @@ export default function Dashboard() {
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#087fd1]/25 blur-2xl" />
             <div className="relative">
               <IconTile icon={LuKeyRound} tone="solid" />
-              <h2 className="mt-4 font-display text-lg font-bold">Kirish kodi bilan test</h2>
-              <p className="mt-1 text-sm text-white/55">
-                O'qituvchingiz bergan 6 xonali kodni kiriting.
-              </p>
+              <h2 className="mt-4 font-display text-lg font-bold">{t("dashboard.codeTitle")}</h2>
+              <p className="mt-1 text-sm text-white/55">{t("dashboard.codeText")}</p>
               <form onSubmit={handleJoin} className="mt-5 space-y-2.5">
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
                   placeholder="000000"
-                  aria-label="Kirish kodi"
+                  aria-label={t("dashboard.codeLabel")}
                   className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.07] px-4 text-center font-mono text-xl font-black tracking-[0.4em] text-white outline-none transition placeholder:text-white/25 focus:border-[#087fd1] focus:bg-white/10"
                 />
                 <Button type="submit" className="w-full" disabled={code.length !== 6}>
-                  Davom etish <LuArrowRight size={17} />
+                  {t("dashboard.continue")} <LuArrowRight size={17} />
                 </Button>
               </form>
             </div>
           </div>
 
           <Card className="p-2">
-            {QUICK_LINKS.map((l) => (
+            {QUICK_LINKS.map((link, i) => ({ ...link, ...tr("dashboard.quick")[i] })).map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
@@ -224,8 +238,8 @@ export default function Dashboard() {
               >
                 <IconTile icon={LuShieldCheck} tone="dark" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#12213D]">Admin panel</p>
-                  <p className="text-xs text-[#12213D]/45">Testlar va to'plamlarni boshqarish</p>
+                  <p className="text-sm font-semibold text-[#12213D]">{t("dashboard.adminTitle")}</p>
+                  <p className="text-xs text-[#12213D]/45">{t("dashboard.adminText")}</p>
                 </div>
                 <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
               </Link>

@@ -1,3 +1,4 @@
+import { translate } from "../i18n";
 // ------------------------------------------------------------------
 // Parol siyosati (Register va Sozlamalar sahifalari uchun).
 //
@@ -7,7 +8,7 @@
 // keyin almashtirib bo'lmay qoladi.
 // ------------------------------------------------------------------
 
-export const MIN_PASSWORD_LENGTH = 8;
+export const MIN_PASSWORD_LENGTH = 10;
 
 // Eng ko'p tarqalgan / sizib chiqqan parollar (kichik harflarda).
 const COMMON = new Set(
@@ -53,14 +54,14 @@ export function checkPassword(password, context = {}) {
   // "Tashkent#2026" -> "tashkent": keng tarqalgan so'z + raqam/belgi qo'shilgani yetarli emas.
   const letters = lower.replace(/[^a-z]/g, "");
   const rules = [
-    { id: "length", label: `Kamida ${MIN_PASSWORD_LENGTH} ta belgi`, ok: pw.length >= MIN_PASSWORD_LENGTH },
-    { id: "upper", label: "Katta harf (A–Z)", ok: /[A-Z]/.test(pw) },
-    { id: "lower", label: "Kichik harf (a–z)", ok: /[a-z]/.test(pw) },
-    { id: "digit", label: "Raqam (0–9)", ok: /\d/.test(pw) },
-    { id: "symbol", label: "Maxsus belgi (!@#$% ...)", ok: /[^A-Za-z0-9\s]/.test(pw) },
+    { id: "length", label: translate("password.length", { n: MIN_PASSWORD_LENGTH }), ok: pw.length >= MIN_PASSWORD_LENGTH },
+    { id: "upper", label: translate("password.upper"), ok: /[A-Z]/.test(pw) },
+    { id: "lower", label: translate("password.lower"), ok: /[a-z]/.test(pw) },
+    { id: "digit", label: translate("password.digit"), ok: /\d/.test(pw) },
+    { id: "symbol", label: translate("password.symbol"), ok: /[^A-Za-z0-9\s]/.test(pw) },
     {
       id: "common",
-      label: "Keng tarqalgan yoki oddiy ketma-ketlik emas",
+      label: translate("password.common"),
       ok:
         pw.length > 0 &&
         !COMMON.has(lower) &&
@@ -71,7 +72,7 @@ export function checkPassword(password, context = {}) {
     },
     {
       id: "personal",
-      label: "Email yoki ismingizni o'z ichiga olmaydi",
+      label: translate("password.personal"),
       ok: pw.length > 0 && !personalTokens(context).some((t) => lower.includes(t)),
     },
   ];
@@ -87,4 +88,4 @@ export function checkPassword(password, context = {}) {
   return { valid, rules, score };
 }
 
-export const STRENGTH_LABELS = ["Juda zaif", "Zaif", "O'rtacha", "Yaxshi", "Kuchli"];
+export const strengthLabel = (score) => translate("password.strength")[score];

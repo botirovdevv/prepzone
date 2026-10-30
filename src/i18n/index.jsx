@@ -14,9 +14,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import uz from "./uz";
 import en from "./en";
+import modules from "./messages";
 
 export const LANGS = ["uz", "en"];
-const DICTS = { uz, en };
+// Asosiy lug'at (uz.js / en.js) + sahifa bo'yicha modullar
+// (messages/*.js — har birida { uz: {...}, en: {...} }).
+const DICTS = {
+  uz: Object.assign({}, uz, ...modules.map((m) => m.uz)),
+  en: Object.assign({}, en, ...modules.map((m) => m.en)),
+};
 const STORAGE_KEY = "pz-lang";
 const LOCALES = { uz: "uz-UZ", en: "en-US" };
 

@@ -1,0 +1,131 @@
+// 404, xato oynasi, tasdiqlash dialogi, QR tasdiqlash, onboarding.
+export default {
+  uz: {
+    notFound: {
+      title: "Sahifa topilmadi",
+      text: "Bunday sahifa mavjud emas yoki ko'chirilgan. Manzilni tekshiring yoki bosh sahifaga qayting.",
+      home: "Bosh sahifa",
+    },
+    crash: {
+      updatedTitle: "Sayt yangilandi",
+      updatedText: "Saytning yangi versiyasi chiqdi. Davom etish uchun sahifani yangilang.",
+      title: "Nimadir noto'g'ri ketdi",
+      text: "Kutilmagan xatolik yuz berdi. Sahifani yangilab ko'ring — muammo takrorlansa, biz bilan bog'laning.",
+      reload: "Sahifani yangilash",
+      home: "Bosh sahifa",
+    },
+    confirm: {
+      confirm: "Tasdiqlash",
+      typeWord: "Tasdiqlash uchun {word} deb yozing",
+      currentPassword: "Joriy parol",
+      working: "Bajarilmoqda...",
+    },
+    qrApprove: {
+      eyebrow: "QR orqali kirish",
+      askTitle: "Kompyuterga kirasizmi?",
+      title: "QR orqali kirish",
+      back: "Bosh sahifaga qaytish",
+      unknown: "noma'lum",
+      requestedAt: "{time} da so'ralgan",
+      warning:
+        "Faqat hozir o'zingiz oldida turgan kompyuterdagi QR kodni tasdiqlang. Kimdir sizga QR yuborgan bo'lsa — rad eting.",
+      approving: "Tasdiqlanmoqda...",
+      yes: "Ha, kirish",
+      no: "Yo'q, bu men emas",
+      results: {
+        approved: {
+          title: "Kompyuterda kirildi",
+          text: "Kompyuter ekranini tekshiring. Bu seansni istalgan vaqtda Sozlamalar → Faol seanslar bo'limidan tugatishingiz mumkin.",
+        },
+        denied: { title: "So'rov rad etildi", text: "Kompyuter hisobingizga kira olmaydi." },
+        expired: { title: "QR kod eskirgan", text: "Kompyuterda yangi QR kodni oching va qaytadan skanerlang." },
+        invalid: {
+          title: "QR kod yaroqsiz",
+          text: "Havola noto'g'ri yoki eskirgan. Kompyuterdagi QR kodni qaytadan skanerlang.",
+        },
+      },
+    },
+    onboarding: {
+      step: "{n}/2-savol",
+      sourceTitleNamed: "{name}, bizni qayerdan topdingiz?",
+      sourceTitle: "Bizni qayerdan topdingiz?",
+      sourceText: "Bu bizga ko'proq o'quvchilarga yetib borishga yordam beradi.",
+      sources: { instagram: "Instagram", telegram: "Telegram", friends: "Do'stlarim", other: "Boshqa" },
+      otherPlaceholder: "Qayerdan? (ixtiyoriy)",
+      next: "Keyingisi",
+      targetTitle: "Maqsad SAT ballingiz qancha?",
+      targetText:
+        "Bluebook formatidagi adaptiv mock testlar 400–1600 ball oralig'ida baholanadi. Maqsadingizni keyin Study Plan'da o'zgartirishingiz mumkin.",
+      targetLabel: "Maqsad ball ({min}–{max})",
+      targetInvalid: "400–1600 oralig'ida, 10 ga karrali son kiriting.",
+      saveError: "Saqlab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.",
+      back: "Orqaga",
+      saving: "Saqlanmoqda...",
+      start: "Boshlash",
+    },
+  },
+  en: {
+    notFound: {
+      title: "Page not found",
+      text: "This page doesn't exist or has moved. Check the address or go back to the home page.",
+      home: "Home",
+    },
+    crash: {
+      updatedTitle: "The site has been updated",
+      updatedText: "A new version of the site is out. Reload the page to continue.",
+      title: "Something went wrong",
+      text: "An unexpected error occurred. Try reloading the page — if it keeps happening, contact us.",
+      reload: "Reload page",
+      home: "Home",
+    },
+    confirm: {
+      confirm: "Confirm",
+      typeWord: "Type {word} to confirm",
+      currentPassword: "Current password",
+      working: "Working...",
+    },
+    qrApprove: {
+      eyebrow: "QR login",
+      askTitle: "Log in on the computer?",
+      title: "QR login",
+      back: "Back to the dashboard",
+      unknown: "unknown",
+      requestedAt: "requested at {time}",
+      warning:
+        "Only confirm the QR code on the computer right in front of you. If someone sent you a QR code, decline it.",
+      approving: "Confirming...",
+      yes: "Yes, log in",
+      no: "No, this isn't me",
+      results: {
+        approved: {
+          title: "Logged in on the computer",
+          text: "Check the computer screen. You can end this session at any time in Settings → Active sessions.",
+        },
+        denied: { title: "Request declined", text: "The computer can't access your account." },
+        expired: { title: "The QR code has expired", text: "Open a new QR code on the computer and scan it again." },
+        invalid: {
+          title: "Invalid QR code",
+          text: "The link is wrong or expired. Scan the QR code on your computer again.",
+        },
+      },
+    },
+    onboarding: {
+      step: "Question {n}/2",
+      sourceTitleNamed: "{name}, how did you hear about us?",
+      sourceTitle: "How did you hear about us?",
+      sourceText: "This helps us reach more students.",
+      sources: { instagram: "Instagram", telegram: "Telegram", friends: "Friends", other: "Other" },
+      otherPlaceholder: "Where? (optional)",
+      next: "Next",
+      targetTitle: "What's your target SAT score?",
+      targetText:
+        "Adaptive mock tests in the Bluebook format are scored from 400 to 1600. You can change your goal later in the Study Plan.",
+      targetLabel: "Target score ({min}–{max})",
+      targetInvalid: "Enter a number from 400 to 1600 that is a multiple of 10.",
+      saveError: "Couldn't save. Check your internet connection and try again.",
+      back: "Back",
+      saving: "Saving...",
+      start: "Start",
+    },
+  },
+};

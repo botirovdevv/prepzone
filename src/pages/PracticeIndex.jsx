@@ -2,38 +2,44 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { LuBookOpen, LuArrowRight, LuLayers, LuSparkles } from "react-icons/lu";
-import { Page, PageHeader, Card, Badge, EmptyState, Skeleton } from "../components/ui";
+import { Page, PageHeader, Card, Badge, EmptyState, ErrorState, Skeleton } from "../components/ui";
+import { useI18n } from "../i18n";
 
 export default function PracticeIndex() {
+  const { t } = useI18n();
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     // Yengil ro'yxat (savollarsiz) — to'liq to'plam faqat ochilganda yuklanadi.
     let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
     api
       .get("/question-sets")
       .then((list) => !cancelled && setSets(list))
-      .catch((err) => console.error("To'plamlarni yuklashda xatolik:", err))
+      .catch(() => !cancelled && setLoadError(true))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   const countQuestions = (s) => s.questionCount ?? 0;
 
   return (
     <Page width="narrow">
       <PageHeader
-        eyebrow="Amaliyot markazi"
+        eyebrow={t("practiceIndex.eyebrow")}
         icon={LuSparkles}
-        title="Savollar to'plamlari"
-        subtitle="Vaqt cheklovisiz mashq qiling — javob belgilashingiz bilan to'g'ri yoki noto'g'riligini darhol ko'rasiz."
+        title={t("practiceIndex.title")}
+        subtitle={t("practiceIndex.subtitle")}
         actions={
-          !loading && (
+          !loading && !loadError && (
             <Badge tone="blue" icon={LuLayers}>
-              {sets.length} ta to'plam
+              {t("practiceIndex.count", { n: sets.length })}
             </Badge>
           )
         }
@@ -45,12 +51,10 @@ export default function PracticeIndex() {
             <Skeleton key={i} className="h-[76px]" />
           ))}
         </div>
+      ) : loadError ? (
+        <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
       ) : sets.length === 0 ? (
-        <EmptyState
-          icon={LuLayers}
-          title="Hozircha to'plamlar mavjud emas"
-          text="Yangi amaliyot to'plamlari qo'shilishi bilan shu yerda paydo bo'ladi."
-        />
+        <EmptyState icon={LuLayers} title={t("practiceIndex.emptyTitle")} text={t("practiceIndex.emptyText")} />
       ) : (
         <Card className="overflow-hidden">
           <div className="grid divide-y divide-[#12213D]/[0.06]">
@@ -70,7 +74,7 @@ export default function PracticeIndex() {
                   )}
                 </div>
                 <Badge tone="blue" icon={LuBookOpen} className="hidden sm:inline-flex">
-                  {countQuestions(s)} ta savol
+                  {t("practiceIndex.questions", { n: countQuestions(s) })}
                 </Badge>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/25 transition group-hover:bg-[#087fd1] group-hover:text-white">
                   <LuArrowRight size={17} />

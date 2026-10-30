@@ -1,10 +1,12 @@
 // Auth formalarining kichik umumiy bo'laklari.
+import { useI18n } from "../../i18n";
 
-export function OrDivider({ children = "yoki" }) {
+export function OrDivider({ children }) {
+  const { t } = useI18n();
   return (
     <div className="my-5 flex items-center gap-3 text-[13px] text-[#86868b]" role="separator">
       <span className="h-px flex-1 bg-black/[0.08]" />
-      {children}
+      {children || t("auth.or")}
       <span className="h-px flex-1 bg-black/[0.08]" />
     </div>
   );

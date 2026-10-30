@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuPen, LuHighlighter, LuEraser, LuUndo2, LuTrash2, LuDownload, LuGrid3X3 } from "react-icons/lu";
 import { getSocket } from "../../api/socket";
+import { useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // Umumiy doska (Study Room). Chiziqlar Socket.IO orqali sinxronlanadi
@@ -85,6 +86,7 @@ function ToolButton({ active, onClick, title, children, disabled }) {
 }
 
 export default function Whiteboard({ code }) {
+  const { t } = useI18n();
   const wrapRef = useRef(null);
   const baseRef = useRef(null);
   const liveRef = useRef(null);
@@ -344,7 +346,7 @@ export default function Whiteboard({ code }) {
   };
 
   const clearAll = () => {
-    if (!window.confirm("Doskani ikkalangiz uchun ham tozalaymizmi?")) return;
+    if (!window.confirm(t("studyRoom.whiteboard.clearConfirm"))) return;
     strokesRef.current.clear();
     liveIdsRef.current.clear();
     myStackRef.current = [];
@@ -387,13 +389,13 @@ export default function Whiteboard({ code }) {
     <div className="flex h-full min-h-0 flex-col">
       {/* Asboblar paneli */}
       <div className="flex flex-wrap items-center gap-1 border-b border-[#12213D]/[0.07] bg-white px-2 py-1.5">
-        <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} title="Qalam">
+        <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} title={t("studyRoom.whiteboard.pen")}>
           <LuPen size={17} />
         </ToolButton>
-        <ToolButton active={tool === "highlighter"} onClick={() => setTool("highlighter")} title="Marker">
+        <ToolButton active={tool === "highlighter"} onClick={() => setTool("highlighter")} title={t("studyRoom.whiteboard.marker")}>
           <LuHighlighter size={17} />
         </ToolButton>
-        <ToolButton active={tool === "eraser"} onClick={() => setTool("eraser")} title="O'chirg'ich">
+        <ToolButton active={tool === "eraser"} onClick={() => setTool("eraser")} title={t("studyRoom.whiteboard.eraser")}>
           <LuEraser size={17} />
         </ToolButton>
 
@@ -403,7 +405,7 @@ export default function Whiteboard({ code }) {
           <button
             key={c}
             type="button"
-            aria-label={`Rang ${c}`}
+            aria-label={t("studyRoom.whiteboard.color", { c })}
             onClick={() => {
               setColor(c);
               if (tool === "eraser") setTool("pen");
@@ -418,23 +420,23 @@ export default function Whiteboard({ code }) {
         <span className="mx-1 h-6 w-px bg-[#12213D]/10" />
 
         {SIZES.map((_, i) => (
-          <ToolButton key={i} active={sizeIdx === i} onClick={() => setSizeIdx(i)} title={`Qalinlik ${i + 1}`}>
+          <ToolButton key={i} active={sizeIdx === i} onClick={() => setSizeIdx(i)} title={t("studyRoom.whiteboard.size", { n: i + 1 })}>
             <span className="rounded-full bg-current" style={{ width: 4 + i * 4, height: 4 + i * 4 }} />
           </ToolButton>
         ))}
 
         <div className="ml-auto flex items-center gap-1">
-          {!connected && <span className="mr-1 text-[11px] font-semibold text-amber-600">Ulanmoqda…</span>}
-          <ToolButton active={grid} onClick={() => setGrid((g) => !g)} title="To'r (katak)">
+          {!connected && <span className="mr-1 text-[11px] font-semibold text-amber-600">{t("studyRoom.whiteboard.connecting")}</span>}
+          <ToolButton active={grid} onClick={() => setGrid((g) => !g)} title={t("studyRoom.whiteboard.grid")}>
             <LuGrid3X3 size={17} />
           </ToolButton>
-          <ToolButton onClick={undo} disabled={!canUndo} title="Bekor qilish (Ctrl+Z)">
+          <ToolButton onClick={undo} disabled={!canUndo} title={t("studyRoom.whiteboard.undo")}>
             <LuUndo2 size={17} />
           </ToolButton>
-          <ToolButton onClick={exportPng} title="Rasm sifatida saqlash">
+          <ToolButton onClick={exportPng} title={t("studyRoom.whiteboard.save")}>
             <LuDownload size={17} />
           </ToolButton>
-          <ToolButton onClick={clearAll} title="Doskani tozalash">
+          <ToolButton onClick={clearAll} title={t("studyRoom.whiteboard.clear")}>
             <LuTrash2 size={17} />
           </ToolButton>
         </div>

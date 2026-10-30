@@ -26,6 +26,7 @@ import {
   PageLoader,
   ScoreTrend,
 } from "../components/ui";
+import { useI18n } from "../i18n";
 
 function resultDate(a) {
   return toDate(a.createdAt) || toDate(a.finishedAt);
@@ -35,6 +36,7 @@ const PAGE_SIZE = 20;
 
 export default function History() {
   const { user, loading } = useAuth();
+  const { t, fmtDate } = useI18n();
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [fetching, setFetching] = useState(true);
@@ -63,7 +65,7 @@ export default function History() {
       })
       .catch((err) => {
         console.error("[History] natijalarni yuklashda xatolik:", err);
-        if (!cancelled) setError("Natijalarni yuklashda xatolik yuz berdi.");
+        if (!cancelled) setError(t("history.loadError"));
       })
       .finally(() => !cancelled && setFetching(false));
     countUserResults("results", user.uid)
@@ -83,7 +85,7 @@ export default function History() {
       setHasMore(page.hasMore);
     } catch (err) {
       console.error(err);
-      setError("Qolgan natijalarni yuklab bo'lmadi.");
+      setError(t("history.loadMoreError"));
     } finally {
       setLoadingMore(false);
     }
@@ -100,19 +102,19 @@ export default function History() {
     .reverse()
     .map((a) => ({
       value: a.total || 0,
-      label: resultDate(a)?.toLocaleDateString("uz-UZ", { day: "2-digit", month: "short" }) || "",
+      label: fmtDate(resultDate(a), { day: "2-digit", month: "short" }),
     }));
 
   return (
     <Page>
       <PageHeader
-        eyebrow="Shaxsiy statistika"
+        eyebrow={t("history.eyebrow")}
         icon={LuChartLine}
-        title="Mening natijalarim"
-        subtitle="Barcha topshirgan testlaringiz shu yerda — vaqt bo'yicha tartiblangan."
+        title={t("history.title")}
+        subtitle={t("history.subtitle")}
         actions={
           <Button to="/sat/select" variant="outline">
-            Yangi test <LuArrowRight size={16} />
+            {t("history.newTest")} <LuArrowRight size={16} />
           </Button>
         }
       />
@@ -124,21 +126,21 @@ export default function History() {
       {attempts.length === 0 && !error ? (
         <EmptyState
           icon={LuTrophy}
-          title="Hali birorta test topshirmagansiz"
-          text="Birinchi mock testni yeching — natijalaringiz va ball dinamikasi shu yerda ko'rinadi."
-          action={<Button to="/sat/select">Testni boshlash</Button>}
+          title={t("history.emptyTitle")}
+          text={t("history.emptyText")}
+          action={<Button to="/sat/select">{t("history.startTest")}</Button>}
         />
       ) : (
         <>
           <section className="mb-6 grid gap-4 sm:grid-cols-3">
-            <StatTile icon={LuTrophy} tone="amber" label="Eng yaxshi" value={bestScore} />
-            <StatTile icon={LuChartLine} label="O'rtacha" value={avgScore} />
-            <StatTile icon={LuClipboardCheck} tone="emerald" label="Urinishlar" value={totalCount ?? attempts.length} />
+            <StatTile icon={LuTrophy} tone="amber" label={t("history.best")} value={bestScore} />
+            <StatTile icon={LuChartLine} label={t("history.average")} value={avgScore} />
+            <StatTile icon={LuClipboardCheck} tone="emerald" label={t("history.attempts")} value={totalCount ?? attempts.length} />
           </section>
 
           {trend.length > 1 && (
             <Card className="mb-6">
-              <CardHeader title="Ball dinamikasi" subtitle="Oxirgi 12 ta urinish" />
+              <CardHeader title={t("history.trendTitle")} subtitle={t("history.trendSubtitle")} />
               <div className="px-3 pb-4 pt-3 sm:px-4">
                 <ScoreTrend scores={trend} />
               </div>
@@ -146,14 +148,14 @@ export default function History() {
           )}
 
           <Card className="overflow-hidden">
-            <CardHeader title="Barcha urinishlar" subtitle={`${totalCount ?? attempts.length} ta natija`} />
+            <CardHeader title={t("history.allTitle")} subtitle={t("history.resultsCount", { n: totalCount ?? attempts.length })} />
             <div className="mt-4 divide-y divide-[#12213D]/[0.06] border-t border-[#12213D]/[0.06]">
               {attempts.map((a) => {
                 const date = resultDate(a);
                 const isBest = attempts.length > 1 && a.total === bestScore;
                 const isSession = !!a.sessionId;
                 const linkTo = isSession ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`;
-                const label = isSession ? a.sessionTitle || "To'liq mock test (sessiya)" : getSatTestTitle(a.testId);
+                const label = isSession ? a.sessionTitle || t("history.sessionFallback") : getSatTestTitle(a.testId);
                 return (
                   <Link
                     key={a.id}
@@ -173,20 +175,15 @@ export default function History() {
                         <p className="truncate text-[15px] font-semibold text-[#12213D]">{label}</p>
                         {isBest && (
                           <Badge tone="amber" icon={LuTrophy}>
-                            Rekord
+                            {t("history.record")}
                           </Badge>
                         )}
-                        {a.terminated && <Badge tone="red">To'xtatilgan</Badge>}
+                        {a.terminated && <Badge tone="red">{t("history.stopped")}</Badge>}
                       </div>
                       <p className="mt-0.5 text-xs text-[#12213D]/45">
                         {date
-                          ? date.toLocaleString("uz-UZ", {
-                              day: "2-digit",
-                              month: "long",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Noma'lum sana"}
+                          ? fmtDate(date, { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" })
+                          : t("history.unknownDate")}
                       </p>
                     </div>
                     <div className="text-right">
@@ -204,7 +201,7 @@ export default function History() {
             {hasMore && (
               <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
                 <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>
-                  {loadingMore ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
+                  {loadingMore ? t("history.loadingMore") : t("history.showMore")}
                 </Button>
               </div>
             )}

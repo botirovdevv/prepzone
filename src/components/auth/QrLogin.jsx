@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { LuRefreshCw, LuSmartphone, LuCircleCheck, LuShieldCheck } from "react-icons/lu";
 import { useAuth } from "../../context/AuthContext";
 import { FormAlert } from "./FormParts";
+import { translate, useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // Kompyuterda QR orqali kirish. QR'da telefonda ochiladigan havola bor
@@ -15,6 +16,7 @@ const MAX_AUTO_REFRESH = 5; // ~10 daqiqa — keyin qo'lda yangilanadi
 
 export default function QrLogin({ onSuccess }) {
   const { qrStart, qrPoll } = useAuth();
+  const { t, tr } = useI18n();
   const [qr, setQr] = useState(null); // { id, pollSecret, expiresAt, image }
   const [status, setStatus] = useState("loading"); // loading | pending | scanned | approved | denied | stale
   const [error, setError] = useState("");
@@ -38,7 +40,7 @@ export default function QrLogin({ onSuccess }) {
       setStatus("pending");
     } catch (err) {
       if (!alive.current) return;
-      setError(err.message || "QR kodni yaratib bo'lmadi.");
+      setError(err.message || translate("auth.qr.createFailed"));
       setStatus("stale");
     }
   }).current;
@@ -100,14 +102,14 @@ export default function QrLogin({ onSuccess }) {
   return (
     <div>
       <p className="mb-4 rounded-[14px] bg-[#eef6ff] px-4 py-3 text-[13px] leading-[1.45] text-[#0a5d99] sm:hidden">
-        QR orqali kirish kompyuter uchun. Telefonda email yoki Google orqali kiring.
+        {t("auth.qr.mobileNote")}
       </p>
 
       <div className="relative mx-auto aspect-square w-full max-w-[240px] overflow-hidden rounded-[22px] border border-black/[0.08] bg-white p-3">
         {qr?.image ? (
           <img
             src={qr.image}
-            alt="Kirish uchun QR kod"
+            alt={t("auth.qr.alt")}
             className={`h-full w-full transition duration-300 ${dimmed ? "scale-[0.97] opacity-15 blur-[2px]" : ""}`}
           />
         ) : (
@@ -119,27 +121,27 @@ export default function QrLogin({ onSuccess }) {
             {status === "scanned" && (
               <>
                 <LuSmartphone size={30} className="text-[#087fd1]" />
-                <p className="text-[15px] font-semibold text-[#1d1d1f]">Telefonda tasdiqlang</p>
-                <p className="text-[13px] text-[#6e6e73]">"Ha, kirish" tugmasini bosing</p>
+                <p className="text-[15px] font-semibold text-[#1d1d1f]">{t("auth.qr.confirmOnPhone")}</p>
+                <p className="text-[13px] text-[#6e6e73]">{t("auth.qr.pressYes")}</p>
               </>
             )}
             {status === "approved" && (
               <>
                 <LuCircleCheck size={32} className="text-emerald-600" />
-                <p className="text-[15px] font-semibold text-[#1d1d1f]">Tasdiqlandi, kirilmoqda...</p>
+                <p className="text-[15px] font-semibold text-[#1d1d1f]">{t("auth.qr.approved")}</p>
               </>
             )}
             {(status === "denied" || status === "stale") && (
               <>
                 <p className="text-[15px] font-semibold text-[#1d1d1f]">
-                  {status === "denied" ? "So'rov rad etildi" : "QR kod eskirdi"}
+                  {status === "denied" ? t("auth.qr.denied") : t("auth.qr.expired")}
                 </p>
                 <button
                   type="button"
                   onClick={manualRefresh}
                   className="pz-press mt-1 inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#0673bd]"
                 >
-                  <LuRefreshCw size={15} /> Yangi QR
+                  <LuRefreshCw size={15} /> {t("auth.qr.newQr")}
                 </button>
               </>
             )}
@@ -149,16 +151,12 @@ export default function QrLogin({ onSuccess }) {
 
       <p className="mt-3 text-center text-[12px] tabular-nums text-[#86868b]">
         {status === "pending" && secondsLeft > 0
-          ? `QR ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")} dan keyin yangilanadi`
+          ? t("auth.qr.refreshIn", { time: `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}` })
           : " "}
       </p>
 
       <ol className="mt-4 space-y-2.5 text-[14px] leading-[1.45] text-[#1d1d1f]">
-        {[
-          "Telefoningizda Prepzone'ga kirgan bo'ling.",
-          "Telefon kamerasini QR kodga qarating va chiqqan havolani oching.",
-          "Kompyuter ma'lumotlarini tekshirib, \"Ha, kirish\"ni bosing.",
-        ].map((text, i) => (
+        {tr("auth.qr.steps").map((text, i) => (
           <li key={i} className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#087fd1]/10 text-[12px] font-bold text-[#087fd1]">
               {i + 1}
@@ -170,7 +168,7 @@ export default function QrLogin({ onSuccess }) {
 
       <p className="mt-4 flex items-start gap-2 text-[12px] leading-[1.45] text-[#86868b]">
         <LuShieldCheck size={14} className="mt-px shrink-0" />
-        QR kodni hech kimga yubormang. U faqat 2 daqiqa amal qiladi va bir marta ishlatiladi.
+        {t("auth.qr.warning")}
       </p>
 
       {error && (

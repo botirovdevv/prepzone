@@ -1,5 +1,6 @@
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
+import { translate } from "../i18n";
 
 const DOMAIN_META = Object.fromEntries(
   [...RW_DOMAINS, ...MATH_DOMAINS].map((d) => [d.id, d])
@@ -98,9 +99,12 @@ export function buildTopicAdvice({ domainSummaries, subjectSummaries }) {
       accuracy: d.accuracy,
       total: d.total,
       correct: d.correct,
-      text: `"${d.label}" mavzusida ${d.correct}/${d.total} ta savolga to'g'ri javob berdingiz (${Math.round(
-        d.accuracy * 100
-      )}%). Shu mavzuga ko'proq e'tibor qarating va qo'shimcha mashq qiling.`,
+      text: translate("topicAdvice.weak", {
+        label: d.label,
+        correct: d.correct,
+        total: d.total,
+        pct: Math.round(d.accuracy * 100),
+      }),
     });
   });
 
@@ -112,9 +116,12 @@ export function buildTopicAdvice({ domainSummaries, subjectSummaries }) {
       accuracy: d.accuracy,
       total: d.total,
       correct: d.correct,
-      text: `"${d.label}" mavzusini yaxshi o'zlashtirgansiz — ${d.correct}/${d.total} to'g'ri (${Math.round(
-        d.accuracy * 100
-      )}%). Ajoyib natija!`,
+      text: translate("topicAdvice.strong", {
+        label: d.label,
+        correct: d.correct,
+        total: d.total,
+        pct: Math.round(d.accuracy * 100),
+      }),
     });
   });
 
@@ -130,9 +137,12 @@ export function buildTopicAdvice({ domainSummaries, subjectSummaries }) {
           accuracy: s.accuracy,
           total: s.total,
           correct: s.correct,
-          text: `${s.label} bo'limida natijangiz ${s.correct}/${s.total} (${Math.round(
-            s.accuracy * 100
-          )}%) — ko'proq mashq qilishni tavsiya qilamiz.`,
+          text: translate("topicAdvice.subjectWeak", {
+            label: s.label,
+            correct: s.correct,
+            total: s.total,
+            pct: Math.round(s.accuracy * 100),
+          }),
         });
       }
     });
@@ -141,7 +151,7 @@ export function buildTopicAdvice({ domainSummaries, subjectSummaries }) {
   if (weak.length === 0 && attempted.length > 0 && !advice.some((a) => a.type === "weak")) {
     advice.push({
       type: "info",
-      text: "Aniq zaif mavzu topilmadi — natijangiz barcha mavzular bo'yicha yaxshi. Shunday davom eting!",
+      text: translate("topicAdvice.allGood"),
     });
   }
 

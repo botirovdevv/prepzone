@@ -270,13 +270,16 @@ function QuestionPanel({
                     type="button"
                     onClick={() => onToggleCrossOut(choice.label)}
                     aria-label={isCrossed ? `Undo cross out ${choice.label}` : `Cross out ${choice.label}`}
-                    className={`shrink-0 text-xs font-bold ${
-                      isCrossed
-                        ? "rounded-md px-1.5 py-1 text-gray-800 underline hover:bg-gray-100"
-                        : "flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-700 text-gray-800 line-through hover:bg-gray-100"
-                    }`}
+                    // Qat'iy kenglik — "Undo" chiqqanda variant qatori siljimaydi.
+                    className="flex w-11 shrink-0 justify-center text-xs font-bold text-gray-800"
                   >
-                    {isCrossed ? "Undo" : choice.label}
+                    {isCrossed ? (
+                      <span className="rounded-md px-1.5 py-1 underline hover:bg-gray-100">Undo</span>
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-700 line-through hover:bg-gray-100">
+                        {choice.label}
+                      </span>
+                    )}
                   </button>
                 )}
               </div>

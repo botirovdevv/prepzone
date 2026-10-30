@@ -9,6 +9,8 @@
 
 // Bo'sh bo'lsa — API shu domenda (/api). Frontend alohida domenda
 // joylashsa VITE_API_URL=https://api.example.com qilib beriladi.
+import { getLang, translate } from "../i18n";
+
 export const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export class ApiError extends Error {
@@ -25,11 +27,15 @@ async function request(method, path, body) {
     res = await fetch(`${API_URL}/api${path}`, {
       method,
       credentials: "include",
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+      // Server xato xabarlarini shu tilda qaytaradi (server/src/lib/i18n.js).
+      headers: {
+        "X-Lang": getLang(),
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError(0, "network-error", "Serverga ulanib bo'lmadi. Internetni tekshiring.");
+    throw new ApiError(0, "network-error", translate("common.networkError"));
   }
 
   const data = await res.json().catch(() => null);
@@ -42,7 +48,7 @@ async function request(method, path, body) {
     throw new ApiError(
       res.status,
       data?.code || "internal",
-      data?.message || "Xatolik yuz berdi. Qaytadan urinib ko'ring."
+      data?.message || translate("common.error")
     );
   }
   return data;

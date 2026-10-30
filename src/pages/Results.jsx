@@ -11,6 +11,7 @@ import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, EmptyState, PageLoader } from "../components/ui";
 import { ScoreSummary, ModuleBreakdown } from "../components/ScoreSummary";
+import { useI18n } from "../i18n";
 
 const DOMAIN_LABELS = Object.fromEntries([...RW_DOMAINS, ...MATH_DOMAINS].map((d) => [d.id, d.label]));
 
@@ -50,8 +51,9 @@ function domainStats(modules) {
 }
 
 function ReviewQuestion({ item, showPassage }) {
+  const { t } = useI18n();
   const { q, number, answer, correct } = item;
-  const correctText = q.type === "spr" ? (q.answers || []).join(" yoki ") : q.correctAnswer;
+  const correctText = q.type === "spr" ? (q.answers || []).join(t("results.or")) : q.correctAnswer;
   return (
     <details className="group border border-gray-200 rounded-lg bg-white">
       <summary className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none text-sm list-none">
@@ -65,7 +67,7 @@ function ReviewQuestion({ item, showPassage }) {
         <span className="font-semibold text-gray-900 w-8">{number}</span>
         <span className="text-gray-500 truncate flex-1">{q.skill}</span>
         <span className="text-gray-600 shrink-0">
-          Siz: <b className="text-gray-900">{answer || "—"}</b> · To&apos;g&apos;ri:{" "}
+          {t("results.yours")} <b className="text-gray-900">{answer || "—"}</b> · {t("results.correct")}{" "}
           <b className="text-emerald-700">{correctText}</b>
         </span>
       </summary>
@@ -73,7 +75,7 @@ function ReviewQuestion({ item, showPassage }) {
         {showPassage && q.passage && <Rich html={q.passage} className="sat-rich whitespace-pre-line mb-3" />}
         {!showPassage && q.passage && <Rich html={q.passage} className="sat-rich mb-3" />}
         <Rich html={q.prompt} className="sat-rich font-medium mb-3" />
-        {q.image && <img src={q.image} alt="Savolga oid rasm" className="max-h-60 mb-3" />}
+        {q.image && <img src={q.image} alt={t("results.figure")} className="max-h-60 mb-3" />}
         {q.choices && (
           <ul className="space-y-1.5 mb-3">
             {q.choices.map((c) => (
@@ -95,7 +97,7 @@ function ReviewQuestion({ item, showPassage }) {
         )}
         {q.explanation && (
           <p className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
-            <b className="text-gray-900">Tushuntirish: </b>
+            <b className="text-gray-900">{t("results.explanation")} </b>
             {q.explanation}
           </p>
         )}
@@ -123,6 +125,7 @@ export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const { t } = useI18n();
 
   const terminated = location.state?.terminated;
   const [results, setResults] = useState(location.state?.results || null);
@@ -131,7 +134,8 @@ export default function Results() {
   const [notFound, setNotFound] = useState(false);
   const [keys, setKeys] = useState(null);
   const [keysError, setKeysError] = useState(false);
-  const loadedTest = useSatTest(testId || "bluebook-1");
+  // Eski natijalarda testId saqlanmagan — ular birinchi statik testniki edi.
+  const loadedTest = useSatTest(testId || (results ? "bluebook-1" : ""));
   // Test saytdan olib tashlangan bo'lsa — ballar ko'rinadi, savollar yo'q.
   const retired = loadedTest === null && !!results;
   const satTest = retired ? retiredTest(testId) : loadedTest;
@@ -178,11 +182,11 @@ export default function Results() {
       <Page width="narrow">
         <EmptyState
           icon={LuSearchX}
-          title="Natija topilmadi"
-          text={notFound ? "Bu natija mavjud emas yoki o'chirilgan." : "Iltimos, testni qaytadan tugating."}
+          title={t("results.notFoundTitle")}
+          text={notFound ? t("results.notFoundText") : t("results.finishAgain")}
           action={
             <Button to={notFound ? "/sat/history" : "/sat/select"}>
-              {notFound ? "Barcha natijalarim" : "Testga qaytish"}
+              {notFound ? t("results.allResults") : t("results.backToTest")}
             </Button>
           }
         />
@@ -196,13 +200,13 @@ export default function Results() {
   return (
     <Page width="narrow">
       <PageHeader
-        eyebrow="Test natijasi"
+        eyebrow={t("results.eyebrow")}
         icon={LuChartColumn}
         title={satTest.testTitle}
-        subtitle="Bo'limlar bo'yicha ball, mavzular tahlili va har bir savolni ko'rib chiqish."
+        subtitle={t("results.subtitle")}
         actions={
           <Button onClick={() => navigate("/sat/select")}>
-            <LuRotateCcw size={16} /> Qayta boshlash
+            <LuRotateCcw size={16} /> {t("results.restart")}
           </Button>
         }
       />
@@ -229,20 +233,18 @@ export default function Results() {
           if (r.module2Total != null) {
             moduleRows.push({
               label: "Module 2",
-              tag: <Badge tone={r.route === "hard" ? "red" : "emerald"}>{r.route === "hard" ? "Qiyin" : "Oson"}</Badge>,
+              tag: <Badge tone={r.route === "hard" ? "red" : "emerald"}>{r.route === "hard" ? t("results.hard") : t("results.easy")}</Badge>,
               value: `${r.module2Correct}/${r.module2Total}`,
             });
           }
-          moduleRows.push({ label: "Jami", value: `${totalCorrect}/${totalQ}` });
+          moduleRows.push({ label: t("results.total"), value: `${totalCorrect}/${totalQ}` });
 
           return (
             <Card key={g.id}>
               <CardHeader
                 title={g.title}
                 subtitle={
-                  r.route === "hard"
-                    ? "Module 1'dagi yaxshi natija tufayli qiyin Module 2'ga yo'naltirildingiz — bu maksimal ball olish imkonini ochadi."
-                    : "Module 1 natijasiga ko'ra oson Module 2'ga yo'naltirildingiz — bu holatda bo'lim bali taxminan 600 atrofida cheklanadi."
+                  r.route === "hard" ? t("results.routedHard") : t("results.routedEasy")
                 }
                 action={
                   <span className="font-display text-3xl font-extrabold tabular-nums text-[#087fd1]">{r.scaledScore}</span>
@@ -253,7 +255,7 @@ export default function Results() {
 
                 {domains.length > 0 && (
                   <div>
-                    <p className="mb-3 text-sm font-semibold text-[#12213D]">Mavzular bo'yicha</p>
+                    <p className="mb-3 text-sm font-semibold text-[#12213D]">{t("results.byTopic")}</p>
                     <div className="space-y-3">
                       {domains.map(([domainId, s]) => {
                         const pct = Math.round((s.correct / s.total) * 100);
@@ -282,17 +284,13 @@ export default function Results() {
 
                 {!keys && (
                   <p className="rounded-xl bg-[#F6F7FB] px-4 py-3 text-sm text-[#12213D]/55">
-                    {retired
-                      ? "Bu test saytdan olib tashlangan — savollarni ko'rib chiqib bo'lmaydi."
-                      : keysError
-                      ? "Savollarni ko'rib chiqish uchun ma'lumotni yuklab bo'lmadi. Sahifani yangilab ko'ring."
-                      : "Savollar va to'g'ri javoblar yuklanmoqda..."}
+                    {retired ? t("results.retired") : keysError ? t("results.keysError") : t("results.keysLoading")}
                   </p>
                 )}
                 {reviewModules.map((m) => (
                   <details key={m.stage} className="group/review rounded-xl border border-[#12213D]/[0.07]">
                     <summary className="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#12213D]">
-                      {m.label} savollarini ko'rib chiqish
+                      {t("results.reviewModule", { module: m.label })}
                       <LuChevronDown size={16} className="text-[#12213D]/40 transition group-open/review:rotate-180" />
                     </summary>
                     <div className="space-y-2 border-t border-[#12213D]/[0.06] p-3">
@@ -309,17 +307,15 @@ export default function Results() {
       </div>
 
       <p className="mt-8 text-center text-xs leading-relaxed text-[#12213D]/40">
-        Bal real Digital SAT kabi IRT (Item Response Theory) usulida hisoblanadi: qiyinroq savollarga
-        to'g'ri javob ko'proq bal beradi. College Board rasmiy savol parametrlarini e'lon qilmagani
-        uchun bal taxminiy va real imtihon natijasidan farq qilishi mumkin.
+        {t("results.irtNote")}
       </p>
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Button variant="outline" to="/dashboard">
-          Bosh sahifa
+          {t("results.home")}
         </Button>
         <Button variant="outline" to="/sat/history">
-          Barcha natijalarim
+          {t("results.allResults")}
         </Button>
       </div>
     </Page>

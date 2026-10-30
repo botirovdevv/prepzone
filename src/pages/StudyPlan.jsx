@@ -34,25 +34,24 @@ import {
   DEFAULT_SETTINGS,
   addDays,
 } from "../utils/studyPlan";
+import { translate, useI18n } from "../i18n";
 
-const WEEKDAYS = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
-const WEEKDAYS_SHORT = ["Yak", "Du", "Se", "Chor", "Pay", "Ju", "Sha"];
 const MINUTE_OPTIONS = [30, 60, 90, 120];
 
 const TASK_META = {
-  mock: { icon: LuNotebookPen, tone: "text-[#087fd1] bg-[#087fd1]/10", label: "Mock test" },
-  review: { icon: LuHistory, tone: "text-amber-600 bg-amber-500/10", label: "Tahlil" },
-  practice: { icon: LuTarget, tone: "text-emerald-600 bg-emerald-500/10", label: "Mashq" },
-  vocab: { icon: LuBookOpen, tone: "text-[#2a9d8f] bg-[#2a9d8f]/10", label: "Vocabulary" },
-  exam: { icon: LuTrophy, tone: "text-red-600 bg-red-500/10", label: "Imtihon" },
+  mock: { icon: LuNotebookPen, tone: "text-[#087fd1] bg-[#087fd1]/10" },
+  review: { icon: LuHistory, tone: "text-amber-600 bg-amber-500/10" },
+  practice: { icon: LuTarget, tone: "text-emerald-600 bg-emerald-500/10" },
+  vocab: { icon: LuBookOpen, tone: "text-[#2a9d8f] bg-[#2a9d8f]/10" },
+  exam: { icon: LuTrophy, tone: "text-red-600 bg-red-500/10" },
 };
 
 function formatMinutes(m) {
   if (!m) return "";
-  if (m < 60) return `${m} daq`;
+  if (m < 60) return translate("studyPlan.min", { m });
   const h = Math.floor(m / 60);
   const r = m % 60;
-  return r ? `${h} soat ${r} daq` : `${h} soat`;
+  return r ? translate("studyPlan.hourMin", { h, m: r }) : translate("studyPlan.hour", { h });
 }
 
 const shortDate = (key) => `${key.slice(8)}.${key.slice(5, 7)}`;
@@ -60,6 +59,7 @@ const shortDate = (key) => `${key.slice(8)}.${key.slice(5, 7)}`;
 // ---------------- Sozlash formasi ----------------
 // `defaultTarget` — onboarding'da kiritilgan maqsad ball (reja hali yo'q bo'lsa).
 function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
+  const { t, tr } = useI18n();
   const [form, setForm] = useState({
     ...DEFAULT_SETTINGS,
     ...(defaultTarget ? { targetScore: defaultTarget } : {}),
@@ -76,13 +76,11 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
   return (
     <Card className="p-5 sm:p-7">
-      <h2 className="font-display text-[19px] font-bold text-[#12213D]">Rejangizni sozlang</h2>
-      <p className="mt-1 text-sm text-[#12213D]/50">
-        Imtihon sanasi va maqsadingizga qarab har kunlik vazifalar tuziladi.
-      </p>
+      <h2 className="font-display text-[19px] font-bold text-[#12213D]">{t("studyPlan.setupTitle")}</h2>
+      <p className="mt-1 text-sm text-[#12213D]/50">{t("studyPlan.setupText")}</p>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
-        <Field label="Imtihon sanasi">
+        <Field label={t("studyPlan.examDate")}>
           <input
             type="date"
             min={minDate}
@@ -91,7 +89,7 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
             className={inputClass}
           />
         </Field>
-        <Field label={`Maqsad ball: ${form.targetScore}`}>
+        <Field label={t("studyPlan.target", { n: form.targetScore })}>
           <input
             type="range"
             min={400}
@@ -105,7 +103,7 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
       </div>
 
       <div className="mt-6">
-        <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">Kuniga qancha vaqt ajrata olasiz?</p>
+        <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">{t("studyPlan.dailyTime")}</p>
         <div className="flex flex-wrap gap-2">
           {MINUTE_OPTIONS.map((m) => (
             <button
@@ -126,9 +124,9 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">Dam olish kunlari</p>
+          <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">{t("studyPlan.restDays")}</p>
           <div className="flex flex-wrap gap-1.5">
-            {WEEKDAYS_SHORT.map((w, d) => (
+            {tr("studyPlan.weekdaysShort").map((w, d) => (
               <button
                 key={d}
                 type="button"
@@ -144,13 +142,13 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
             ))}
           </div>
         </div>
-        <Field label="Mock test kuni">
+        <Field label={t("studyPlan.mockDay")}>
           <select
             value={form.mockDay}
             onChange={(e) => set({ mockDay: Number(e.target.value) })}
             className={inputClass}
           >
-            {WEEKDAYS.map((w, d) => (
+            {tr("studyPlan.weekdays").map((w, d) => (
               <option key={d} value={d} disabled={form.restDays.includes(d)}>
                 {w}
               </option>
@@ -162,11 +160,11 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
       <div className="mt-8 flex flex-wrap justify-end gap-2">
         {onCancel && (
           <Button variant="ghost" onClick={onCancel}>
-            Bekor qilish
+            {t("common.cancel")}
           </Button>
         )}
         <Button onClick={() => onSave(form)} disabled={!valid || saving}>
-          {saving ? "Saqlanmoqda..." : "Rejani tuzish"} <LuArrowRight size={16} />
+          {saving ? t("studyPlan.saving") : t("studyPlan.build")} <LuArrowRight size={16} />
         </Button>
       </div>
     </Card>
@@ -205,16 +203,17 @@ function ScoreRing({ current, target }) {
 
 // ---------------- Hero ----------------
 function Hero({ settings, analysis, streakCount, status, ai, generating, onGenerate }) {
+  const { t } = useI18n();
   const left = daysUntil(settings.examDate);
   const gap = analysis.current != null ? settings.targetScore - analysis.current : null;
   return (
     <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#12213D] via-[#163056] to-[#0b5fa0] text-white shadow-[0_18px_40px_-20px_rgba(18,33,61,0.6)]">
       <div className="grid gap-6 p-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-8">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/50">Imtihongacha</p>
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/50">{t("studyPlan.untilExam")}</p>
           <p className="mt-1 font-display text-[44px] font-extrabold leading-none tabular-nums">
-            {left > 0 ? left : left === 0 ? "Bugun" : "—"}
-            {left > 0 && <span className="ml-2 text-[20px] font-bold text-white/60">kun</span>}
+            {left > 0 ? left : left === 0 ? t("studyPlan.today") : "—"}
+            {left > 0 && <span className="ml-2 text-[20px] font-bold text-white/60">{t("studyPlan.days")}</span>}
           </p>
           <p className="mt-2 text-sm text-white/55">{settings.examDate.split("-").reverse().join(".")}</p>
         </div>
@@ -222,7 +221,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
         <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
           <ScoreRing current={analysis.current} target={settings.targetScore} />
           <p className="text-[13px] font-semibold text-white/70 sm:text-center">
-            {gap == null ? "Diagnostik test yeching" : gap > 0 ? `Maqsadgacha +${gap} ball` : "Maqsadga yetdingiz! 🎉"}
+            {gap == null ? t("studyPlan.takeDiagnostic") : gap > 0 ? t("studyPlan.toGoal", { n: gap }) : t("studyPlan.reached")}
           </p>
         </div>
 
@@ -232,7 +231,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
           </span>
           <div>
             <p className="font-display text-[28px] font-extrabold leading-none tabular-nums">{streakCount}</p>
-            <p className="mt-1 text-[12px] font-semibold text-white/50">ketma-ket kun</p>
+            <p className="mt-1 text-[12px] font-semibold text-white/50">{t("studyPlan.streak")}</p>
           </div>
         </div>
       </div>
@@ -243,12 +242,12 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
         </span>
         <p className="min-w-0 flex-1 text-[14px] leading-relaxed text-white/80">
           {generating
-            ? "AI natijalaringizni tahlil qilib, haftalik rejangizni tuzmoqda…"
+            ? t("studyPlan.aiGenerating")
             : status === "none"
-              ? "AI murabbiy mock natijalaringiz, zaif mavzularingiz va imtihon sanangizga qarab shaxsiy haftalik reja tuzib beradi."
+              ? t("studyPlan.aiNone")
               : status === "stale"
-                ? "Yangi natija bor yoki reja eskirdi — AI bilan yangilang, vazifalar zaif mavzularingizga moslashadi."
-                : ai.summary || "Bu haftalik reja AI tomonidan tuzilgan."}
+                ? t("studyPlan.aiStale")
+                : ai.summary || t("studyPlan.aiFallbackSummary")}
         </p>
         <button
           type="button"
@@ -263,7 +262,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
           ) : (
             <LuRefreshCw size={16} />
           )}
-          {generating ? "Tuzilmoqda" : status === "none" ? "AI bilan tuzish" : "Qayta tuzish"}
+          {generating ? t("studyPlan.building") : status === "none" ? t("studyPlan.buildAi") : t("studyPlan.rebuild")}
         </button>
       </div>
     </div>
@@ -272,6 +271,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
 
 // ---------------- Kunlar chizig'i ----------------
 function DayStrip({ week, done, selected, onSelect }) {
+  const { t, tr } = useI18n();
   return (
     <div className="-mx-5 overflow-x-auto px-5 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none]">
       <div className="flex min-w-max snap-x gap-2 sm:grid sm:min-w-0 sm:grid-cols-7">
@@ -296,7 +296,7 @@ function DayStrip({ week, done, selected, onSelect }) {
               }`}
             >
               <span className={`text-[11px] font-bold uppercase ${active ? "text-white/70" : "opacity-60"}`}>
-                {i === 0 ? "Bugun" : WEEKDAYS_SHORT[day.weekday]}
+                {i === 0 ? t("studyPlan.today") : tr("studyPlan.weekdaysShort")[day.weekday]}
               </span>
               <span className="mt-0.5 font-display text-[20px] font-extrabold tabular-nums">{day.key.slice(8)}</span>
               <span className="mt-1.5 flex h-3 items-center gap-1">
@@ -326,6 +326,7 @@ function DayStrip({ week, done, selected, onSelect }) {
 
 // ---------------- Vazifa kartasi ----------------
 function TaskCard({ task, done, canCheck, canStart, onToggle }) {
+  const { t } = useI18n();
   const meta = TASK_META[task.type];
   const Icon = meta.icon;
   return (
@@ -338,7 +339,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
         type="button"
         onClick={onToggle}
         disabled={!canCheck}
-        aria-label={done ? "Bajarilmagan deb belgilash" : "Bajarildi deb belgilash"}
+        aria-label={done ? t("studyPlan.markUndone") : t("studyPlan.markDone")}
         className={`mt-0.5 shrink-0 transition sm:mt-0 disabled:cursor-not-allowed ${
           done ? "text-emerald-500" : canCheck ? "text-[#12213D]/20 hover:text-[#12213D]/45" : "text-[#12213D]/10"
         }`}
@@ -350,7 +351,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-[#12213D]/40">{meta.label}</span>
+          <span className="text-[11px] font-bold uppercase tracking-wide text-[#12213D]/40">{t(`studyPlan.taskLabels.${task.type}`)}</span>
           {task.minutes > 0 && (
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#12213D]/40">
               <LuClock size={11} /> {formatMinutes(task.minutes)}
@@ -364,7 +365,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
       </div>
       {task.to && canStart && !done && (
         <Button to={task.to} variant="outline" size="sm" className="hidden shrink-0 sm:inline-flex">
-          Boshlash <LuArrowRight size={14} />
+          {t("studyPlan.start")} <LuArrowRight size={14} />
         </Button>
       )}
     </div>
@@ -373,6 +374,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
 
 // ---------------- Tanlangan kun ----------------
 function DayPanel({ day, isToday, done, generating, onToggle }) {
+  const { t, tr } = useI18n();
   const dayDone = done[day.key] || [];
   const finished = day.tasks.filter((t) => dayDone.includes(t.id)).length;
   const minutes = day.tasks.reduce((s, t) => s + (t.minutes || 0), 0);
@@ -383,7 +385,7 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-display text-[19px] font-bold text-[#12213D]">
-            {isToday ? "Bugun" : WEEKDAYS[day.weekday]} · {shortDate(day.key)}
+            {isToday ? t("studyPlan.today") : tr("studyPlan.weekdays")[day.weekday]} · {shortDate(day.key)}
           </h2>
           {day.focus && !generating && (
             <p className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-[#087fd1]">
@@ -394,7 +396,7 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
         {day.tasks.length > 0 && !generating && (
           <div className="text-right">
             <p className="text-[13px] font-semibold tabular-nums text-[#12213D]/70">
-              {finished}/{day.tasks.length} bajarildi
+              {t("studyPlan.doneCount", { done: finished, total: day.tasks.length })}
             </p>
             <p className="text-xs text-[#12213D]/40">{formatMinutes(minutes)}</p>
           </div>
@@ -413,15 +415,15 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
             {[0, 1, 2].map((k) => (
               <Skeleton key={k} className="h-[76px]" />
             ))}
-            <p className="pt-1 text-center text-[13px] text-[#12213D]/45">AI rejangizni tuzmoqda… (10–20 soniya)</p>
+            <p className="pt-1 text-center text-[13px] text-[#12213D]/45">{t("studyPlan.aiWorking")}</p>
           </>
         ) : day.rest ? (
           <div className="flex items-center gap-3 rounded-2xl bg-[#12213D]/[0.03] p-5 text-sm text-[#12213D]/55">
-            <LuCoffee size={20} /> Dam olish kuni. Yaxshi hordiq chiqaring — miya ham tiklanishi kerak!
+            <LuCoffee size={20} /> {t("studyPlan.restDay")}
           </div>
         ) : day.afterExam ? (
           <p className="rounded-2xl bg-[#12213D]/[0.03] p-5 text-sm text-[#12213D]/55">
-            Imtihon sanasi o'tib ketdi. Yangi sana kiritish uchun "Sozlamalar"ni bosing.
+            {t("studyPlan.afterExam")}
           </p>
         ) : (
           day.tasks.map((t) => (
@@ -437,7 +439,7 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
         )}
       </div>
       {!isToday && !generating && day.tasks.length > 0 && (
-        <p className="mt-4 text-center text-xs text-[#12213D]/40">Vazifalarni o'z kunida belgilash mumkin.</p>
+        <p className="mt-4 text-center text-xs text-[#12213D]/40">{t("studyPlan.onlyToday")}</p>
       )}
     </Card>
   );
@@ -445,15 +447,16 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
 
 // ---------------- Mavzular ----------------
 function TopicsCard({ analysis }) {
+  const { t } = useI18n();
   return (
     <Card>
-      <CardHeader title="Mavzular bo'yicha" subtitle="Oxirgi 3 ta mock test asosida" />
+      <CardHeader title={t("studyPlan.topicsTitle")} subtitle={t("studyPlan.topicsSubtitle")} />
       <div className="px-5 pb-6 pt-4 sm:px-6">
         {!analysis.hasData || analysis.domains.length === 0 ? (
           <div className="text-sm text-[#12213D]/55">
-            <p>Zaif mavzularni aniqlash uchun avval bitta to'liq mock test yeching.</p>
+            <p>{t("studyPlan.topicsEmpty")}</p>
             <Button to="/sat/select" size="sm" className="mt-4">
-              Diagnostik test <LuArrowRight size={14} />
+              {t("studyPlan.diagnostic")} <LuArrowRight size={14} />
             </Button>
           </div>
         ) : (
@@ -484,6 +487,7 @@ function TopicsCard({ analysis }) {
 }
 
 function SourceCard({ status, ai }) {
+  const { t, fmtDate } = useI18n();
   const isAi = status !== "none";
   const when = isAi ? new Date(ai.generatedAt) : null;
   return (
@@ -497,13 +501,13 @@ function SourceCard({ status, ai }) {
       </span>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-bold text-[#12213D]">{isAi ? "AI reja" : "Standart reja"}</p>
-          {status === "stale" && <Badge tone="amber">Yangilash kerak</Badge>}
+          <p className="text-sm font-bold text-[#12213D]">{isAi ? t("studyPlan.aiPlan") : t("studyPlan.standardPlan")}</p>
+          {status === "stale" && <Badge tone="amber">{t("studyPlan.needsUpdate")}</Badge>}
         </div>
         <p className="mt-0.5 text-xs leading-relaxed text-[#12213D]/50">
           {isAi
-            ? `Gemini tomonidan ${when.toLocaleDateString("uz-UZ")} kuni tuzilgan. Sozlamalarni o'zgartirsangiz, standart rejaga qaytadi.`
-            : "Zaif mavzular navbatma-navbat almashadigan avtomatik reja. Shaxsiy reja uchun “AI bilan tuzish”ni bosing."}
+            ? t("studyPlan.aiMade", { date: fmtDate(when, { day: "2-digit", month: "2-digit", year: "numeric" }) })
+            : t("studyPlan.autoPlan")}
         </p>
       </div>
     </Card>
@@ -513,6 +517,7 @@ function SourceCard({ status, ai }) {
 // ---------------- Sahifa ----------------
 export default function StudyPlan() {
   const { user, saveStudyPlan, setStudyPlanDone, generateAiStudyPlan } = useAuth();
+  const { t, lang } = useI18n();
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState(null); // { settings, done, ai }
   const [attempts, setAttempts] = useState([]);
@@ -551,7 +556,9 @@ export default function StudyPlan() {
     if (!plan) return [];
     const base = buildWeek({ settings: plan.settings, analysis, vocabDue });
     return status === "none" ? base : mergeAiWeek(base, plan.ai, { latestResultPath: analysis.latestResultPath });
-  }, [plan, analysis, vocabDue, status]);
+    // lang: vazifa nomlari tanlangan tilda qayta tuziladi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, analysis, vocabDue, status, lang]);
 
   const saveSettings = async (settings) => {
     setSaving(true);
@@ -563,7 +570,7 @@ export default function StudyPlan() {
       setEditing(false);
     } catch (err) {
       console.error(err);
-      setError("Saqlashda xatolik. Qaytadan urinib ko'ring.");
+      setError(t("studyPlan.saveError"));
     } finally {
       setSaving(false);
     }
@@ -575,6 +582,7 @@ export default function StudyPlan() {
     try {
       const updated = await generateAiStudyPlan({
         startDate: dayKey(),
+        lang,
         vocabDue,
         latestId: analysis.latestId,
         analysis: {
@@ -587,7 +595,7 @@ export default function StudyPlan() {
       setPlan((p) => ({ ...p, ai: updated.studyPlan?.ai || null }));
     } catch (err) {
       console.error(err);
-      setError(err?.message || "AI reja tuzib bo'lmadi. Keyinroq qayta urinib ko'ring.");
+      setError(err?.message || t("studyPlan.aiError"));
     } finally {
       setGenerating(false);
     }
@@ -599,7 +607,7 @@ export default function StudyPlan() {
     setPlan((p) => ({ ...p, done: { ...p.done, [dateKey]: next } }));
     setStudyPlanDone(dateKey, next).catch((err) => {
       console.error(err);
-      setError("Belgini saqlab bo'lmadi.");
+      setError(t("studyPlan.checkError"));
     });
   };
 
@@ -609,13 +617,13 @@ export default function StudyPlan() {
     <PageHeader
       eyebrow="Study Plan"
       icon={LuCompass}
-      title="O'quv rejangiz"
-      subtitle="Mock natijalaringiz va zaif mavzularingizga qarab AI tuzadigan kunlik vazifalar."
+      title={t("studyPlan.title")}
+      subtitle={t("studyPlan.subtitle")}
       actions={
         plan &&
         !editing && (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            <LuPencil size={14} /> Sozlamalar
+            <LuPencil size={14} /> {t("studyPlan.settings")}
           </Button>
         )
       }
@@ -679,9 +687,9 @@ export default function StudyPlan() {
 
       {analysis.latestResultPath && (
         <p className="mt-6 text-center text-xs text-[#12213D]/40">
-          Har bir yangi mock natijasidan keyin rejani AI bilan yangilang ·{" "}
+          {t("studyPlan.updateHint")}{" "}
           <Link to={analysis.latestResultPath} className="font-semibold text-[#087fd1] hover:underline">
-            Oxirgi natija
+            {t("studyPlan.latestResult")}
           </Link>
         </p>
       )}

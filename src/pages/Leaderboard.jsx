@@ -3,7 +3,8 @@ import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { LuTrophy, LuCrown, LuMedal } from "react-icons/lu";
 import Avatar from "../components/Avatar";
-import { Page, PageHeader, Card, Button, EmptyState, Skeleton } from "../components/ui";
+import { Page, PageHeader, Card, Button, EmptyState, ErrorState, Skeleton } from "../components/ui";
+import { useI18n } from "../i18n";
 
 // Podium tartibi: 2-o'rin, 1-o'rin, 3-o'rin (o'rtadagisi eng baland).
 const PODIUM = [
@@ -14,16 +15,24 @@ const PODIUM = [
 
 export default function Leaderboard() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(false);
     api
       .get("/leaderboard?limit=15")
       .then(setRows)
-      .catch(() => setRows([]))
+      .catch(() => {
+        setRows([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [reloadKey]);
 
   const myRank = rows.findIndex((r) => r.uid === user?.uid);
   const rest = rows.slice(3);
@@ -31,10 +40,10 @@ export default function Leaderboard() {
   return (
     <Page width="narrow">
       <PageHeader
-        eyebrow="Reyting"
+        eyebrow={t("leaderboard.eyebrow")}
         icon={LuTrophy}
-        title="Eng yaxshi natijalar"
-        subtitle="Har bir foydalanuvchining eng yuqori to'liq SAT mock balli bo'yicha TOP-15. Adolat uchun har testning faqat birinchi to'liq urinishi hisobga olinadi."
+        title={t("leaderboard.title")}
+        subtitle={t("leaderboard.subtitle")}
       />
 
       {loading ? (
@@ -43,12 +52,14 @@ export default function Leaderboard() {
           <Skeleton className="h-16" />
           <Skeleton className="h-16" />
         </div>
+      ) : loadError ? (
+        <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
       ) : rows.length === 0 ? (
         <EmptyState
           icon={LuTrophy}
-          title="Reyting hali bo'sh"
-          text="Hali hech kim mock test yakunlamagan — birinchi bo'ling!"
-          action={<Button to="/sat/select">Testni boshlash</Button>}
+          title={t("leaderboard.emptyTitle")}
+          text={t("leaderboard.emptyText")}
+          action={<Button to="/sat/select">{t("leaderboard.startTest")}</Button>}
         />
       ) : (
         <>
@@ -69,7 +80,7 @@ export default function Leaderboard() {
                     />
                     <p className="mt-3 w-full truncate text-sm font-semibold text-[#12213D]">
                       {r.name}
-                      {isMe && <span className="text-[#087fd1]"> (Siz)</span>}
+                      {isMe && <span className="text-[#087fd1]">{t("leaderboard.you")}</span>}
                     </p>
                     <p className="font-display text-xl font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
                     <div
@@ -101,7 +112,7 @@ export default function Leaderboard() {
                       <Avatar name={r.name} src={r.avatarUrl} className="h-9 w-9 rounded-xl bg-[#12213D] text-xs" />
                       <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#12213D]">
                         {r.name}
-                        {isMe && <span className="font-semibold text-[#087fd1]"> (Siz)</span>}
+                        {isMe && <span className="font-semibold text-[#087fd1]">{t("leaderboard.you")}</span>}
                       </p>
                       <p className="font-display text-lg font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
                     </div>
@@ -114,7 +125,7 @@ export default function Leaderboard() {
           {user && myRank === -1 && (
             <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-[#12213D]/45">
               <LuMedal size={16} />
-              Siz hali TOP-15'da emassiz — yaxshiroq natija ko'rsatib, ro'yxatga kiring!
+              {t("leaderboard.notInTop")}
             </p>
           )}
         </>

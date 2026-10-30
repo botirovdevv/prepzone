@@ -38,7 +38,6 @@ const pages = {
   Analytics: () => import("./pages/admin/Analytics"),
   ChooseExam: () => import("./pages/ChooseExam"),
   DesmosIndex: () => import("./pages/DesmosIndex"),
-  DesmosTutorial: () => import("./pages/DesmosTutorial"),
   DesmosDashboard: () => import("./pages/admin/DesmosDashboard"),
   DesmosForm: () => import("./pages/admin/DesmosForm"),
 };
@@ -66,7 +65,6 @@ const SetForm = lazy(pages.SetForm);
 const Analytics = lazy(pages.Analytics);
 const ChooseExam = lazy(pages.ChooseExam);
 const DesmosIndex = lazy(pages.DesmosIndex);
-const DesmosTutorial = lazy(pages.DesmosTutorial);
 const DesmosDashboard = lazy(pages.DesmosDashboard);
 const DesmosForm = lazy(pages.DesmosForm);
 
@@ -347,14 +345,9 @@ export default function AuthedApp() {
             </DashboardRoute>
           }
         />
-        <Route
-          path="desmos/:id"
-          element={
-            <DashboardRoute>
-              <DesmosTutorial />
-            </DashboardRoute>
-          }
-        />
+        {/* Desmos bo'limi hali yopiq (sidebar'da "Tez orada") — darslik
+            havolalari ro'yxat sahifasidagi ogohlantirishga olib boradi. */}
+        <Route path="desmos/:id" element={<Navigate to="/desmos" replace />} />
         <Route
           path="admin/desmos"
           element={
