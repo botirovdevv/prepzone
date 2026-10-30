@@ -14,7 +14,7 @@ import {
   useRoomContext,
   useTracks,
 } from "@livekit/components-react";
-import { ConnectionQuality, ConnectionState, DisconnectReason, ScreenSharePresets, Track, VideoPresets } from "livekit-client";
+import { ConnectionQuality, ConnectionState, DisconnectReason, ScreenSharePresets, Track } from "livekit-client";
 import {
   LuMic,
   LuMicOff,
@@ -31,10 +31,13 @@ import {
   LuLoaderCircle,
   LuTimer,
   LuAlarmClock,
+  LuSettings2,
 } from "react-icons/lu";
 import { api } from "../api/client";
 import { Button } from "../components/ui";
 import Whiteboard from "../components/studyRoom/Whiteboard";
+import { QualityPanel } from "../components/studyRoom/QualitySettings";
+import { INCOMING_QUALITY, loadQuality, outgoingProfile, useQualitySettings } from "../components/studyRoom/quality";
 
 // ------------------------------------------------------------------
 // Study Room — ikki talaba uchun video dars xonasi.
@@ -57,31 +60,37 @@ function isPortraitPhone() {
 
 // Kameradan kadr nisbatini (aspectRatio) majburlamasdan so'raymiz: aks holda
 // tik ushlangan telefon keng kadr berish uchun sensor o'rtasini kesib oladi va
-// tasvir juda yaqin (zoom) bo'lib qoladi. Telefon tik bo'lsa — tik kadr.
-// Telefonlar 540p yuboradi: arzonroq Android'lar 720p'ni uch qatlamda
-// kodlashga qiynalib, videosi qotadi; telefon ekranida 540p baribir tiniq.
-function cameraProfile() {
-  return isPortraitPhone()
-    ? { resolution: { width: 540, height: 960, frameRate: 24 }, maxBitrate: 900_000 }
-    : { resolution: { width: 1280, height: 720, frameRate: 24 }, maxBitrate: 1_200_000 };
+// tasvir juda yaqin (zoom) bo'lib qoladi. Profillar: components/studyRoom/quality.js.
+function cameraProfile(outgoing = loadQuality().outgoing) {
+  return outgoingProfile(outgoing, isPortraitPhone());
+}
+
+// LiveKit'ga beriladigan kamera sozlamalari (yoqish/qayta e'lon qilishda ham).
+function cameraOptions(profile) {
+  return {
+    capture: { resolution: profile.resolution, facingMode: "user" },
+    publish: {
+      simulcast: profile.simulcast,
+      videoEncoding: profile.encoding,
+      // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
+      videoSimulcastLayers: profile.layers,
+      degradationPreference: "balanced",
+    },
+  };
 }
 
 // Xonaga kirish paytida (telefonning o'sha paytdagi holatiga qarab) quriladi.
 function buildRoomOptions() {
-  const camera = cameraProfile();
+  const camera = cameraOptions(cameraProfile());
   return {
     // "screen" — telefonning haqiqiy piksel zichligi hisobga olinadi (aks holda
     // kichik plitka uchun 180p tanlanib, video xira ko'rinadi).
     adaptiveStream: { pixelDensity: "screen" },
     dynacast: true,
-    videoCaptureDefaults: { resolution: camera.resolution, facingMode: "user" },
+    videoCaptureDefaults: camera.capture,
     audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     publishDefaults: {
-      simulcast: true,
-      videoEncoding: { maxBitrate: camera.maxBitrate, maxFramerate: 24 },
-      // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
-      videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
-      degradationPreference: "balanced",
+      ...camera.publish,
       screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
       dtx: true,
       red: true,
@@ -107,7 +116,7 @@ const canScreenShare = typeof navigator !== "undefined" && Boolean(navigator.med
 // ---------------- Kirishdan oldin: kamera/mikrofon tekshiruvi ----------------
 function PreJoin({ code, onJoin, joining, error }) {
   const videoRef = useRef(null);
-  const [profile] = useState(cameraProfile);
+  const [profile] = useState(() => cameraProfile());
   const portrait = profile.resolution.height > profile.resolution.width;
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
@@ -191,9 +200,10 @@ function PreJoin({ code, onJoin, joining, error }) {
   );
 }
 
-function RoundButton({ active, danger, onClick, title, children, disabled }) {
+function RoundButton({ active, danger, onClick, title, children, disabled, ...rest }) {
   return (
     <button
+      {...rest}
       type="button"
       title={title}
       aria-label={title}
@@ -444,12 +454,17 @@ function useSustained(flag) {
 
 const isBad = (q) => q === ConnectionQuality.Poor || q === ConnectionQuality.Lost;
 
-function LocalNetworkNotice({ participant, cameraOn, onCameraOff }) {
+function LocalNetworkNotice({ participant, cameraOn, onCameraOff, onLowerQuality }) {
   const { quality } = useConnectionQualityIndicator({ participant });
   if (!useSustained(isBad(quality))) return null;
   return (
-    <div className="flex items-center justify-center gap-3 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
       <span>Internetingiz sekin — video qotishi yoki xiralashishi mumkin.</span>
+      {cameraOn && onLowerQuality && (
+        <button type="button" onClick={onLowerQuality} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
+          Sifatni pasaytirish
+        </button>
+      )}
       {cameraOn && (
         <button type="button" onClick={onCameraOff} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
           Kamerani o'chirish
@@ -489,6 +504,45 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   // desktop asosiy maydon: "board" | "screen" (videolar doim o'ng ustunda).
   const [view, setView] = useState(() => (window.matchMedia("(min-width: 1024px)").matches ? "board" : "video"));
   const mobileVideo = !isDesktop && view === "video";
+
+  // ---------------- Video sifati ----------------
+  const [quality, updateQuality] = useQualitySettings();
+  const [qualityOpen, setQualityOpen] = useState(false);
+  const [applyingOutgoing, setApplyingOutgoing] = useState(false);
+
+  // Ko'radigan sifat: sherik kamerasining eng yuqori qatlami. Sherik qayta
+  // ulanganda (yangi track) ham qayta qo'llanadi.
+  const remotePub = remoteCamera && isTrackReference(remoteCamera) ? remoteCamera.publication : null;
+  const remoteSubscribed = remotePub?.isSubscribed;
+  useEffect(() => {
+    if (remotePub && remoteSubscribed) remotePub.setVideoQuality(INCOMING_QUALITY[quality.incoming]);
+  }, [remotePub, remoteSubscribed, quality.incoming]);
+
+  // Yuboradigan sifat: kamerani yangi o'lcham/bitreyt bilan qayta e'lon qilamiz
+  // (eski e'lon olib tashlanmasa LiveKit uni eski sozlama bilan qayta yoqadi).
+  const applyOutgoing = async (id) => {
+    if (applyingOutgoing) return;
+    updateQuality({ outgoing: id });
+    setApplyingOutgoing(true);
+    try {
+      const wasOn = localParticipant.isCameraEnabled;
+      const pub = localParticipant.getTrackPublication(Track.Source.Camera);
+      if (pub?.track) await localParticipant.unpublishTrack(pub.track);
+      if (wasOn) {
+        const camera = cameraOptions(cameraProfile(id));
+        await localParticipant.setCameraEnabled(true, camera.capture, camera.publish);
+      }
+    } catch {
+      /* kamera ruxsati yo'q — keyingi yoqishda yangi sozlama ishlaydi */
+    } finally {
+      setApplyingOutgoing(false);
+    }
+  };
+
+  const setCamera = (on) => {
+    const camera = cameraOptions(cameraProfile(quality.outgoing));
+    return localParticipant.setCameraEnabled(on, camera.capture, camera.publish);
+  };
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -543,7 +597,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
       </div>
       {showScreen && <ParticipantTile trackRef={screen} className="h-full w-full" />}
       {/* Telefonda doska/ekran ochiq bo'lsa ham sherik kichik oynada ko'rinadi. */}
-      {!isDesktop && remoteCamera && (
+      {!isDesktop && !mobileVideo && remoteCamera && (
         <FloatingTile trackRef={remoteCamera} onClick={() => setView("video")} className="bottom-3 right-3" />
       )}
     </>
@@ -553,20 +607,24 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
     <button
       type="button"
       onClick={() => setView(id)}
-      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold transition ${
+      title={label}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-[13px] font-semibold transition ${
         view === id ? "bg-white text-[#12213D]" : "text-white/70 hover:text-white"
       }`}
     >
-      <Icon size={15} /> {label}
+      {/* Telefonda joy tor — faol tabda matn, qolganlarida faqat ikonka. */}
+      <Icon size={15} /> <span className={view === id ? "" : "hidden sm:inline"}>{label}</span>
     </button>
   );
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#0f1b33] text-white">
       {/* Yuqori panel */}
-      <header className="flex items-center gap-3 px-3 py-2 sm:px-4">
+      <header className="flex items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">Study Room · Beta</p>
+          <p className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-white/45 sm:block">
+            Study Room · Beta
+          </p>
           <p className="font-mono text-sm font-bold tracking-[0.14em]">{code}</p>
         </div>
         <button
@@ -581,7 +639,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
           {tab("board", "Doska", LuPencilLine)}
           {screen && tab("screen", "Ekran", LuMonitorUp)}
-          {!isDesktop && tab("video", `Video (${participants.length})`, LuVideo)}
+          {!isDesktop && tab("video", `Video · ${participants.length}`, LuVideo)}
         </div>
       </header>
 
@@ -589,7 +647,8 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
       <LocalNetworkNotice
         participant={localParticipant}
         cameraOn={isCameraEnabled}
-        onCameraOff={() => toggle(() => localParticipant.setCameraEnabled(false))}
+        onCameraOff={() => toggle(() => setCamera(false))}
+        onLowerQuality={quality.outgoing !== "low" ? () => applyOutgoing("low") : undefined}
       />
       {remoteParticipant && <RemoteNetworkNotice participant={remoteParticipant} />}
       {connectionState === ConnectionState.Reconnecting && (
@@ -624,7 +683,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         </RoundButton>
         <RoundButton
           active={isCameraEnabled}
-          onClick={() => toggle(() => localParticipant.setCameraEnabled(!isCameraEnabled))}
+          onClick={() => toggle(() => setCamera(!isCameraEnabled))}
           title={isCameraEnabled ? "Kamerani o'chirish" : "Kamerani yoqish"}
         >
           {isCameraEnabled ? <LuVideo size={20} /> : <LuVideoOff size={20} />}
@@ -647,6 +706,26 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
             {isScreenShareEnabled ? <LuMonitorX size={20} className="text-sky-300" /> : <LuMonitorUp size={20} />}
           </RoundButton>
         )}
+        <div className="relative">
+          <RoundButton
+            active
+            data-quality-toggle
+            onClick={() => setQualityOpen((v) => !v)}
+            title="Video sifati"
+          >
+            <LuSettings2 size={20} className={qualityOpen ? "text-sky-300" : ""} />
+          </RoundButton>
+          {qualityOpen && (
+            <QualityPanel
+              incoming={quality.incoming}
+              outgoing={quality.outgoing}
+              onIncoming={(id) => updateQuality({ incoming: id })}
+              onOutgoing={applyOutgoing}
+              applying={applyingOutgoing}
+              onClose={() => setQualityOpen(false)}
+            />
+          )}
+        </div>
         <RoundButton danger onClick={leave} title="Chiqish">
           <LuPhoneOff size={20} />
         </RoundButton>
