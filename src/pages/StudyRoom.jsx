@@ -41,19 +41,37 @@ import Whiteboard from "../components/studyRoom/Whiteboard";
 //   Video/ovoz/ekran: LiveKit Cloud (token: POST /api/study-room/:code/token)
 //   Doska: Socket.IO (components/studyRoom/Whiteboard.jsx)
 //
-// Qotmaslik uchun: adaptiveStream (ko'rinadigan o'lchamga mos sifat),
-// dynacast (hech kim ko'rmayotgan sifat qatlami yuborilmaydi), simulcast,
-// kamera 360p, ekran 1080p/15fps ("detail" — matn tiniq qoladi).
+// Sifat va qotmaslik uchun: adaptiveStream (ekran zichligiga mos sifat qatlami),
+// dynacast (hech kim ko'rmayotgan qatlam yuborilmaydi), simulcast (720p +
+// 360p + 180p), ekran 1080p/15fps ("detail" — matn tiniq qoladi).
 // ------------------------------------------------------------------
 
+// Kameradan kadr nisbatini (aspectRatio) majburlamasdan so'raymiz: aks holda
+// tik ushlangan telefon keng kadr berish uchun sensor o'rtasini kesib oladi va
+// tasvir juda yaqin (zoom) bo'lib qoladi. Telefon tik bo'lsa — tik kadr.
+function cameraResolution() {
+  const portraitPhone =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(pointer: coarse)").matches &&
+    window.matchMedia?.("(orientation: portrait)").matches;
+  return portraitPhone ? { width: 720, height: 1280, frameRate: 24 } : { width: 1280, height: 720, frameRate: 24 };
+}
+
+const CAMERA_RESOLUTION = cameraResolution();
+
 const ROOM_OPTIONS = {
-  adaptiveStream: true,
+  // "screen" — telefonning haqiqiy piksel zichligi hisobga olinadi (aks holda
+  // kichik plitka uchun 180p tanlanib, video xira ko'rinadi).
+  adaptiveStream: { pixelDensity: "screen" },
   dynacast: true,
-  videoCaptureDefaults: { resolution: VideoPresets.h360.resolution },
+  videoCaptureDefaults: { resolution: CAMERA_RESOLUTION, facingMode: "user" },
   audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
   publishDefaults: {
     simulcast: true,
-    videoSimulcastLayers: [VideoPresets.h180],
+    videoEncoding: { maxBitrate: 1_200_000, maxFramerate: 24 },
+    // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
+    videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+    degradationPreference: "balanced",
     screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
     dtx: true,
     red: true,
@@ -74,7 +92,13 @@ function PreJoin({ code, onJoin, joining, error }) {
     let stream;
     let cancelled = false;
     navigator.mediaDevices
-      ?.getUserMedia({ video: { width: 640, height: 360 } })
+      ?.getUserMedia({
+        video: {
+          width: { ideal: CAMERA_RESOLUTION.width },
+          height: { ideal: CAMERA_RESOLUTION.height },
+          facingMode: "user",
+        },
+      })
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         stream = s;
@@ -103,7 +127,7 @@ function PreJoin({ code, onJoin, joining, error }) {
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
           <div className="relative aspect-video bg-[#12213D]">
             {camOn ? (
-              <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-cover" />
+              <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-contain" />
             ) : (
               <div className="flex h-full items-center justify-center text-white/60">
                 <LuVideoOff size={40} />
@@ -174,15 +198,45 @@ function QualityBars({ participant }) {
   );
 }
 
+// Video va plitka shakli (tik/keng) bir xil bo'lsa — plitkani to'ldiramiz
+// (object-cover, Meet kabi); farq qilsa (masalan tik telefon videosi keng
+// plitkada) — kesmasdan to'liq ko'rsatamiz (object-contain).
+function useVideoFit() {
+  const boxRef = useRef(null);
+  const [boxRatio, setBoxRatio] = useState(16 / 9);
+  const [videoRatio, setVideoRatio] = useState(16 / 9);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width && height) setBoxRatio(width / height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const onVideoSize = (e) => {
+    const { videoWidth, videoHeight } = e.currentTarget;
+    if (videoWidth && videoHeight) setVideoRatio(videoWidth / videoHeight);
+  };
+
+  const ratio = Math.max(boxRatio, videoRatio) / Math.min(boxRatio, videoRatio);
+  return { boxRef, onVideoSize, cover: ratio < 1.35 };
+}
+
 function ParticipantTile({ trackRef, className = "" }) {
   const participant = trackRef.participant;
   const speaking = useIsSpeaking(participant);
   const hasVideo = isTrackReference(trackRef) && !trackRef.publication.isMuted;
   const name = participant.name || participant.identity;
   const isScreen = trackRef.source === Track.Source.ScreenShare;
+  const { boxRef, onVideoSize, cover } = useVideoFit();
 
   return (
     <div
+      ref={boxRef}
       className={`relative overflow-hidden rounded-2xl bg-[#1b2c4d] ring-2 transition ${
         speaking && !isScreen ? "ring-emerald-400" : "ring-transparent"
       } ${className}`}
@@ -190,7 +244,9 @@ function ParticipantTile({ trackRef, className = "" }) {
       {hasVideo ? (
         <VideoTrack
           trackRef={trackRef}
-          className={`h-full w-full ${isScreen ? "object-contain" : "object-cover"} ${
+          onLoadedMetadata={onVideoSize}
+          onResize={onVideoSize}
+          className={`h-full w-full ${cover && !isScreen ? "object-cover" : "object-contain"} ${
             participant.isLocal && !isScreen ? "-scale-x-100" : ""
           }`}
         />
@@ -266,7 +322,10 @@ function formatMs(ms) {
   return `${m}:${sec}`;
 }
 
-function TimeLeft({ remaining }) {
+// Taymer faqat shu kichik komponentlarni har soniyada qayta chizadi —
+// videolar bilan butun xona qayta chizilmaydi.
+function TimeLeft({ endsAt }) {
+  const remaining = useRemaining(endsAt);
   const warn = remaining <= WARN_MS;
   return (
     <span
@@ -280,7 +339,21 @@ function TimeLeft({ remaining }) {
   );
 }
 
+function TimeWarning({ endsAt, limitMinutes }) {
+  const remaining = useRemaining(endsAt);
+  if (remaining <= 0 || remaining > WARN_MS) return null;
+  return (
+    <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+      Dars vaqti ({limitMinutes} daqiqa) tugashiga {Math.ceil(remaining / 60_000)} daqiqa qoldi. Doskani saqlab
+      qo'ying.
+    </div>
+  );
+}
+
 // ---------------- Xona ichi ----------------
+// Telefondagi "Video" tabida ikki plitka ekranni teng bo'lishadi (tik video uchun
+// balandlik yetarli); desktopda o'ng ustunda 16:9.
+const TILE_CLASS = "min-h-0 w-full flex-1 lg:flex-none lg:aspect-video";
 function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const room = useRoomContext();
   const connectionState = useConnectionState();
@@ -295,7 +368,6 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const [view, setView] = useState("board");
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-  const remaining = useRemaining(endsAt);
 
   // Yangi ekran ulashilsa — avtomatik o'sha ko'rinishga o'tamiz; tugasa doskaga qaytamiz.
   const screenSid = screen?.publication.trackSid;
@@ -333,9 +405,9 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const tiles = (
     <>
       {cameraTracks.map((t) => (
-        <ParticipantTile key={`${t.participant.identity}-cam`} trackRef={t} className="aspect-video w-full" />
+        <ParticipantTile key={`${t.participant.identity}-cam`} trackRef={t} className={TILE_CLASS} />
       ))}
-      {participants.length < 2 && <WaitingTile className="aspect-video w-full" />}
+      {participants.length < 2 && <WaitingTile className={TILE_CLASS} />}
     </>
   );
 
@@ -378,7 +450,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
           {copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
           <span className="hidden sm:inline">{copied ? "Nusxalandi" : "Taklif linki"}</span>
         </button>
-        <TimeLeft remaining={remaining} />
+        <TimeLeft endsAt={endsAt} />
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
           {tab("board", "Doska", LuPencilLine)}
           {screen && tab("screen", "Ekran", LuMonitorUp)}
@@ -386,12 +458,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         </div>
       </header>
 
-      {remaining > 0 && remaining <= WARN_MS && (
-        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
-          Dars vaqti ({limitMinutes} daqiqa) tugashiga {Math.ceil(remaining / 60_000)} daqiqa qoldi. Doskani saqlab
-          qo'ying.
-        </div>
-      )}
+      <TimeWarning endsAt={endsAt} limitMinutes={limitMinutes} />
       {connectionState === ConnectionState.Reconnecting && (
         <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
           Aloqa uzildi — qayta ulanmoqda…
