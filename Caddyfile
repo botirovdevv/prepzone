@@ -10,10 +10,6 @@
 	handle /socket.io/* {
 		reverse_proxy api:4000
 	}
-	# Study Room video signali (LiveKit). Media 7881/7882 portlardan to'g'ridan-to'g'ri.
-	handle /rtc* {
-		reverse_proxy livekit:7880
-	}
 
 	# Qolgan hamma narsa — React ilova (SPA: noma'lum yo'llar index.html'ga)
 	handle {

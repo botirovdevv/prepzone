@@ -26,28 +26,47 @@ services:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: postgres://prepzone:${POSTGRES_PASSWORD}@db:5432/prepzone
-      # Study Room: brauzer wss://DOMAIN/rtc ga ulanadi, API esa ichki tarmoqdan.
-      LIVEKIT_URL: wss://${DOMAIN}
-      LIVEKIT_API_HOST: http://livekit:7880
-      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
-      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      # Study Room: TURN relay (coturn) uchun vaqtinchalik login yaratiladi.
+      TURN_SECRET: ${TURN_SECRET:-}
+      TURN_URLS: turn:${DOMAIN}:3478?transport=udp,turn:${DOMAIN}:3478?transport=tcp
     depends_on:
       db:
         condition: service_healthy
 
-  # Study Room uchun o'z video serverimiz (LiveKit SFU). Signal Caddy orqali
-  # (/rtc), media 7881/tcp va 7882/udp orqali to'g'ridan-to'g'ri.
-  livekit:
-    image: livekit/livekit-server:v1.13
+  # Study Room: video brauzerlar orasida to'g'ridan-to'g'ri (P2P). Ikki qurilma
+  # to'g'ridan-to'g'ri ulana olmasa (qattiq operator NAT) — shu TURN relay.
+  # network_mode: host — TURN relay portlari (49160-49260/udp) uchun tavsiya.
+  # Ochiq portlar (Oracle konsoli + iptables): 3478/udp, 3478/tcp, 49160-49260/udp.
+  coturn:
+    image: coturn/coturn:4.18
     restart: unless-stopped
-    command: --config /etc/livekit.yaml
-    environment:
-      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-}"
-    volumes:
-      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
-    ports:
-      - "7881:7881"
-      - "7882:7882/udp"
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49260
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?.env faylida TURN_SECRET ni kiriting}
+      - --realm=${DOMAIN}
+      - --external-ip=${TURN_EXTERNAL_IP:-92.5.135.143}/${TURN_PRIVATE_IP:-10.0.0.212}
+      - --fingerprint
+      - --no-tls
+      - --no-dtls
+      - --no-cli
+      - --no-multicast-peers
+      - --stale-nonce=600
+      - --total-quota=200
+      - --user-quota=6
+      # Relay ichki tarmoqlarga (DB, docker, metadata) yo'l ochmasin.
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=100.64.0.0-100.127.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
 
   web:
     build:

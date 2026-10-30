@@ -3,7 +3,15 @@ import { config } from "../config.js";
 import { COOKIE_NAME } from "./session.js";
 import { userFromToken } from "../middleware/auth.js";
 import { hasPerm } from "./permissions.js";
-import { CODE_RE, MAX_POINTS_PER_STROKE, MAX_STROKES, getRoom } from "./studyRooms.js";
+import {
+  CODE_RE,
+  MAX_PARTICIPANTS,
+  MAX_POINTS_PER_STROKE,
+  MAX_STROKES,
+  getRoom,
+  isTimeUp,
+  startRoomClock,
+} from "./studyRooms.js";
 
 // ------------------------------------------------------------------
 // Jonli yangilanishlar (Firestore onSnapshot o'rnini bosadi).
@@ -14,6 +22,8 @@ import { CODE_RE, MAX_POINTS_PER_STROKE, MAX_STROKES, getRoom } from "./studyRoo
 //   session-admin:{id}  — faqat admin: kod bilan meta, ishtirokchilar
 //                         holati va proktoring hodisalari.
 //   board:{code}        — Study Room doskasi (chiziqlar ikkala talabaga).
+//   call:{code}         — Study Room qo'ng'irog'i: WebRTC signal (offer/answer/
+//                         ICE), mikrofon/kamera holati. Video P2P boradi.
 // ------------------------------------------------------------------
 
 let io = null;
@@ -55,6 +65,7 @@ export function initRealtime(httpServer) {
       socket.leave(`session-admin:${sessionId}`);
     });
     registerBoard(socket);
+    registerCall(socket);
   });
 
   return io;
@@ -137,6 +148,102 @@ function registerBoard(socket) {
     board.strokes.clear();
     socket.to(`board:${code}`).emit("board:clear");
   });
+}
+
+// ------------------------------------------------------------------
+// Study Room qo'ng'irog'i — WebRTC signal serveri. Media server orqali
+// o'tmaydi: brauzerlar to'g'ridan-to'g'ri ulanadi (kerak bo'lsa TURN relay).
+// Xonada ko'pi bilan 2 socket; o'sha foydalanuvchi qayta kirsa eski socket
+// chiqariladi. Perfect-negotiation rollari socket id'lar bo'yicha (klientda).
+// ------------------------------------------------------------------
+
+const SIGNAL_MAX_BYTES = 64 * 1024;
+const QUALITY_IDS = new Set(["auto", "medium", "low"]);
+const callRoom = (code) => `call:${code}`;
+
+function endCall(code) {
+  const room = getRoom(code);
+  if (room) room.peers.clear();
+  io?.to(callRoom(code)).emit("call:ended");
+  io?.in(callRoom(code)).socketsLeave(callRoom(code));
+}
+
+function registerCall(socket) {
+  let code = null;
+  let phone = false;
+  const user = socket.data.user;
+  const name = user.display_name || user.email?.split("@")[0] || "Talaba";
+  const peerInfo = () => ({ id: socket.id, name, phone });
+
+  const leave = () => {
+    if (!code) return;
+    const room = getRoom(code);
+    room?.peers.delete(socket.id);
+    socket.to(callRoom(code)).emit("call:peer-left", { id: socket.id });
+    socket.leave(callRoom(code));
+    code = null;
+  };
+
+  socket.on("call:join", (raw, ack) => {
+    const reply = typeof ack === "function" ? ack : () => {};
+    // { code, phone } — phone: sherik telefondan (kodek tanlash uchun).
+    const next = typeof raw?.code === "string" ? raw.code.toUpperCase() : "";
+    phone = Boolean(raw?.phone);
+    const room = CODE_RE.test(next) ? getRoom(next) : null;
+    if (!room) return reply({ ok: false, reason: "not-found" });
+    if (isTimeUp(room)) return reply({ ok: false, reason: "time-up" });
+    if (code) leave();
+
+    // O'sha foydalanuvchining eski socketi (boshqa tab/refresh) — chiqariladi.
+    for (const [sid, p] of room.peers) {
+      if (p.userId === String(user.id)) {
+        room.peers.delete(sid);
+        io.to(sid).emit("call:replaced");
+        io.in(sid).socketsLeave(callRoom(next));
+        socket.to(callRoom(next)).emit("call:peer-left", { id: sid });
+      }
+    }
+    if (room.peers.size >= MAX_PARTICIPANTS) return reply({ ok: false, reason: "full" });
+
+    code = next;
+    const endsAt = startRoomClock(room, () => endCall(next));
+    const other = [...room.peers.entries()][0];
+    room.peers.set(socket.id, { userId: String(user.id), name, phone });
+    socket.join(callRoom(code));
+    socket.to(callRoom(code)).emit("call:peer-joined", peerInfo());
+    reply({
+      ok: true,
+      self: socket.id,
+      peer: other ? { id: other[0], name: other[1].name, phone: other[1].phone } : null,
+      endsAt,
+      limitMinutes: room.limitMs / 60_000,
+    });
+  });
+
+  // offer/answer/ICE — faqat xonadagi ikkinchi kishiga.
+  socket.on("call:signal", (msg) => {
+    if (!code || !msg || typeof msg !== "object") return;
+    if (JSON.stringify(msg).length > SIGNAL_MAX_BYTES) return;
+    socket.to(callRoom(code)).emit("call:signal", msg);
+  });
+
+  socket.on("call:state", (state) => {
+    if (!code || !state || typeof state !== "object") return;
+    socket.to(callRoom(code)).emit("call:state", {
+      mic: Boolean(state.mic),
+      cam: Boolean(state.cam),
+      screen: Boolean(state.screen),
+    });
+  });
+
+  // "Menga ko'pi bilan shu sifatda yubor" — sherikning ko'radigan sifati.
+  socket.on("call:quality", (q) => {
+    if (!code || !QUALITY_IDS.has(q)) return;
+    socket.to(callRoom(code)).emit("call:quality", q);
+  });
+
+  socket.on("call:leave", leave);
+  socket.on("disconnect", leave);
 }
 
 export function emitSessionUpdate(sessionId, publicDoc, adminDoc) {

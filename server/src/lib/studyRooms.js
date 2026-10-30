@@ -1,9 +1,10 @@
 import { randomInt } from "node:crypto";
 
 // ------------------------------------------------------------------
-// Study Room xonalari va ularning doskasi — faqat xotirada saqlanadi
-// (server qayta ishga tushsa xonalar yo'qoladi; hozircha shu yetarli).
-// Video/ovoz LiveKit Cloud orqali, doska esa Socket.IO orqali (realtime.js).
+// Study Room xonalari, ularning doskasi va qo'ng'iroq ishtirokchilari — faqat
+// xotirada saqlanadi (server qayta ishga tushsa xonalar yo'qoladi).
+// Video/ovoz brauzerlar orasida to'g'ridan-to'g'ri (WebRTC P2P, kerak bo'lsa
+// TURN relay); signal va doska Socket.IO orqali (realtime.js).
 // ------------------------------------------------------------------
 
 // Bir-biriga o'xshash belgilar (0/O, 1/I/L) yo'q — kodni og'zaki aytish oson.
@@ -23,7 +24,8 @@ export const PREMIUM_MINUTES = 90;
 export const MAX_STROKES = 5000;
 export const MAX_POINTS_PER_STROKE = 4000;
 
-// code -> { createdBy, createdAt, touchedAt, limitMs, startedAt, endTimer, strokes: Map<id, stroke> }
+// code -> { createdBy, createdAt, touchedAt, limitMs, startedAt, endTimer,
+//           strokes: Map<id, stroke>, peers: Map<socketId, { userId, name }> }
 const rooms = new Map();
 
 // Hozircha hamma uchun bepul limit. Premium qo'shilganda:
@@ -51,8 +53,13 @@ export function createRoom(user) {
     startedAt: null, // birinchi kishi kirganda boshlanadi
     endTimer: null,
     strokes: new Map(),
+    peers: new Map(),
   });
   return code;
+}
+
+export function isTimeUp(room) {
+  return Boolean(room.startedAt) && Date.now() >= room.startedAt + room.limitMs;
 }
 
 // Xona vaqtini birinchi kirishda boshlaydi va tugash vaqtida onEnd'ni chaqiradi.

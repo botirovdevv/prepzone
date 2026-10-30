@@ -28,12 +28,12 @@ export const config = {
   // Frontend boshqa domenda bo'lsa (masalan Vercel) — shu yerga uning
   // manzili yoziladi. Caddy orqali bitta domenda ishlasa bo'sh qoladi.
   clientOrigin: process.env.CLIENT_ORIGIN || "",
-  // LiveKit (Study Room video/ovoz) — o'z serverimiz (docker-compose "livekit").
-  // LIVEKIT_URL — brauzer ulanadigan manzil (wss://prep-zone.uz),
-  // LIVEKIT_API_HOST — server API'ga ichkaridan murojaat (http://livekit:7880).
-  // Kalitlar bo'sh bo'lsa Study Room o'chiq.
-  livekitUrl: process.env.LIVEKIT_URL || "",
-  livekitApiHost: process.env.LIVEKIT_API_HOST || "",
-  livekitApiKey: process.env.LIVEKIT_API_KEY || "",
-  livekitApiSecret: process.env.LIVEKIT_API_SECRET || "",
+  // Study Room: video brauzerlar orasida P2P; to'g'ridan-to'g'ri ulanib
+  // bo'lmasa TURN relay (docker-compose "coturn"). TURN_SECRET coturn'dagi
+  // static-auth-secret bilan bir xil. Bo'sh bo'lsa faqat STUN (P2P) ishlaydi.
+  turnSecret: process.env.TURN_SECRET || "",
+  turnUrls: (process.env.TURN_URLS || "")
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean),
 };

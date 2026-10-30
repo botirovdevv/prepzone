@@ -1,20 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  LiveKitRoom,
-  RoomAudioRenderer,
-  StartAudio,
-  VideoTrack,
-  isTrackReference,
-  useConnectionQualityIndicator,
-  useConnectionState,
-  useIsSpeaking,
-  useLocalParticipant,
-  useParticipants,
-  useRoomContext,
-  useTracks,
-} from "@livekit/components-react";
-import { ConnectionQuality, ConnectionState, DisconnectReason, ScreenSharePresets, Track } from "livekit-client";
 import {
   LuMic,
   LuMicOff,
@@ -32,73 +17,35 @@ import {
   LuTimer,
   LuAlarmClock,
   LuSettings2,
+  LuVolume2,
 } from "react-icons/lu";
 import { api } from "../api/client";
 import { Button } from "../components/ui";
 import Whiteboard from "../components/studyRoom/Whiteboard";
 import { QualityPanel } from "../components/studyRoom/QualitySettings";
-import { INCOMING_QUALITY, loadQuality, outgoingProfile, useQualitySettings } from "../components/studyRoom/quality";
+import { cameraConstraints, useQualitySettings } from "../components/studyRoom/quality";
+import useP2PCall from "../components/studyRoom/useP2PCall";
 
 // ------------------------------------------------------------------
 // Study Room — ikki talaba uchun video dars xonasi.
-//   Video/ovoz/ekran: o'z LiveKit serverimiz (token: POST /api/study-room/:code/token)
+//   Video/ovoz: brauzerlar orasida to'g'ridan-to'g'ri WebRTC (Google Meet'ning
+//     ikki kishilik qo'ng'iroqlari kabi), kerak bo'lsa TURN relay —
+//     components/studyRoom/useP2PCall.js. Kirish: POST /api/study-room/:code/join
 //   Doska: Socket.IO (components/studyRoom/Whiteboard.jsx)
-//
-// Sifat va qotmaslik uchun: adaptiveStream (ekran zichligiga mos sifat qatlami),
-// dynacast (hech kim ko'rmayotgan qatlam yuborilmaydi), simulcast, ekran
-// 1080p/15fps ("detail" — matn tiniq qoladi). Telefonda Meet uslubidagi tik
-// (9:16) ko'rinish; internet sekinlashsa foydalanuvchiga aytiladi.
+// Ko'rinish Meet uslubida: sherik katta, o'zimiz burchakda (telefonda tik 9:16).
+// Internet sekinlashsa foydalanuvchiga aytiladi.
 // ------------------------------------------------------------------
+
+const canScreenShare = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getDisplayMedia);
 
 // Telefon/planshet: asosiy kiritish — barmoq.
 function isPhone() {
   return typeof window !== "undefined" && Boolean(window.matchMedia?.("(pointer: coarse)").matches);
 }
 
-function isPortraitPhone() {
-  return isPhone() && Boolean(window.matchMedia?.("(orientation: portrait)").matches);
-}
-
-// Kameradan kadr nisbatini (aspectRatio) majburlamasdan so'raymiz: aks holda
-// tik ushlangan telefon keng kadr berish uchun sensor o'rtasini kesib oladi va
-// tasvir juda yaqin (zoom) bo'lib qoladi. Profillar: components/studyRoom/quality.js.
-function cameraProfile(outgoing = loadQuality().outgoing) {
-  return outgoingProfile(outgoing, { phone: isPhone(), portrait: isPortraitPhone() });
-}
-
-// LiveKit'ga beriladigan kamera sozlamalari (yoqish/qayta e'lon qilishda ham).
-function cameraOptions(profile) {
-  return {
-    capture: { resolution: profile.resolution, facingMode: "user" },
-    publish: {
-      videoCodec: profile.codec,
-      ...(profile.scalabilityMode && { scalabilityMode: profile.scalabilityMode, backupCodec: { codec: "vp8" } }),
-      simulcast: profile.simulcast,
-      videoEncoding: profile.encoding,
-      // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
-      videoSimulcastLayers: profile.layers,
-      degradationPreference: "balanced",
-    },
-  };
-}
-
-// Xonaga kirish paytida (telefonning o'sha paytdagi holatiga qarab) quriladi.
-function buildRoomOptions() {
-  const camera = cameraOptions(cameraProfile());
-  return {
-    // "screen" — telefonning haqiqiy piksel zichligi hisobga olinadi (aks holda
-    // kichik plitka uchun 180p tanlanib, video xira ko'rinadi).
-    adaptiveStream: { pixelDensity: "screen" },
-    dynacast: true,
-    videoCaptureDefaults: camera.capture,
-    audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    publishDefaults: {
-      ...camera.publish,
-      screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
-      dtx: true,
-      red: true,
-    },
-  };
+function deviceInfo() {
+  const phone = isPhone();
+  return { phone, portrait: phone && Boolean(window.matchMedia?.("(orientation: portrait)").matches) };
 }
 
 // lg (1024px) va undan keng — desktop ko'rinishi.
@@ -114,13 +61,20 @@ function useIsDesktop() {
   return desktop;
 }
 
-const canScreenShare = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getDisplayMedia);
+// MediaStream'ni <video>/<audio> elementga ulaydi.
+function useMediaRef(stream) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && el.srcObject !== stream) el.srcObject = stream || null;
+  }, [stream]);
+  return ref;
+}
 
 // ---------------- Kirishdan oldin: kamera/mikrofon tekshiruvi ----------------
 function PreJoin({ code, onJoin, joining, error }) {
   const videoRef = useRef(null);
-  const [profile] = useState(() => cameraProfile());
-  const portrait = profile.resolution.height > profile.resolution.width;
+  const [device] = useState(deviceInfo);
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [mediaError, setMediaError] = useState("");
@@ -130,13 +84,7 @@ function PreJoin({ code, onJoin, joining, error }) {
     let stream;
     let cancelled = false;
     navigator.mediaDevices
-      ?.getUserMedia({
-        video: {
-          width: { ideal: profile.resolution.width },
-          height: { ideal: profile.resolution.height },
-          facingMode: "user",
-        },
-      })
+      ?.getUserMedia({ video: cameraConstraints(device) })
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         stream = s;
@@ -151,7 +99,7 @@ function PreJoin({ code, onJoin, joining, error }) {
       cancelled = true;
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [camOn, profile]);
+  }, [camOn, device]);
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4 py-8">
@@ -165,7 +113,7 @@ function PreJoin({ code, onJoin, joining, error }) {
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
           {/* Telefonda oldindan ko'rish ham tik (9:16) — yuboriladigan kadrning o'zi. */}
           <div
-            className={`relative mx-auto bg-[#12213D] ${portrait ? "aspect-[9/16] h-[58dvh] max-w-full" : "aspect-video"}`}
+            className={`relative mx-auto bg-[#12213D] ${device.portrait ? "aspect-[9/16] h-[58dvh] max-w-full" : "aspect-video"}`}
           >
             {camOn ? (
               <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-contain" />
@@ -226,11 +174,9 @@ function RoundButton({ active, danger, onClick, title, children, disabled, ...re
 }
 
 // ---------------- Video plitkasi ----------------
-function QualityBars({ participant }) {
-  const { quality } = useConnectionQualityIndicator({ participant });
-  const level =
-    quality === ConnectionQuality.Excellent ? 3 : quality === ConnectionQuality.Good ? 2 : quality === ConnectionQuality.Poor ? 1 : 0;
-  const color = level >= 2 ? "bg-emerald-400" : level === 1 ? "bg-amber-400" : "bg-red-400";
+function QualityBars({ quality }) {
+  const level = quality === "excellent" ? 3 : quality === "good" ? 2 : quality === "poor" ? 1 : 0;
+  const color = level >= 2 ? "bg-emerald-400" : level === 1 ? "bg-amber-400" : "bg-white/40";
   return (
     <span className="flex items-end gap-[2px]" title="Aloqa sifati">
       {[1, 2, 3].map((i) => (
@@ -268,15 +214,13 @@ function useVideoFit() {
   return { boxRef, onVideoSize, cover: ratio < 1.35 };
 }
 
-// compact — kichik suzuvchi oyna (faqat ism va mikrofon belgisi);
-// forceCover — kadrni doim to'ldiradi (o'z kichik oynamiz uchun).
-function ParticipantTile({ trackRef, className = "", compact = false, forceCover = false }) {
-  const participant = trackRef.participant;
-  const speaking = useIsSpeaking(participant);
-  const hasVideo = isTrackReference(trackRef) && !trackRef.publication.isMuted;
-  const name = participant.name || participant.identity;
-  const isScreen = trackRef.source === Track.Source.ScreenShare;
+// tile: { stream, name, isLocal, isScreen, cam, mic, quality, speaking }
+// compact — kichik suzuvchi oyna; forceCover — kadrni doim to'ldiradi.
+function ParticipantTile({ tile, className = "", compact = false, forceCover = false }) {
+  const { stream, name, isLocal, isScreen, cam, mic, quality, speaking } = tile;
+  const videoRef = useMediaRef(stream);
   const { boxRef, onVideoSize, cover } = useVideoFit();
+  const showVideo = Boolean(stream) && (isScreen || cam);
 
   return (
     <div
@@ -285,23 +229,25 @@ function ParticipantTile({ trackRef, className = "", compact = false, forceCover
         speaking && !isScreen ? "ring-emerald-400" : "ring-transparent"
       } ${className}`}
     >
-      {hasVideo ? (
-        <VideoTrack
-          trackRef={trackRef}
-          onLoadedMetadata={onVideoSize}
-          onResize={onVideoSize}
-          className={`h-full w-full ${(cover || forceCover) && !isScreen ? "object-cover" : "object-contain"} ${
-            participant.isLocal && !isScreen ? "-scale-x-100" : ""
-          }`}
-        />
-      ) : (
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        onLoadedMetadata={onVideoSize}
+        onResize={onVideoSize}
+        className={`h-full w-full ${(cover || forceCover) && !isScreen ? "object-cover" : "object-contain"} ${
+          isLocal && !isScreen ? "-scale-x-100" : ""
+        } ${showVideo ? "" : "hidden"}`}
+      />
+      {!showVideo && (
         <div className="flex h-full items-center justify-center">
           <span
             className={`flex items-center justify-center rounded-full bg-[#087fd1] font-display font-bold text-white ${
               compact ? "h-9 w-9 text-base" : "h-16 w-16 text-2xl"
             }`}
           >
-            {name.slice(0, 1).toUpperCase()}
+            {(name || "?").slice(0, 1).toUpperCase()}
           </span>
         </div>
       )}
@@ -311,15 +257,15 @@ function ParticipantTile({ trackRef, className = "", compact = false, forceCover
             compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
           }`}
         >
-          {!isScreen && !participant.isMicrophoneEnabled && <LuMicOff size={12} className="shrink-0 text-red-300" />}
+          {!isScreen && !mic && <LuMicOff size={12} className="shrink-0 text-red-300" />}
           <span className="truncate">
             {isScreen ? `${name} — ekran` : name}
-            {participant.isLocal && " (siz)"}
+            {isLocal && name !== "Siz" && " (siz)"}
           </span>
         </span>
         {!isScreen && !compact && (
           <span className="ml-auto rounded-lg bg-black/45 px-1.5 py-1 backdrop-blur">
-            <QualityBars participant={participant} />
+            <QualityBars quality={quality} />
           </span>
         )}
       </div>
@@ -404,7 +350,7 @@ function TimeWarning({ endsAt, limitMinutes }) {
 
 // ---------------- Video ko'rinishi (Meet uslubi) ----------------
 // Kichik suzuvchi oyna — bosilsa onClick. Telefonda tik (9:16), kompyuterda keng (16:9).
-function FloatingTile({ trackRef, onClick, wide = false, className = "" }) {
+function FloatingTile({ tile, onClick, wide = false, className = "" }) {
   return (
     <button
       type="button"
@@ -414,25 +360,23 @@ function FloatingTile({ trackRef, onClick, wide = false, className = "" }) {
         wide ? "aspect-video w-[240px]" : "aspect-[9/16] w-[28vw] max-w-[132px]"
       } ${className}`}
     >
-      <ParticipantTile trackRef={trackRef} className="h-full w-full" compact forceCover={trackRef.participant.isLocal} />
+      <ParticipantTile tile={tile} className="h-full w-full" compact forceCover={tile.isLocal} />
     </button>
   );
 }
 
-// Sherik katta (adaptiveStream to'liq 720p qatlamni so'raydi), o'zimiz burchakda
-// kichik oynada (bosilsa o'rin almashadi). Sherik hali kirmagan bo'lsa — o'zimiz katta.
-function VideoStage({ cameraTracks, wide }) {
+// Sherik katta, o'zimiz burchakda kichik oynada (bosilsa o'rin almashadi).
+// Sherik hali kirmagan bo'lsa — o'zimiz katta.
+function VideoStage({ local, remote, wide }) {
   const [swapped, setSwapped] = useState(false);
-  const local = cameraTracks.find((t) => t.participant.isLocal);
-  const remote = cameraTracks.find((t) => !t.participant.isLocal);
   const big = remote && !swapped ? remote : local;
   const small = remote ? (swapped ? remote : local) : null;
 
   return (
     <div className="relative h-full w-full">
-      {big && <ParticipantTile trackRef={big} className="h-full w-full" />}
+      <ParticipantTile tile={big} className="h-full w-full" />
       {small && (
-        <FloatingTile trackRef={small} wide={wide} onClick={() => setSwapped((v) => !v)} className="right-3 top-3" />
+        <FloatingTile tile={small} wide={wide} onClick={() => setSwapped((v) => !v)} className="right-3 top-3" />
       )}
       {!remote && (
         <div className="absolute inset-x-4 top-1/2 mx-auto max-w-sm -translate-y-1/2">
@@ -457,119 +401,101 @@ function useSustained(flag) {
   return shown;
 }
 
-const isBad = (q) => q === ConnectionQuality.Poor || q === ConnectionQuality.Lost;
-
-function LocalNetworkNotice({ participant, cameraOn, onCameraOff, onLowerQuality }) {
-  const { quality } = useConnectionQualityIndicator({ participant });
-  if (!useSustained(isBad(quality))) return null;
+function NetworkNotices({ stats, peerName, cameraOn, outgoing, onCameraOff, onLowerQuality }) {
+  const localBad = useSustained(stats.local === "poor");
+  const remoteBad = useSustained(Boolean(peerName) && stats.remote === "poor");
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
-      <span>Internetingiz sekin — video qotishi yoki xiralashishi mumkin.</span>
-      {cameraOn && onLowerQuality && (
-        <button type="button" onClick={onLowerQuality} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
-          Sifatni pasaytirish
-        </button>
+    <>
+      {localBad && (
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
+          <span>Internetingiz sekin — video qotishi yoki xiralashishi mumkin.</span>
+          {cameraOn && outgoing !== "low" && (
+            <button type="button" onClick={onLowerQuality} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
+              Sifatni pasaytirish
+            </button>
+          )}
+          {cameraOn && (
+            <button type="button" onClick={onCameraOff} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
+              Kamerani o'chirish
+            </button>
+          )}
+        </div>
       )}
-      {cameraOn && (
-        <button type="button" onClick={onCameraOff} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
-          Kamerani o'chirish
-        </button>
+      {remoteBad && !localBad && (
+        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+          {peerName}ning interneti sekin — uning videosi qotishi mumkin.
+        </div>
       )}
-    </div>
+    </>
   );
 }
 
-function RemoteNetworkNotice({ participant }) {
-  const { quality } = useConnectionQualityIndicator({ participant });
-  if (!useSustained(isBad(quality))) return null;
+// Sherik ovozi. Brauzer avtomatik ijroni bloklasa — tugma chiqadi.
+function RemoteAudio({ stream }) {
+  const ref = useMediaRef(stream);
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    if (!stream || !ref.current) return;
+    ref.current.play().then(
+      () => setBlocked(false),
+      () => setBlocked(true)
+    );
+  }, [stream, ref]);
   return (
-    <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
-      {participant.name || "Sherigingiz"}ning interneti sekin — uning videosi qotishi mumkin.
-    </div>
+    <>
+      <audio ref={ref} autoPlay playsInline />
+      {blocked && (
+        <button
+          type="button"
+          onClick={() => ref.current?.play().then(() => setBlocked(false), () => {})}
+          className="fixed bottom-24 left-1/2 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-xl bg-[#087fd1] px-4 py-2 text-sm font-semibold text-white shadow-lg"
+        >
+          <LuVolume2 size={16} /> Ovozni yoqish
+        </button>
+      )}
+    </>
   );
 }
 
 // ---------------- Xona ichi ----------------
 // Desktop, doska/ekran ochiq paytda: o'ng ustunda 16:9 plitkalar.
 const TILE_CLASS = "aspect-video w-full shrink-0";
-function RoomView({ code, endsAt, limitMinutes, onLeave }) {
-  const room = useRoomContext();
-  const connectionState = useConnectionState();
-  const participants = useParticipants();
-  const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant();
 
-  const cameraTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], { onlySubscribed: false });
-  const screenTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }]).filter(isTrackReference);
-  const screen = screenTracks[0];
-  const remoteCamera = cameraTracks.find((t) => !t.participant.isLocal);
-  const remoteParticipant = participants.find((p) => !p.isLocal);
+function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
   const isDesktop = useIsDesktop();
-
-  // "video" | "board" | "screen". Hamma qurilmada video'dan boshlanadi (Meet kabi):
-  // sherik katta ko'rinsa, adaptiveStream to'liq sifatli qatlamni so'raydi.
-  // Doska/ekran ochiq bo'lsa — desktopda videolar o'ng ustunda, telefonda burchakda.
-  const [view, setView] = useState("video");
-  const videoView = view === "video";
-
-  // ---------------- Video sifati ----------------
+  const [device] = useState(deviceInfo);
+  const [constraints] = useState(() => cameraConstraints(device));
   const [quality, updateQuality] = useQualitySettings();
   const [qualityOpen, setQualityOpen] = useState(false);
-  const [applyingOutgoing, setApplyingOutgoing] = useState(false);
 
-  // Ko'radigan sifat: sherik kamerasining eng yuqori qatlami. Sherik qayta
-  // ulanganda (yangi track) ham qayta qo'llanadi.
-  const remotePub = remoteCamera && isTrackReference(remoteCamera) ? remoteCamera.publication : null;
-  const remoteSubscribed = remotePub?.isSubscribed;
+  const call = useP2PCall({
+    code,
+    iceServers,
+    initialCam: camOn,
+    initialMic: micOn,
+    cameraConstraints: constraints,
+    outgoing: quality.outgoing,
+    incoming: quality.incoming,
+  });
+  const { peer, stats, connection, route, clock } = call;
+
   useEffect(() => {
-    if (remotePub && remoteSubscribed) remotePub.setVideoQuality(INCOMING_QUALITY[quality.incoming]);
-  }, [remotePub, remoteSubscribed, quality.incoming]);
+    if (call.ended) onEnded(call.ended, clock?.limitMinutes);
+  }, [call.ended, clock?.limitMinutes, onEnded]);
 
-  // Yuboradigan sifat: kamerani yangi o'lcham/bitreyt bilan qayta e'lon qilamiz
-  // (eski e'lon olib tashlanmasa LiveKit uni eski sozlama bilan qayta yoqadi).
-  const applyOutgoing = async (id) => {
-    if (applyingOutgoing) return;
-    updateQuality({ outgoing: id });
-    setApplyingOutgoing(true);
-    try {
-      const wasOn = localParticipant.isCameraEnabled;
-      const pub = localParticipant.getTrackPublication(Track.Source.Camera);
-      if (pub?.track) await localParticipant.unpublishTrack(pub.track);
-      if (wasOn) {
-        const camera = cameraOptions(cameraProfile(id));
-        await localParticipant.setCameraEnabled(true, camera.capture, camera.publish);
-      }
-    } catch {
-      /* kamera ruxsati yo'q — keyingi yoqishda yangi sozlama ishlaydi */
-    } finally {
-      setApplyingOutgoing(false);
-    }
-  };
+  // "video" | "board" | "screen". Hamma qurilmada video'dan boshlanadi (Meet kabi).
+  const [view, setView] = useState("video");
+  const videoView = view === "video";
+  const screenStream = call.remoteScreen || call.localScreen;
+  const screenOwner = call.remoteScreen ? peer?.name : "Siz";
 
-  const setCamera = (on) => {
-    const camera = cameraOptions(cameraProfile(quality.outgoing));
-    return localParticipant.setCameraEnabled(on, camera.capture, camera.publish);
-  };
+  // Ekran ulashilsa — o'sha ko'rinishga o'tamiz; tugasa videoga qaytamiz.
+  const hasScreen = Boolean(screenStream);
+  useEffect(() => {
+    setView((v) => (hasScreen ? "screen" : v === "screen" ? "video" : v));
+  }, [hasScreen]);
+
   const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  // Yangi ekran ulashilsa — avtomatik o'sha ko'rinishga o'tamiz; tugasa videoga qaytamiz.
-  const screenSid = screen?.publication.trackSid;
-  useEffect(() => {
-    setView((v) => (screenSid ? "screen" : v === "screen" ? "video" : v));
-  }, [screenSid]);
-
-  const toggle = async (fn) => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await fn();
-    } catch {
-      /* foydalanuvchi ruxsat bermadi yoki ekran tanlashni bekor qildi */
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -580,31 +506,54 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
     }
   };
 
-  const leave = async () => {
-    await room.disconnect();
+  const [busy, setBusy] = useState(false);
+  const run = async (fn) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+    } catch {
+      /* ruxsat berilmadi yoki ekran tanlash bekor qilindi */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const leave = () => {
+    call.leave();
     onLeave();
   };
 
-  const tiles = (
-    <>
-      {cameraTracks.map((t) => (
-        <ParticipantTile key={`${t.participant.identity}-cam`} trackRef={t} className={TILE_CLASS} />
-      ))}
-      {participants.length < 2 && <WaitingTile className={TILE_CLASS} />}
-    </>
-  );
+  const localTile = {
+    stream: call.localStream,
+    name: "Siz",
+    isLocal: true,
+    cam: call.cam,
+    mic: call.mic,
+    quality: stats.local,
+    speaking: stats.speakingLocal,
+  };
+  const remoteTile = peer
+    ? {
+        stream: call.remoteVideo,
+        name: peer.name,
+        cam: peer.cam && Boolean(call.remoteVideo),
+        mic: peer.mic,
+        quality: connection === "connected" ? stats.remote : "unknown",
+        speaking: stats.speakingRemote,
+      }
+    : null;
+  const screenTile = screenStream ? { stream: screenStream, name: screenOwner, isScreen: true } : null;
 
-  // Doska yashirilganda ham DOM'da qoladi — tab almashganda qayta ulanmaydi.
-  const showScreen = view === "screen" && screen;
   const mainArea = (
     <>
-      <div className={`h-full overflow-hidden rounded-2xl bg-white ${showScreen ? "hidden" : ""}`}>
+      <div className={`h-full overflow-hidden rounded-2xl bg-white ${view === "screen" && screenTile ? "hidden" : ""}`}>
         <Whiteboard code={code} />
       </div>
-      {showScreen && <ParticipantTile trackRef={screen} className="h-full w-full" />}
+      {view === "screen" && screenTile && <ParticipantTile tile={screenTile} className="h-full w-full" />}
       {/* Telefonda doska/ekran ochiq bo'lsa ham sherik kichik oynada ko'rinadi. */}
-      {!isDesktop && !videoView && remoteCamera && (
-        <FloatingTile trackRef={remoteCamera} onClick={() => setView("video")} className="bottom-3 right-3" />
+      {!isDesktop && remoteTile && (
+        <FloatingTile tile={remoteTile} onClick={() => setView("video")} className="bottom-3 right-3" />
       )}
     </>
   );
@@ -641,25 +590,46 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
           {copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
           <span className="hidden sm:inline">{copied ? "Nusxalandi" : "Taklif linki"}</span>
         </button>
-        <TimeLeft endsAt={endsAt} />
+        {clock && <TimeLeft endsAt={clock.endsAt} />}
+        {route && (
+          <span
+            title={
+              route === "direct"
+                ? "Video to'g'ridan-to'g'ri sherigingizga boradi (eng tez yo'l)"
+                : "To'g'ridan-to'g'ri ulanib bo'lmadi — video server orqali boradi"
+            }
+            className={`hidden items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold md:inline-flex ${
+              route === "direct" ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-400/15 text-amber-300"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${route === "direct" ? "bg-emerald-400" : "bg-amber-400"}`} />
+            {route === "direct" ? "To'g'ridan-to'g'ri" : "Server orqali"}
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
-          {tab("video", `Video · ${participants.length}`, LuVideo)}
+          {tab("video", `Video · ${peer ? 2 : 1}`, LuVideo)}
           {tab("board", "Doska", LuPencilLine)}
-          {screen && tab("screen", "Ekran", LuMonitorUp)}
+          {screenTile && tab("screen", "Ekran", LuMonitorUp)}
         </div>
       </header>
 
-      <TimeWarning endsAt={endsAt} limitMinutes={limitMinutes} />
-      <LocalNetworkNotice
-        participant={localParticipant}
-        cameraOn={isCameraEnabled}
-        onCameraOff={() => toggle(() => setCamera(false))}
-        onLowerQuality={quality.outgoing !== "low" ? () => applyOutgoing("low") : undefined}
+      {clock && <TimeWarning endsAt={clock.endsAt} limitMinutes={clock.limitMinutes} />}
+      <NetworkNotices
+        stats={stats}
+        peerName={peer?.name}
+        cameraOn={call.cam}
+        outgoing={quality.outgoing}
+        onCameraOff={() => run(call.toggleCam)}
+        onLowerQuality={() => updateQuality({ outgoing: "low" })}
       />
-      {remoteParticipant && <RemoteNetworkNotice participant={remoteParticipant} />}
-      {connectionState === ConnectionState.Reconnecting && (
+      {connection === "reconnecting" && (
         <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
           Aloqa uzildi — qayta ulanmoqda…
+        </div>
+      )}
+      {peer && connection === "connecting" && (
+        <div className="bg-white/10 px-4 py-1.5 text-center text-xs font-semibold text-white/80">
+          {peer.name} bilan ulanmoqda…
         </div>
       )}
 
@@ -670,55 +640,45 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         {/* Video ko'rinishi: sherik katta, o'zimiz burchakda (telefonda tik oyna). */}
         {videoView && (
           <div className="min-h-0 flex-1">
-            <VideoStage cameraTracks={cameraTracks} wide={isDesktop} />
+            <VideoStage local={localTile} remote={remoteTile} wide={isDesktop} />
           </div>
         )}
         {isDesktop && !videoView && (
-          <aside className="flex min-h-0 w-[300px] flex-col gap-3 overflow-y-auto xl:w-[340px]">{tiles}</aside>
+          <aside className="flex min-h-0 w-[300px] flex-col gap-3 overflow-y-auto xl:w-[340px]">
+            <ParticipantTile tile={localTile} className={TILE_CLASS} />
+            {remoteTile ? <ParticipantTile tile={remoteTile} className={TILE_CLASS} /> : <WaitingTile className={TILE_CLASS} />}
+          </aside>
         )}
       </div>
 
       {/* Boshqaruv paneli */}
       <footer className="flex items-center justify-center gap-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
         <RoundButton
-          active={isMicrophoneEnabled}
-          onClick={() => toggle(() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled))}
-          title={isMicrophoneEnabled ? "Mikrofonni o'chirish" : "Mikrofonni yoqish"}
+          active={call.mic}
+          onClick={call.toggleMic}
+          title={call.mic ? "Mikrofonni o'chirish" : "Mikrofonni yoqish"}
         >
-          {isMicrophoneEnabled ? <LuMic size={20} /> : <LuMicOff size={20} />}
+          {call.mic ? <LuMic size={20} /> : <LuMicOff size={20} />}
         </RoundButton>
         <RoundButton
-          active={isCameraEnabled}
-          onClick={() => toggle(() => setCamera(!isCameraEnabled))}
-          title={isCameraEnabled ? "Kamerani o'chirish" : "Kamerani yoqish"}
+          active={call.cam}
+          onClick={() => run(call.toggleCam)}
+          title={call.cam ? "Kamerani o'chirish" : "Kamerani yoqish"}
         >
-          {isCameraEnabled ? <LuVideo size={20} /> : <LuVideoOff size={20} />}
+          {call.cam ? <LuVideo size={20} /> : <LuVideoOff size={20} />}
         </RoundButton>
         {canScreenShare && (
           <RoundButton
             active
-            onClick={() =>
-              toggle(() =>
-                localParticipant.setScreenShareEnabled(!isScreenShareEnabled, {
-                  audio: false,
-                  contentHint: "detail",
-                  resolution: ScreenSharePresets.h1080fps15.resolution,
-                })
-              )
-            }
-            disabled={Boolean(screen && !screen.participant.isLocal)}
-            title={isScreenShareEnabled ? "Ulashishni to'xtatish" : "Ekranni ulashish"}
+            onClick={() => run(call.toggleScreen)}
+            disabled={Boolean(call.remoteScreen)}
+            title={call.screenOn ? "Ulashishni to'xtatish" : "Ekranni ulashish"}
           >
-            {isScreenShareEnabled ? <LuMonitorX size={20} className="text-sky-300" /> : <LuMonitorUp size={20} />}
+            {call.screenOn ? <LuMonitorX size={20} className="text-sky-300" /> : <LuMonitorUp size={20} />}
           </RoundButton>
         )}
         <div className="relative">
-          <RoundButton
-            active
-            data-quality-toggle
-            onClick={() => setQualityOpen((v) => !v)}
-            title="Video sifati"
-          >
+          <RoundButton active data-quality-toggle onClick={() => setQualityOpen((v) => !v)} title="Video sifati">
             <LuSettings2 size={20} className={qualityOpen ? "text-sky-300" : ""} />
           </RoundButton>
           {qualityOpen && (
@@ -726,8 +686,8 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
               incoming={quality.incoming}
               outgoing={quality.outgoing}
               onIncoming={(id) => updateQuality({ incoming: id })}
-              onOutgoing={applyOutgoing}
-              applying={applyingOutgoing}
+              onOutgoing={(id) => updateQuality({ outgoing: id })}
+              applying={false}
               onClose={() => setQualityOpen(false)}
             />
           )}
@@ -737,28 +697,21 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         </RoundButton>
       </footer>
 
-      <RoomAudioRenderer />
-      {/* Brauzer ovozni avtomatik yoqishga ruxsat bermasa — tugma chiqadi. */}
-      <StartAudio
-        label="Ovozni yoqish"
-        className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#087fd1] px-4 py-2 text-sm font-semibold text-white shadow-lg"
-      />
+      <RemoteAudio stream={call.remoteAudio} />
     </div>
   );
 }
 
-// ---------------- Vaqt tugadi ----------------
-function TimeUp({ message }) {
+// ---------------- Dars tugadi / xonaga kirib bo'lmadi ----------------
+function EndScreen({ title, message }) {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
           <LuAlarmClock size={26} />
         </span>
-        <h1 className="mt-4 font-display text-2xl font-extrabold text-[#12213D]">Dars vaqti tugadi</h1>
-        <p className="mt-2 text-sm text-[#12213D]/55">
-          {message} Davom ettirish uchun yangi xona oching.
-        </p>
+        <h1 className="mt-4 font-display text-2xl font-extrabold text-[#12213D]">{title}</h1>
+        <p className="mt-2 text-sm text-[#12213D]/55">{message}</p>
         <Button to="/study-room" className="mt-6 w-full">
           Study Room'ga qaytish
         </Button>
@@ -767,57 +720,51 @@ function TimeUp({ message }) {
   );
 }
 
+const END_TEXT = {
+  "time-up": (min) => ["Dars vaqti tugadi", `Bitta dars ${min || 40} daqiqa davom etadi. Davom ettirish uchun yangi xona oching.`],
+  replaced: () => ["Boshqa oynada ochildi", "Bu xona boshqa oyna yoki qurilmada ochildi."],
+  full: () => ["Xona to'la", "Bu xonada allaqachon 2 kishi bor."],
+  "not-found": () => ["Xona topilmadi", "Bunday xona yo'q yoki muddati tugagan."],
+};
+
 // ---------------- Sahifa ----------------
 export default function StudyRoom() {
   const { code: rawCode } = useParams();
   const code = String(rawCode || "").toUpperCase();
   const navigate = useNavigate();
 
-  const [conn, setConn] = useState(null); // { token, url, endsAt, limitMinutes, camOn, micOn }
-  const [timeUp, setTimeUp] = useState(""); // xona vaqti tugagan bo'lsa — xabar
-  // Kamera sozlamalari xonaga kirish paytidagi telefon holatiga qarab.
-  const roomOptions = useMemo(() => (conn ? buildRoomOptions() : null), [conn]);
+  const [conn, setConn] = useState(null); // { iceServers, camOn, micOn }
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
+  const [end, setEnd] = useState(null); // [title, message]
 
   const join = async ({ camOn, micOn }) => {
     setJoining(true);
     setError("");
     try {
-      const { token, url, endsAt, limitMinutes } = await api.post(`/study-room/${code}/token`);
-      setConn({ token, url, endsAt, limitMinutes, camOn, micOn });
+      const { iceServers } = await api.post(`/study-room/${code}/join`);
+      setConn({ iceServers, camOn, micOn });
     } catch (err) {
-      if (err.code === "study-room/time-up") setTimeUp(err.message);
+      if (err.code === "study-room/time-up") setEnd(["Dars vaqti tugadi", `${err.message} Yangi xona oching.`]);
       setError(err.message);
     } finally {
       setJoining(false);
     }
   };
 
-  if (timeUp) return <TimeUp message={timeUp} />;
+  const onEnded = useRef((reason, min) => setEnd((END_TEXT[reason] || END_TEXT["not-found"])(min))).current;
+
+  if (end) return <EndScreen title={end[0]} message={end[1]} />;
   if (!conn) return <PreJoin code={code} onJoin={join} joining={joining} error={error} />;
 
   return (
-    <LiveKitRoom
-      serverUrl={conn.url}
-      token={conn.token}
-      connect
-      video={conn.camOn}
-      audio={conn.micOn}
-      options={roomOptions}
-      onError={(err) => setError(err.message)}
-      onDisconnected={(reason) => {
-        // Server xona vaqti tugaganda xonani o'chiradi.
-        if (reason === DisconnectReason.ROOM_DELETED || Date.now() >= conn.endsAt) setTimeUp(`Bitta dars ${conn.limitMinutes} daqiqa davom etadi.`);
-        setConn(null);
-      }}
-    >
-      <RoomView
-        code={code}
-        endsAt={conn.endsAt}
-        limitMinutes={conn.limitMinutes}
-        onLeave={() => navigate("/study-room")}
-      />
-    </LiveKitRoom>
+    <RoomView
+      code={code}
+      iceServers={conn.iceServers}
+      camOn={conn.camOn}
+      micOn={conn.micOn}
+      onLeave={() => navigate("/study-room")}
+      onEnded={onEnded}
+    />
   );
 }

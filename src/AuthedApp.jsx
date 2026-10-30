@@ -107,8 +107,6 @@ const ADMIN_PAGES = [
   "Analytics",
   "DesmosDashboard",
   "DesmosForm",
-  // LiveKit kutubxonasi og'ir — faqat xonaga kirilganda yuklanadi.
-  "StudyRoom",
 ];
 const PREFETCH = Object.entries(pages)
   .filter(([name]) => !ADMIN_PAGES.includes(name))
