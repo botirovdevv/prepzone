@@ -17,7 +17,8 @@ import BottomNav from "../components/BottomNav";
 import QuestionNav from "../components/QuestionNav";
 import ModuleReview from "../components/ModuleReview";
 import DesmosCalculator from "../components/DesmosCalculator";
-import BreakScreen from "../components/BreakScreen";
+import BreakScreen, { BREAK_SECONDS } from "../components/BreakScreen";
+import ModuleTransition from "../components/ModuleTransition";
 import RulesGate from "../components/RulesGate";
 import TestLockedScreen from "../components/TestLockedScreen";
 import TestTerminatedScreen from "../components/TestTerminatedScreen";
@@ -27,6 +28,7 @@ import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 import { PageLoader } from "../components/ui";
+import { useI18n } from "../i18n";
 
 const MAX_WARNINGS = 3;
 
@@ -35,10 +37,6 @@ const emptyModuleState = (count) => ({
   marked: Array(count).fill(false),
   crossedOut: Array(count).fill(null).map(() => []),
 });
-
-function Centered({ children }) {
-  return <div className="min-h-screen flex items-center justify-center text-gray-500">{children}</div>;
-}
 
 // Eski formatdagi pauza snapshot'i (natijalar clientda hisoblangan) ->
 // yangi `attempts` shakli: { [bo'lim]: { module1Answers, route, module2Answers } }.
@@ -53,6 +51,7 @@ function snapshotAttempts(snapshot) {
 
 export default function SATTest() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   // Qaysi test ochilgani TestSelect sahifasidan state orqali keladi.
@@ -85,6 +84,7 @@ export default function SATTest() {
   // module2 uchun server tanlagan yo'nalish: "easy" | "hard" | null
   const [route, setRoute] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
+  const [breakEndAt, setBreakEndAt] = useState(null);
   const [reviewing, setReviewing] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -269,6 +269,7 @@ export default function SATTest() {
   const advanceToNextGroup = () => {
     const nextGroup = satTest.groups[groupIndex + 1];
     setOnBreak(false);
+    setBreakEndAt(null);
     setGroupIndex((i) => i + 1);
     setStage("module1");
     setRoute(null);
@@ -317,8 +318,10 @@ export default function SATTest() {
     if (groupIndex < satTest.groups.length - 1) {
       // Reading&Writing tugagach — 10 daqiqalik tanaffus
       setEndAt(null);
-      if (group.type === "rw") setOnBreak(true);
-      else advanceToNextGroup();
+      if (group.type === "rw") {
+        setBreakEndAt(Date.now() + BREAK_SECONDS * 1000);
+        setOnBreak(true);
+      } else advanceToNextGroup();
       return;
     }
     setEndAt(null);
@@ -349,6 +352,9 @@ export default function SATTest() {
       setCurrentIndex(resumeSnapshot.currentIndex ?? 0);
       setAttempts(snapshotAttempts(resumeSnapshot));
       setOnBreak(!!resumeSnapshot.onBreak);
+      setBreakEndAt(
+        resumeSnapshot.onBreak ? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000 : null
+      );
     } else {
       startModule(satTest.groups[0].module1.questions.length, satTest.groups[0].durationMin);
     }
@@ -374,6 +380,7 @@ export default function SATTest() {
         currentIndex: safeIndex,
         attempts,
         onBreak,
+        breakSecondsLeft: secondsUntil(breakEndAt),
       },
       "paused"
     );
@@ -399,7 +406,7 @@ export default function SATTest() {
   }
 
   if (phase === "rules") {
-    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} />;
+    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} title={satTest.title} />;
   }
 
   if (phase === "terminated") {
@@ -407,15 +414,15 @@ export default function SATTest() {
   }
 
   if (busy === "saving") {
-    return <Centered>Natijalar hisoblanmoqda...</Centered>;
+    return <PageLoader fullscreen label={t("proctor.calculating")} />;
   }
 
   if (onBreak) {
-    return <BreakScreen onContinue={advanceToNextGroup} />;
+    return <BreakScreen endAt={breakEndAt} onContinue={advanceToNextGroup} />;
   }
 
   if (busy === "routing" || !question) {
-    return <Centered>Modul yuklanmoqda...</Centered>;
+    return <ModuleTransition />;
   }
 
   const sectionLabel = `Section ${group.sectionNumber}, Module ${stage === "module1" ? "1" : "2"}`;
@@ -427,9 +434,12 @@ export default function SATTest() {
       <TestHeader
         sectionLabel={sectionLabel}
         title={group.title}
+        sectionType={group.type}
         endAt={endAt}
         showCalcButton={group.type === "math"}
+        calcOpen={calcOpen}
         onToggleCalculator={() => setCalcOpen((c) => !c)}
+        directionsKey={groupIndex}
         onExit={() => setShowExitModal(true)}
       />
 
@@ -459,15 +469,14 @@ export default function SATTest() {
             showPassage={showPassage}
           />
 
-          <div className="h-20" />
+          <div className="h-16 shrink-0" />
 
           <BottomNav
             total={totalQuestions}
             currentIndex={safeIndex}
-            answers={moduleState.answers}
-            marked={moduleState.marked}
             studentName={studentName}
-            onOpenNav={() => setNavOpen(true)}
+            navOpen={navOpen}
+            onOpenNav={() => setNavOpen((o) => !o)}
             onPrev={handlePrev}
             onNext={handleNext}
             isLastQuestion={safeIndex === totalQuestions - 1}

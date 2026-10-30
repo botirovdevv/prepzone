@@ -15,7 +15,9 @@ import QuestionPanel from "../components/QuestionPanel";
 import BottomNav from "../components/BottomNav";
 import QuestionNav from "../components/QuestionNav";
 import DesmosCalculator from "../components/DesmosCalculator";
-import BreakScreen from "../components/BreakScreen";
+import BreakScreen, { BREAK_SECONDS } from "../components/BreakScreen";
+import ModuleReview from "../components/ModuleReview";
+import ModuleTransition from "../components/ModuleTransition";
 import RulesGate from "../components/RulesGate";
 import TestLockedScreen from "../components/TestLockedScreen";
 import TestTerminatedScreen from "../components/TestTerminatedScreen";
@@ -26,6 +28,8 @@ import SubmitErrorScreen from "../components/SubmitErrorScreen";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { useAuth } from "../context/AuthContext";
 import { PageLoader } from "../components/ui";
+import TestStatusScreen from "../components/TestStatusScreen";
+import { useI18n } from "../i18n";
 
 const MAX_WARNINGS = 3;
 
@@ -49,6 +53,7 @@ const FALLBACK_SECTION = {
 
 export default function SessionTest() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const { id: sessionId } = useParams();
@@ -156,6 +161,9 @@ export default function SessionTest() {
   const [stage, setStage] = useState("module1");
   const [route, setRoute] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
+  // Tanaffus tugash vaqti (ms) — pauza qilinib qaytilganda qolgan vaqt saqlanadi.
+  const [breakEndAt, setBreakEndAt] = useState(null);
+  const [reviewing, setReviewing] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
@@ -336,6 +344,8 @@ export default function SessionTest() {
     setModuleState(emptyModuleState(count));
     setEndAt(Date.now() + (durationMin || 30) * 60_000);
     setCurrentIndex(0);
+    setReviewing(false);
+    setNavOpen(false);
     finishingRef.current = false;
   };
 
@@ -375,10 +385,15 @@ export default function SessionTest() {
     [safeIndex]
   );
 
-  const goTo = (i) => {
+  const goTo = useCallback((i) => {
     setCurrentIndex(i);
     setNavOpen(false);
-  };
+    setReviewing(false);
+  }, []);
+  const openReview = useCallback(() => {
+    setNavOpen(false);
+    setReviewing(true);
+  }, []);
   const handleNext = () => {
     if (safeIndex < totalQuestions - 1) goTo(safeIndex + 1);
   };
@@ -398,6 +413,7 @@ export default function SessionTest() {
   const advanceToNextGroup = () => {
     const next = session.sections[groupIndex + 1];
     setOnBreak(false);
+    setBreakEndAt(null);
     setGroupIndex((i) => i + 1);
     setStage("module1");
     setRoute(null);
@@ -441,6 +457,7 @@ export default function SessionTest() {
     }
     setEndAt(null);
     if (groupIndex < session.sections.length - 1) {
+      setBreakEndAt(Date.now() + BREAK_SECONDS * 1000);
       setOnBreak(true);
     } else {
       finishTest(nextAttempts);
@@ -497,6 +514,9 @@ export default function SessionTest() {
       );
       setAttempts(resumeSnapshot.attempts || {});
       setOnBreak(!!resumeSnapshot.onBreak);
+      setBreakEndAt(
+        resumeSnapshot.onBreak ? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000 : null
+      );
     } else {
       startModule(totalQuestions, section.durationMin);
     }
@@ -510,7 +530,16 @@ export default function SessionTest() {
     saveLocalProgress(
       user.uid,
       progressKey,
-      { groupIndex, stage, route, moduleState, secondsLeft: secondsUntil(endAt), attempts, onBreak },
+      {
+        groupIndex,
+        stage,
+        route,
+        moduleState,
+        secondsLeft: secondsUntil(endAt),
+        attempts,
+        onBreak,
+        breakSecondsLeft: secondsUntil(breakEndAt),
+      },
       "paused"
     );
     updateParticipant({ status: "paused" });
@@ -518,7 +547,7 @@ export default function SessionTest() {
     navigate("/dashboard");
   };
 
-  const sectionLabel = `Bo'lim ${groupIndex + 1}, Modul ${stage === "module1" ? "1" : "2"}`;
+  const sectionLabel = `Section ${groupIndex + 1}, Module ${stage === "module1" ? "1" : "2"}`;
   const showPassage = section.type === "rw";
 
   // ------------------------------------------------------------
@@ -529,19 +558,11 @@ export default function SessionTest() {
   }
 
   if (sessionMissing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Bunday test topilmadi. Kodni tekshirib qayta urinib ko'ring.
-      </div>
-    );
+    return <TestStatusScreen title={t("proctor.notFound")} />;
   }
 
   if (phase === "closed") {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Bu test yakunlangan.
-      </div>
-    );
+    return <TestStatusScreen title={t("proctor.closed")} />;
   }
 
   if (phase === null) {
@@ -565,21 +586,17 @@ export default function SessionTest() {
   if (phase === "rules") {
     if (contentError) {
       return (
-        <div className="min-h-screen flex items-center justify-center text-gray-500 text-center px-6">
-          {joinError
-            ? `${joinError} Kodni "Mock with key" sahifasida qaytadan kiriting.`
-            : "Savollarni yuklab bo'lmadi. Internet aloqasini tekshirib, sahifani qayta yuklang."}
-        </div>
+        <TestStatusScreen title={t("common.error")}>
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">
+            {joinError ? `${joinError} ${t("proctor.joinErrorHint")}` : t("proctor.contentError")}
+          </p>
+        </TestStatusScreen>
       );
     }
     if (!sessionContent) {
-      return (
-        <div className="min-h-screen flex items-center justify-center text-gray-500">
-          Savollar tayyorlanmoqda...
-        </div>
-      );
+      return <PageLoader fullscreen label={t("proctor.preparing")} />;
     }
-    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} />;
+    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} title={session.title} />;
   }
 
   if (submitError) {
@@ -591,23 +608,15 @@ export default function SessionTest() {
   }
 
   if (busy === "saving") {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Natijalar hisoblanmoqda...
-      </div>
-    );
+    return <PageLoader fullscreen label={t("proctor.calculating")} />;
   }
 
   if (onBreak) {
-    return <BreakScreen onContinue={advanceToNextGroup} />;
+    return <BreakScreen endAt={breakEndAt} onContinue={advanceToNextGroup} />;
   }
 
   if (busy === "routing" || !question) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Modul yuklanmoqda...
-      </div>
-    );
+    return <ModuleTransition />;
   }
 
   return (
@@ -616,38 +625,56 @@ export default function SessionTest() {
       <TestHeader
         sectionLabel={sectionLabel}
         title={section.title}
+        sectionType={section.type}
         endAt={endAt}
         showCalcButton={!!section.calculator}
+        calcOpen={calcOpen}
         onToggleCalculator={() => setCalcOpen((c) => !c)}
         onExit={() => setShowExitModal(true)}
+        directionsKey={groupIndex}
       />
 
-      <QuestionPanel
-        question={question}
-        index={safeIndex}
-        selected={moduleState.answers[safeIndex]}
-        marked={moduleState.marked[safeIndex]}
-        crossedOut={moduleState.crossedOut[safeIndex]}
-        onSelectAnswer={handleSelectAnswer}
-        onToggleMark={handleToggleMark}
-        onToggleCrossOut={handleToggleCrossOut}
-        showPassage={showPassage}
-      />
+      {reviewing ? (
+        <ModuleReview
+          sectionTitle={`${sectionLabel}: ${section.title}`}
+          questions={questions}
+          answers={moduleState.answers}
+          marked={moduleState.marked}
+          currentIndex={safeIndex}
+          studentName={studentName}
+          onSelect={goTo}
+          onBack={() => setReviewing(false)}
+          onSubmit={handleFinishModule}
+        />
+      ) : (
+        <>
+          <QuestionPanel
+            question={question}
+            index={safeIndex}
+            selected={moduleState.answers[safeIndex]}
+            marked={moduleState.marked[safeIndex]}
+            crossedOut={moduleState.crossedOut[safeIndex]}
+            onSelectAnswer={handleSelectAnswer}
+            onToggleMark={handleToggleMark}
+            onToggleCrossOut={handleToggleCrossOut}
+            showPassage={showPassage}
+          />
 
-      <div className="h-20" />
+          <div className="h-16 shrink-0" />
 
-      <BottomNav
-        total={totalQuestions}
-        currentIndex={safeIndex}
-        answers={moduleState.answers}
-        marked={moduleState.marked}
-        studentName={studentName}
-        onOpenNav={() => setNavOpen(true)}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        isLastQuestion={safeIndex === totalQuestions - 1}
-        onFinishModule={handleFinishModule}
-      />
+          <BottomNav
+            total={totalQuestions}
+            currentIndex={safeIndex}
+            studentName={studentName}
+            navOpen={navOpen}
+            onOpenNav={() => setNavOpen((o) => !o)}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            isLastQuestion={safeIndex === totalQuestions - 1}
+            onFinishModule={openReview}
+          />
+        </>
+      )}
 
       {navOpen && (
         <QuestionNav
@@ -658,10 +685,9 @@ export default function SessionTest() {
           sectionTitle={`${sectionLabel}: ${section.title}`}
           onSelect={goTo}
           onClose={() => setNavOpen(false)}
-          onGoToReview={() => goTo(totalQuestions - 1)}
+          onGoToReview={openReview}
         />
       )}
-
       {calcOpen && <DesmosCalculator onClose={() => setCalcOpen(false)} />}
 
       <CheatWarningToast warning={proctoring.warning} maxWarnings={MAX_WARNINGS} />

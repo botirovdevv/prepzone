@@ -1,41 +1,56 @@
 import { useState } from "react";
 import {
-  LuShieldAlert,
   LuMonitor,
   LuCamera,
   LuMousePointerClick,
   LuLogOut,
   LuArrowRight,
+  LuClock,
+  LuLayers,
+  LuCoffee,
+  LuBookmark,
+  LuShieldCheck,
+  LuInfo,
 } from "react-icons/lu";
+import { LanguageSwitch, useI18n } from "../i18n";
 
-const RULES = [
-  {
-    icon: LuMonitor,
-    title: "To'liq ekran (fullscreen) rejimi",
-    text:
-      "Test boshlanishi bilan avtomatik to'liq ekran rejimiga o'tasiz. Fullscreen'dan chiqsangiz (Esc yoki boshqa usul bilan), test DARHOL yakunlanadi va siz testdan chetlatilasiz — shu paytgacha bergan javoblaringiz asosida natija hisoblab qo'yiladi.",
-  },
-  {
-    icon: LuCamera,
-    title: "Skrinshot olish taqiqlanadi",
-    text:
-      "Print Screen va Win+Shift+S kombinatsiyalari bloklanadi va ogohlantirish chiqadi. Mac'da Cmd+Shift+3/4/5 orqali skrinshot olishning oldini brauzer texnik jihatdan 100% ololmaydi — lekin imkon qadar bunday urinishlar ham kuzatiladi va ogohlantirishga sabab bo'ladi.",
-  },
-  {
-    icon: LuMousePointerClick,
-    title: "Nusxalash va boshqa oynaga o'tish",
-    text:
-      "Test davomida o'ng tugma menyusi, matn nusxalash/joylashtirish va DevTools ochish o'chirilgan. Boshqa tab yoki oynaga o'tish kuzatiladi. Ogohlantirishlar soni ko'payib ketsa, test avtomatik yakunlanadi.",
-  },
-  {
-    icon: LuLogOut,
-    title: "Chiqish tugmasi",
-    text:
-      "Testni davom ettira olmasangiz, \"Chiqish\" tugmasini bosing — hozirgi holatingiz saqlanadi, lekin testni faqat 30 daqiqadan so'ng qayta davom ettira olasiz.",
-  },
-];
+const ICONS = {
+  timing: LuClock,
+  adaptive: LuLayers,
+  break: LuCoffee,
+  tools: LuBookmark,
+  fullscreen: LuMonitor,
+  screenshot: LuCamera,
+  copy: LuMousePointerClick,
+  exit: LuLogOut,
+};
 
-export default function RulesGate({ onStart, isResume }) {
+function InfoList({ items, tone }) {
+  const iconTone = tone === "blue" ? "bg-[#087fd1]/10 text-[#087fd1]" : "bg-amber-500/10 text-amber-600";
+  return (
+    <ul className="space-y-4">
+      {items.map((item) => {
+        const Icon = ICONS[item.icon] || LuInfo;
+        return (
+          <li key={item.title} className="flex gap-3.5">
+            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconTone}`}>
+              <Icon size={17} />
+            </span>
+            <div>
+              <p className="text-[15px] font-semibold text-[#111827]">{item.title}</p>
+              <p className="mt-0.5 text-[13.5px] leading-relaxed text-[#566176]">{item.text}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// Test boshlanishidan oldingi ekran: test formati haqida ma'lumot va
+// proktoring qoidalari. Rozilik belgilangach "Boshlash" fullscreen so'raydi.
+export default function RulesGate({ onStart, isResume, title }) {
+  const { t, tr } = useI18n();
   const [agreed, setAgreed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState(false);
@@ -52,77 +67,71 @@ export default function RulesGate({ onStart, isResume }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-xl">
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4">
-            <LuShieldAlert size={30} />
-          </div>
-          <p className="text-sm uppercase tracking-widest text-white/50 font-semibold mb-2">
-            Xavfsizlik qoidalari
-          </p>
-          <h1 className="font-display text-3xl font-extrabold">
-            {isResume ? "Testni davom ettirishdan oldin" : "Testni boshlashdan oldin"}
-          </h1>
-          <p className="text-white/60 mt-2 text-sm max-w-md">
-            Iltimos, quyidagi qoidalar bilan tanishing. Bu qoidalar barcha
-            ishtirokchilar uchun adolatli va halol test muhitini ta'minlash
-            uchun kerak.
-          </p>
+    <div className="min-h-screen bg-[#f5f6f4] text-[#111827]">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-5 pt-6 sm:px-8">
+        <img src="/Logo.png" alt="Prepzone" className="h-7 w-auto" />
+        <LanguageSwitch />
+      </header>
+
+      <main className="mx-auto max-w-5xl px-5 pb-12 pt-10 sm:px-8">
+        <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#087fd1]">
+          {t("proctor.rules.eyebrow")}
+        </p>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
+          {isResume ? t("proctor.rules.titleResume") : t("proctor.rules.title")}
+        </h1>
+        {title && <p className="mt-2 text-[15px] font-semibold text-[#344054]">{title}</p>}
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[#566176]">{t("proctor.rules.subtitle")}</p>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <section className="rounded-3xl border border-[#111827]/[0.07] bg-white p-6 sm:p-7">
+            <h2 className="mb-5 flex items-center gap-2 text-[17px] font-bold tracking-tight">
+              <LuInfo size={18} className="text-[#087fd1]" />
+              {t("proctor.rules.aboutTitle")}
+            </h2>
+            <InfoList items={tr("proctor.rules.about")} tone="blue" />
+          </section>
+
+          <section className="rounded-3xl border border-[#111827]/[0.07] bg-white p-6 sm:p-7">
+            <h2 className="mb-5 flex items-center gap-2 text-[17px] font-bold tracking-tight">
+              <LuShieldCheck size={18} className="text-amber-600" />
+              {t("proctor.rules.rulesTitle")}
+            </h2>
+            <InfoList items={tr("proctor.rules.rules")} tone="amber" />
+          </section>
         </div>
 
-        <div className="space-y-4 mb-8">
-          {RULES.map((r, i) => (
-            <div key={i} className="flex gap-4 bg-white/5 rounded-xl p-4">
-              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <r.icon size={18} />
-              </div>
-              <div>
-                <p className="font-semibold text-sm mb-1">{r.title}</p>
-                <p className="text-white/60 text-sm leading-relaxed">{r.text}</p>
-              </div>
-            </div>
-          ))}
+        <div className="mt-6 rounded-3xl border border-[#111827]/[0.07] bg-white p-5 sm:p-6">
+          <label className="flex cursor-pointer select-none items-start gap-3">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#087fd1]"
+            />
+            <span className="text-[15px] font-medium text-[#344054]">{t("proctor.rules.agree")}</span>
+          </label>
+
+          {error && <p className="mt-4 text-sm text-red-600">{t("proctor.rules.fullscreenError")}</p>}
+
+          <button
+            onClick={handleStart}
+            disabled={!agreed || starting}
+            className={`group mt-5 flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-semibold transition sm:w-auto ${
+              agreed
+                ? "bg-[#087fd1] text-white hover:bg-[#066fb8]"
+                : "cursor-not-allowed bg-[#111827]/[0.06] text-[#98a2b3]"
+            }`}
+          >
+            {starting
+              ? t("proctor.rules.starting")
+              : isResume
+              ? t("proctor.rules.resume")
+              : t("proctor.rules.start")}
+            {!starting && <LuArrowRight size={18} className="transition group-hover:translate-x-0.5" />}
+          </button>
         </div>
-
-        <label className="flex items-start gap-3 mb-4 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-[#087fd1]"
-          />
-          <span className="text-sm text-white/80">
-            Yuqoridagi xavfsizlik qoidalarini o'qib chiqdim va roziman.
-          </span>
-        </label>
-
-        {error && (
-          <p className="text-red-400 text-sm mb-4">
-            To'liq ekran rejimini yoqib bo'lmadi. Iltimos, brauzeringizda
-            fullscreen ruxsatini tekshirib, qayta urinib ko'ring.
-          </p>
-        )}
-
-        <button
-          onClick={handleStart}
-          disabled={!agreed || starting}
-          className={`w-full group flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition ${
-            agreed
-              ? "bg-[#087fd1] text-white hover:bg-[#066fb8]"
-              : "bg-white/10 text-white/40 cursor-not-allowed"
-          }`}
-        >
-          {starting
-            ? "Boshlanmoqda..."
-            : isResume
-            ? "Testni davom ettirish"
-            : "Testni boshlash"}
-          {!starting && (
-            <LuArrowRight size={18} className="group-hover:translate-x-0.5 transition" />
-          )}
-        </button>
-      </div>
+      </main>
     </div>
   );
 }

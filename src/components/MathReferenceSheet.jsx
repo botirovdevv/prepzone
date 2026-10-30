@@ -1,89 +1,181 @@
-import { LuX } from "react-icons/lu";
+import { LuSigma } from "react-icons/lu";
+import FloatingPanel from "./FloatingPanel";
 
-// Rasmiy digital SAT Math bo'limida taqdim etiladigan "Reference"
-// varag'idagi formulalar (o'zgarmas, hamma testda bir xil).
-const SHAPES = [
-  { label: "Doira", lines: ["A = πr²", "C = 2πr"], note: "π taxminan 3.14159" },
-  { label: "To'g'ri to'rtburchak", lines: ["A = lw"] },
-  { label: "Uchburchak", lines: ["A = ½bh"] },
-  { label: "Trapetsiya", lines: ["A = ½(b₁ + b₂)h"] },
-];
+// Digital SAT Math bo'limidagi "Reference" varag'i: rasmiy varaqdagi
+// shakllar va formulalar, chizmalari shu yerda SVG'da qayta chizilgan
+// (tashqi rasm fayli kerak emas, har qanday o'lchamda tiniq).
 
-const SOLIDS = [
-  { label: "To'g'ri burchakli parallelepiped", lines: ["V = lwh"] },
-  { label: "Silindr", lines: ["V = πr²h"] },
-  { label: "Konus", lines: ["V = ⅓πr²h"] },
-  { label: "Shar", lines: ["V = 4/3 πr³"] },
-  { label: "Piramida", lines: ["V = ⅓lwh"] },
-];
+const S = { fill: "none", stroke: "#111827", strokeWidth: 1.6, strokeLinejoin: "round" };
+const DASH = { ...S, strokeDasharray: "4 3" };
+const VAR = { fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fill: "#111827" };
+const FORMULA = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 16, fill: "#111827", textAnchor: "middle" };
+const SMALL = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 12, fill: "#111827" };
 
-const FACTS = [
-  "Uchburchak burchaklari yig'indisi = 180°",
-  "To'g'ri chiziqdagi burchaklar yig'indisi = 180°",
-  "Doiradagi darajalar soni = 360°, radianlarda = 2π",
-  "Pifagor teoremasi: a² + b² = c²",
-  "n ta tomonli ko'pburchak ichki burchaklari yig'indisi = (n − 2) × 180°",
-];
+function RightAngle({ x, y, dx = 8, dy = -8 }) {
+  return <path d={`M${x + dx} ${y} V${y + dy} H${x}`} {...S} strokeWidth={1.2} />;
+}
 
-const SPECIAL_TRIANGLES = [
-  { label: "30°–60°–90°", desc: "tomonlar nisbati: x, x√3, 2x" },
-  { label: "45°–45°–90°", desc: "tomonlar nisbati: x, x, x√2" },
-];
+function Formula({ x, y, children }) {
+  return (
+    <text x={x} y={y} {...FORMULA}>
+      {children}
+    </text>
+  );
+}
+
+function ReferenceFigure() {
+  return (
+    <svg
+      viewBox="0 0 760 480"
+      role="img"
+      aria-label="SAT math reference sheet: area and volume formulas, Pythagorean theorem, special right triangles, and angle facts"
+      className="block h-auto w-full"
+    >
+      {/* ---------- 1-qator: tekis shakllar ---------- */}
+      {/* Doira */}
+      <circle cx="65" cy="82" r="44" {...S} />
+      <circle cx="65" cy="82" r="2.2" fill="#111827" />
+      <line x1="65" y1="82" x2="109" y2="82" {...S} />
+      <text x="83" y="76" {...VAR}>r</text>
+      <Formula x={65} y={162}>
+        A = π<tspan fontStyle="italic">r</tspan>²
+      </Formula>
+      <Formula x={65} y={184}>
+        C = 2π<tspan fontStyle="italic">r</tspan>
+      </Formula>
+
+      {/* To'g'ri to'rtburchak */}
+      <rect x="142" y="52" width="96" height="62" {...S} />
+      <text x="186" y="132" {...VAR}>ℓ</text>
+      <text x="245" y="88" {...VAR}>w</text>
+      <Formula x={190} y={162}>
+        A = <tspan fontStyle="italic">ℓw</tspan>
+      </Formula>
+
+      {/* Uchburchak */}
+      <path d="M266 120 L366 120 L302 46 Z" {...S} />
+      <line x1="302" y1="46" x2="302" y2="120" {...DASH} />
+      <RightAngle x={302} y={120} />
+      <text x="307" y="90" {...VAR}>h</text>
+      <text x="326" y="138" {...VAR}>b</text>
+      <Formula x={316} y={162}>
+        A = ½<tspan fontStyle="italic">bh</tspan>
+      </Formula>
+
+      {/* To'g'ri burchakli uchburchak (Pifagor) */}
+      <path d="M402 120 L482 120 L402 46 Z" {...S} />
+      <RightAngle x={402} y={120} />
+      <text x="388" y="88" {...VAR}>a</text>
+      <text x="438" y="138" {...VAR}>b</text>
+      <text x="448" y="78" {...VAR}>c</text>
+      <Formula x={442} y={162}>
+        <tspan fontStyle="italic">c</tspan>² = <tspan fontStyle="italic">a</tspan>² + <tspan fontStyle="italic">b</tspan>²
+      </Formula>
+
+      {/* 30°-60°-90° */}
+      <path d="M514 120 L583 120 L514 80 Z" {...S} />
+      <RightAngle x={514} y={120} />
+      <text x="503" y="105" {...VAR}>x</text>
+      <text x="536" y="138" {...VAR}>
+        x<tspan fontStyle="normal">√3</tspan>
+      </text>
+      <text x="552" y="92" {...VAR}>2x</text>
+      <text x="518" y="94" {...SMALL}>60°</text>
+      <text x="557" y="116" {...SMALL}>30°</text>
+
+      {/* 45°-45°-90° */}
+      <path d="M640 120 L700 120 L640 60 Z" {...S} />
+      <RightAngle x={640} y={120} />
+      <text x="628" y="96" {...VAR}>s</text>
+      <text x="666" y="138" {...VAR}>s</text>
+      <text x="673" y="84" {...VAR}>
+        s<tspan fontStyle="normal">√2</tspan>
+      </text>
+      <text x="644" y="78" {...SMALL}>45°</text>
+      <text x="674" y="116" {...SMALL}>45°</text>
+      <text x="610" y="162" {...FORMULA} fontSize={13}>
+        Special Right Triangles
+      </text>
+
+      {/* ---------- 2-qator: jismlar ---------- */}
+      {/* To'g'ri burchakli quti */}
+      <path d="M36 280 H106 V330 H36 Z" {...S} />
+      <path d="M36 280 L61 260 H131 L106 280 M131 260 V310 L106 330" {...S} />
+      <path d="M61 260 V310 H131 M61 310 L36 330" {...DASH} />
+      <text x="68" y="348" {...VAR}>ℓ</text>
+      <text x="121" y="328" {...VAR}>w</text>
+      <text x="137" y="290" {...VAR}>h</text>
+      <Formula x={84} y={384}>
+        V = <tspan fontStyle="italic">ℓwh</tspan>
+      </Formula>
+
+      {/* Silindr */}
+      <ellipse cx="228" cy="258" rx="40" ry="11" {...S} />
+      <line x1="188" y1="258" x2="188" y2="326" {...S} />
+      <line x1="268" y1="258" x2="268" y2="326" {...S} />
+      <path d="M188 326 A40 11 0 0 0 268 326" {...S} />
+      <path d="M188 326 A40 11 0 0 1 268 326" {...DASH} />
+      <line x1="228" y1="258" x2="268" y2="258" {...S} />
+      <circle cx="228" cy="258" r="2" fill="#111827" />
+      <text x="244" y="253" {...VAR}>r</text>
+      <text x="275" y="296" {...VAR}>h</text>
+      <Formula x={228} y={384}>
+        V = π<tspan fontStyle="italic">r</tspan>²
+        <tspan fontStyle="italic">h</tspan>
+      </Formula>
+
+      {/* Shar */}
+      <circle cx="380" cy="292" r="42" {...S} />
+      <path d="M338 292 A42 11 0 0 0 422 292" {...S} />
+      <path d="M338 292 A42 11 0 0 1 422 292" {...DASH} />
+      <line x1="380" y1="292" x2="422" y2="292" {...S} />
+      <circle cx="380" cy="292" r="2" fill="#111827" />
+      <text x="398" y="286" {...VAR}>r</text>
+      <Formula x={380} y={384}>
+        V = ⁴⁄₃π<tspan fontStyle="italic">r</tspan>³
+      </Formula>
+
+      {/* Konus */}
+      <path d="M492 326 L532 248 L572 326" {...S} />
+      <path d="M492 326 A40 11 0 0 0 572 326" {...S} />
+      <path d="M492 326 A40 11 0 0 1 572 326" {...DASH} />
+      <line x1="532" y1="248" x2="532" y2="326" {...DASH} />
+      <line x1="532" y1="326" x2="572" y2="326" {...S} />
+      <RightAngle x={532} y={326} />
+      <text x="537" y="292" {...VAR}>h</text>
+      <text x="550" y="320" {...VAR}>r</text>
+      <Formula x={532} y={384}>
+        V = ⅓π<tspan fontStyle="italic">r</tspan>²
+        <tspan fontStyle="italic">h</tspan>
+      </Formula>
+
+      {/* Piramida */}
+      <path d="M644 330 H704 L729 310 M644 330 L686 246 L704 330 M686 246 L729 310" {...S} />
+      <path d="M644 330 L669 310 H729 M669 310 L686 246" {...DASH} />
+      <line x1="686" y1="246" x2="686" y2="320" {...DASH} />
+      <text x="670" y="348" {...VAR}>ℓ</text>
+      <text x="722" y="330" {...VAR}>w</text>
+      <text x="690" y="290" {...VAR}>h</text>
+      <Formula x={686} y={384}>
+        V = ⅓<tspan fontStyle="italic">ℓwh</tspan>
+      </Formula>
+
+      {/* ---------- Qoidalar ---------- */}
+      <g fontFamily="Georgia, 'Times New Roman', serif" fontSize="14.5" fill="#111827">
+        <text x="20" y="424">The number of degrees of arc in a circle is 360.</text>
+        <text x="20" y="446">The number of radians of arc in a circle is 2π.</text>
+        <text x="20" y="468">The sum of the measures in degrees of the angles of a triangle is 180.</text>
+      </g>
+    </svg>
+  );
+}
 
 export default function MathReferenceSheet({ onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl"
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 sticky top-0 bg-white">
-          <h2 className="text-base font-bold text-gray-800">Reference</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <LuX size={20} />
-          </button>
-        </div>
-
-        <div className="p-5 grid sm:grid-cols-2 gap-4">
-          {[...SHAPES, ...SOLIDS].map((item) => (
-            <div key={item.label} className="border border-gray-200 rounded-xl p-3.5">
-              <p className="text-xs font-bold text-gray-500 mb-1.5">{item.label}</p>
-              {item.lines.map((l) => (
-                <p key={l} className="font-mono text-[15px] text-gray-900">
-                  {l}
-                </p>
-              ))}
-              {item.note && <p className="text-[11px] text-gray-400 mt-1">{item.note}</p>}
-            </div>
-          ))}
-        </div>
-
-        <div className="px-5 pb-5">
-          <div className="border border-gray-200 rounded-xl p-3.5 mb-4">
-            <p className="text-xs font-bold text-gray-500 mb-2">Maxsus to'g'ri burchakli uchburchaklar</p>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {SPECIAL_TRIANGLES.map((t) => (
-                <div key={t.label}>
-                  <p className="font-mono text-sm text-gray-900">{t.label}</p>
-                  <p className="text-[11px] text-gray-400">{t.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-gray-200 rounded-xl p-3.5">
-            <p className="text-xs font-bold text-gray-500 mb-2">Boshqa qoidalar</p>
-            <ul className="space-y-1.5">
-              {FACTS.map((f) => (
-                <li key={f} className="text-sm text-gray-800 flex items-start gap-2">
-                  <span className="text-gray-300 mt-0.5">•</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+    <FloatingPanel title="Reference" icon={LuSigma} width={640} onClose={onClose}>
+      <div className="p-4">
+        <ReferenceFigure />
       </div>
-    </div>
+    </FloatingPanel>
   );
 }

@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { getCooldownRemainingMs } from "../utils/testProgress";
+import { useI18n } from "../i18n";
+import TestStatusScreen, { BigTimer } from "./TestStatusScreen";
 
 function formatRemaining(ms) {
-  const totalSec = Math.ceil(ms / 1000);
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function TestLockedScreen({ pausedAt, onUnlocked }) {
+  const { t } = useI18n();
   const [remaining, setRemaining] = useState(() => getCooldownRemainingMs(pausedAt));
 
   useEffect(() => {
@@ -26,24 +29,9 @@ export default function TestLockedScreen({ pausedAt, onUnlocked }) {
   }, [pausedAt]);
 
   return (
-    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
-        <LuLock size={32} />
-      </div>
-      <p className="text-sm uppercase tracking-widest text-white/50 font-semibold mb-2">
-        Test vaqtincha bloklangan
-      </p>
-      <h1 className="font-display text-3xl font-extrabold mb-3">
-        Siz testdan chiqib ketgansiz
-      </h1>
-      <p className="text-white/60 max-w-md mb-10">
-        Xavfsizlik qoidasiga ko'ra, testdan chiqqandan so'ng uni faqat 30
-        daqiqadan keyin qayta davom ettirish mumkin.
-      </p>
-      <div className="text-6xl font-black font-display tabular-nums mb-2">
-        {formatRemaining(remaining)}
-      </div>
-      <p className="text-white/40 text-sm">qolgan vaqt</p>
-    </div>
+    <TestStatusScreen icon={LuLock} tone="amber" eyebrow={t("proctor.locked.eyebrow")} title={t("proctor.locked.title")}>
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">{t("proctor.locked.text")}</p>
+      <BigTimer caption={t("proctor.locked.left")}>{formatRemaining(remaining)}</BigTimer>
+    </TestStatusScreen>
   );
 }

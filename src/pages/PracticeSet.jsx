@@ -11,9 +11,12 @@ import { analyzeTopics, buildTopicAdvice } from "../utils/topicAnalysis";
 import { LuCircleCheck, LuTriangleAlert, LuSparkles, LuCircleAlert } from "react-icons/lu";
 import { HighlightsProvider } from "../context/HighlightsContext";
 import { PageLoader } from "../components/ui";
+import TestStatusScreen from "../components/TestStatusScreen";
+import { useI18n } from "../i18n";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -50,6 +53,7 @@ export default function PracticeSet() {
       (sec.questions || []).map((q) => ({
         ...q,
         _sectionTitle: sec.title,
+        _sectionType: sec.type,
         _showPassage: sec.type === "rw",
       }))
     );
@@ -99,19 +103,11 @@ export default function PracticeSet() {
   }
 
   if (setMissing || !set) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Bu to'plam topilmadi.
-      </div>
-    );
+    return <TestStatusScreen title={t("practiceSet.notFound")} />;
   }
 
   if (total === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Bu to'plamda hali savol yo'q.
-      </div>
-    );
+    return <TestStatusScreen title={t("practiceSet.empty")} />;
   }
 
   if (showSummary) {
@@ -122,12 +118,12 @@ export default function PracticeSet() {
         </div>
         <h1 className="text-2xl font-extrabold text-[#12213D] mb-2 text-center">{set.title}</h1>
         <p className="text-[#12213D]/60 mb-8 text-center">
-          {answeredCount}/{total} savolga javob berdingiz — {correctCount} tasi to'g'ri
+          {t("practiceSet.summary", { answered: answeredCount, total, correct: correctCount })}
         </p>
 
         {topicAnalysis.domainSummaries.length > 0 && (
           <div className="w-full max-w-xl bg-white rounded-2xl border border-[#12213D]/8 p-5 mb-6 text-left">
-            <h2 className="font-bold text-[#12213D] mb-4">Mavzular bo'yicha natija</h2>
+            <h2 className="font-bold text-[#12213D] mb-4">{t("practiceSet.byTopic")}</h2>
             <div className="space-y-3">
               {topicAnalysis.domainSummaries.map((d) => {
                 const pct = Math.round(d.accuracy * 100);
@@ -180,13 +176,13 @@ export default function PracticeSet() {
             }}
             className="border border-[#12213D]/15 text-[#12213D] font-semibold px-5 py-2.5 rounded-full hover:bg-[#12213D]/5"
           >
-            Qayta ko'rib chiqish
+            {t("practiceSet.reviewAgain")}
           </button>
           <button
             onClick={() => navigate("/dashboard")}
             className="bg-[#087fd1] text-white font-semibold px-5 py-2.5 rounded-full hover:bg-[#066fb8]"
           >
-            Bosh sahifa
+            {t("practiceSet.home")}
           </button>
         </div>
       </div>
@@ -197,9 +193,12 @@ export default function PracticeSet() {
     <HighlightsProvider>
     <div className="h-screen flex flex-col bg-white">
       <TestHeader
-        sectionLabel="Amaliyot"
+        sectionLabel="Practice"
         title={`${set.title} — ${question._sectionTitle}`}
+        sectionType={question._sectionType}
         hideTimer
+        calcOpen={calcOpen}
+        exitLabel="Exit"
         showCalcButton={hasMath}
         onToggleCalculator={() => setCalcOpen((c) => !c)}
         onExit={() => navigate("/dashboard")}
@@ -219,20 +218,19 @@ export default function PracticeSet() {
         feedbackMode
       />
 
-      <div className="h-20" />
+      <div className="h-16 shrink-0" />
 
       <BottomNav
         total={total}
         currentIndex={safeIndex}
-        answers={answersArray}
-        marked={markedArray}
         studentName={user?.displayName || user?.email?.split("@")[0]}
-        onOpenNav={() => setNavOpen(true)}
+        navOpen={navOpen}
+        onOpenNav={() => setNavOpen((o) => !o)}
         onPrev={handlePrev}
         onNext={handleNext}
         isLastQuestion={safeIndex === total - 1}
         onFinishModule={() => setShowSummary(true)}
-        finishLabel="Yakunlash"
+        finishLabel="Finish"
       />
 
       {navOpen && (
@@ -244,7 +242,11 @@ export default function PracticeSet() {
           sectionTitle={set.title}
           onSelect={goTo}
           onClose={() => setNavOpen(false)}
-          onGoToReview={() => goTo(total - 1)}
+          onGoToReview={() => {
+            setNavOpen(false);
+            setShowSummary(true);
+          }}
+          reviewLabel="Finish and see results"
         />
       )}
 

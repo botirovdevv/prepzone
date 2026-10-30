@@ -65,7 +65,7 @@ function HighlightableText({
 
     const mark = document.createElement("mark");
     mark.className = "bg-yellow-200 rounded-sm cursor-pointer";
-    mark.title = "Belgini olib tashlash uchun bosing";
+    mark.title = "Click to remove the highlight";
     try {
       range.surroundContents(mark);
     } catch {

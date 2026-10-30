@@ -10,6 +10,7 @@ function QuestionNav({
   onSelect,
   onClose,
   onGoToReview,
+  reviewLabel = "Go to Review Page",
 }) {
   return (
     <div
@@ -84,7 +85,7 @@ function QuestionNav({
             onClick={onGoToReview}
             className="border border-[#375DFB] text-[#375DFB] font-semibold text-sm px-5 py-2 rounded-full hover:bg-blue-50 transition"
           >
-            Go to Review Page
+            {reviewLabel}
           </button>
         </div>
       </div>

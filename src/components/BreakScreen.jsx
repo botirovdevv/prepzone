@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
-import { LuCoffee, LuArrowRight } from "react-icons/lu";
+import { LuChevronLeft, LuChevronRight, LuLightbulb, LuWind } from "react-icons/lu";
+import { useDeadline, useSecondsLeft } from "../hooks/useCountdown";
+import { LanguageSwitch, useI18n } from "../i18n";
 
-const BREAK_SECONDS = 10 * 60;
+export const BREAK_SECONDS = 10 * 60;
+const BREATH_CYCLE = 12; // 4 s nafas olish, 4 s ushlash, 4 s chiqarish
+const TIP_SECONDS = 12;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -9,54 +13,146 @@ function formatTime(totalSeconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function BreakScreen({ onContinue }) {
-  const [secondsLeft, setSecondsLeft] = useState(BREAK_SECONDS);
+// Bluebook'dagi tanaffus qoidalari (rasmiy matn inglizcha qoladi).
+const BREAK_RULES = [
+  "Do not disturb students who are still testing.",
+  "Do not exit the app or close your laptop.",
+  "Do not access phones, smartwatches, textbooks, notes, or the internet.",
+  "Do not eat or drink near any testing device.",
+  "Do not speak in the test room; outside the test room, do not discuss the exam with anyone.",
+];
 
+function Breathing() {
+  const { t } = useI18n();
+  const [tick, setTick] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    if (secondsLeft === 0) onContinue();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
+  const phase = Math.floor((tick % BREATH_CYCLE) / 4);
+  const label = [t("breakExtras.inhale"), t("breakExtras.hold"), t("breakExtras.exhale")][phase];
+  const left = 4 - (tick % 4);
 
   return (
-    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
-        <LuCoffee size={36} />
+    <section className="flex flex-col items-center rounded-3xl border border-[#111827]/[0.07] bg-white p-6 text-center">
+      <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#111827]">
+        <LuWind size={17} className="text-[#087fd1]" /> {t("breakExtras.breathingTitle")}
+      </h3>
+      <p className="mt-1 max-w-xs text-[13px] leading-relaxed text-[#566176]">{t("breakExtras.breathingText")}</p>
+      <div className="relative mt-6 flex h-44 w-44 items-center justify-center">
+        <span className="pz-breathe absolute inset-0 rounded-full bg-[#087fd1]/15" aria-hidden="true" />
+        <span className="pz-breathe absolute inset-5 rounded-full bg-[#087fd1]/25" aria-hidden="true" />
+        <div className="relative text-center" aria-live="polite">
+          <p className="text-[15px] font-bold text-[#0b4f80]">{label}</p>
+          <p className="font-display text-2xl font-semibold tabular-nums text-[#087fd1]">{left}</p>
+        </div>
       </div>
-      <p className="text-sm uppercase tracking-widest text-white/50 font-semibold mb-2">
-        Tanaffus
-      </p>
-      <h1 className="font-display text-4xl font-extrabold mb-3">
-        Reading & Writing bo'limi tugadi
-      </h1>
-      <p className="text-white/60 max-w-md mb-10">
-        Bir oz dam oling. Math bo'limi tanaffus tugagach yoki siz "Davom
-        etish" tugmasini bosganingizda boshlanadi.
-      </p>
+    </section>
+  );
+}
 
-      <div className="text-6xl font-black font-display tabular-nums mb-10">
-        {formatTime(secondsLeft)}
+function Tips() {
+  const { t, tr } = useI18n();
+  const tips = tr("breakExtras.tips") || [];
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * Math.max(tips.length, 1)));
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % tips.length), TIP_SECONDS * 1000);
+    return () => clearInterval(id);
+  }, [index, tips.length]);
+  if (!tips.length) return null;
+  const go = (d) => setIndex((i) => (i + d + tips.length) % tips.length);
+
+  return (
+    <section className="flex flex-col rounded-3xl border border-[#111827]/[0.07] bg-white p-6">
+      <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#111827]">
+        <LuLightbulb size={17} className="text-amber-500" /> {t("breakExtras.tipsTitle")}
+      </h3>
+      <p key={index} className="pz-fade-in mt-4 min-h-[96px] flex-1 text-[15px] leading-relaxed text-[#344054]">
+        {tips[index]}
+      </p>
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-[12px] font-semibold tabular-nums text-[#98a2b3]">
+          {t("breakExtras.tipOf", { n: index + 1, total: tips.length })}
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            aria-label="Previous tip"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#111827]/10 text-[#344054] hover:bg-[#f5f6f4]"
+          >
+            <LuChevronLeft size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            aria-label="Next tip"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#111827]/10 text-[#344054] hover:bg-[#f5f6f4]"
+          >
+            <LuChevronRight size={17} />
+          </button>
+        </div>
       </div>
+    </section>
+  );
+}
 
-      <button
-        onClick={onContinue}
-        className="group flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#087fd1] text-white font-semibold hover:bg-[#066fb8] transition"
-      >
-        Davom etish
-        <LuArrowRight size={18} className="group-hover:translate-x-0.5 transition" />
-      </button>
+// Bo'limlar orasidagi tanaffus. Chap/o'ng qismi Bluebook'dagi kabi
+// (inglizcha), pastda nafas mashqi va maslahatlar (sayt tilida).
+// `endAt` ota komponentda saqlanadi — test pauza qilinib qaytilganda
+// tanaffus boshidan boshlanmaydi.
+export default function BreakScreen({ endAt, onContinue }) {
+  const secondsLeft = useSecondsLeft(endAt) ?? BREAK_SECONDS;
+  useDeadline(endAt, onContinue);
+
+  return (
+    <div className="min-h-screen bg-[#f5f6f4] text-[#111827]">
+      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
+        <div className="mb-6 flex items-center justify-between">
+          <img src="/Logo.png" alt="Prepzone" className="h-7 w-auto" />
+          <LanguageSwitch />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <section className="flex flex-col items-center justify-center rounded-3xl bg-[#111827] px-6 py-10 text-center text-white">
+            <p className="text-[15px] font-semibold text-white/70">Remaining Break Time:</p>
+            <p className="mt-2 font-display text-6xl font-semibold tabular-nums tracking-[-0.04em]">
+              {formatTime(secondsLeft)}
+            </p>
+            <button
+              onClick={onContinue}
+              className="mt-8 rounded-full bg-[#ffd400] px-7 py-3 text-[15px] font-bold text-[#111827] transition hover:bg-[#ffe14d]"
+            >
+              Resume Testing
+            </button>
+          </section>
+
+          <section className="rounded-3xl border border-[#111827]/[0.07] bg-white p-6 sm:p-8">
+            <h1 className="font-display text-2xl font-semibold tracking-[-0.03em]">Practice Test Break</h1>
+            <p className="mt-2 text-[15px] leading-relaxed text-[#344054]">
+              You can resume this practice test as soon as you&apos;re ready to move on. On test day, you&apos;ll
+              wait until the clock counts down. Read below to see how breaks work on test day.
+            </p>
+            <hr className="my-5 border-[#111827]/10" />
+            <h2 className="text-[17px] font-bold">Take a Break: Do Not Close Your Device</h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#344054]">
+              After the break, a <b>Resume Testing Now</b> button will appear and you&apos;ll start the next
+              section.
+            </p>
+            <p className="mt-4 text-[14px] font-bold">Follow these rules during the break:</p>
+            <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[14px] leading-relaxed text-[#344054]">
+              {BREAK_RULES.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ol>
+          </section>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Breathing />
+          <Tips />
+        </div>
+      </div>
     </div>
   );
 }

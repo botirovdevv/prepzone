@@ -192,6 +192,19 @@ h6 {
   scale: 0.97;
 }
 
+/* Tanaffusdagi nafas mashqi: 4 s kattalashadi, 4 s turadi, 4 s kichrayadi. */
+@keyframes pz-breathe {
+  0% { scale: 0.62; }
+  33.3% { scale: 1; }
+  66.6% { scale: 1; }
+  100% { scale: 0.62; }
+}
+.pz-breathe { animation: pz-breathe 12s ease-in-out infinite; }
+.pz-fade-in { animation: pz-fade-in 320ms var(--ease-out) both; }
+@media (prefers-reduced-motion: reduce) {
+  .pz-breathe { animation: none; scale: 0.85; }
+}
+
 /* Mobil sidebar drawer */
 .pz-overlay-in { animation: pz-fade-in 240ms var(--ease-out) both; }
 .pz-overlay-out { animation: pz-fade-out 200ms var(--ease-out) both; }

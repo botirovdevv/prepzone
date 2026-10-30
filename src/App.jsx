@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { LanguageProvider } from "./i18n";
 import ErrorBoundary from "./components/ErrorBoundary";
 import BetaNotice from "./components/BetaNotice";
 import PresencePing from "./components/PresencePing";
@@ -47,6 +48,7 @@ function Prefetch() {
 
 export default function App() {
   return (
+    <LanguageProvider>
     <AuthProvider>
       <Prefetch />
       <BrowserRouter>
@@ -71,5 +73,6 @@ export default function App() {
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
+    </LanguageProvider>
   );
 }

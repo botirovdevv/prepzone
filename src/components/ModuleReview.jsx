@@ -72,23 +72,23 @@ export default function ModuleReview({
 
           {unanswered > 0 && (
             <p className="text-center text-sm text-amber-700 mt-5">
-              {unanswered} ta savolga javob berilmagan. Javobsiz savol xato hisoblanadi — taxminiy
-              javob belgilash foydaliroq.
+              {unanswered === 1 ? "1 question is" : `${unanswered} questions are`} unanswered. Unanswered questions
+              are scored as incorrect, so it&apos;s better to guess.
             </p>
           )}
         </div>
       </div>
 
       <div className="h-20" />
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 z-30">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-dashed border-gray-400 bg-[#F3F4F6]">
         <div className="flex items-center justify-between px-6 py-3">
-          <div className="text-sm font-semibold text-gray-800 truncate max-w-[160px]">
+          <div className="text-sm font-bold text-gray-900 truncate max-w-[180px]">
             {studentName || "Student"}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onBack}
-              className="border border-gray-400 rounded-full px-5 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100"
+              className="rounded-full bg-[#375DFB] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2b4bd9]"
             >
               Back
             </button>

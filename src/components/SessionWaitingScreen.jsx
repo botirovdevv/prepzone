@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { LuClock } from "react-icons/lu";
+import { useI18n } from "../i18n";
+import TestStatusScreen, { BigTimer } from "./TestStatusScreen";
 
 function formatRemaining(ms) {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
@@ -11,6 +13,7 @@ function formatRemaining(ms) {
 }
 
 export default function SessionWaitingScreen({ title, scheduledAt, onReady }) {
+  const { t, fmtDate } = useI18n();
   const [remaining, setRemaining] = useState(() => scheduledAt.getTime() - Date.now());
 
   useEffect(() => {
@@ -26,30 +29,14 @@ export default function SessionWaitingScreen({ title, scheduledAt, onReady }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduledAt]);
 
+  const time = fmtDate(scheduledAt, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
   return (
-    <div className="min-h-screen bg-[#12213D] text-white flex flex-col items-center justify-center px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
-        <LuClock size={32} />
-      </div>
-      <p className="text-sm uppercase tracking-widest text-white/50 font-semibold mb-2">
-        Test hali boshlanmagan
+    <TestStatusScreen icon={LuClock} eyebrow={t("proctor.waiting.eyebrow")} title={title}>
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">
+        {t("proctor.waiting.text", { time })}
       </p>
-      <h1 className="font-display text-2xl font-extrabold mb-3 max-w-md">{title}</h1>
-      <p className="text-white/60 max-w-md mb-10">
-        Test{" "}
-        {scheduledAt.toLocaleString("uz-UZ", {
-          day: "2-digit",
-          month: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}{" "}
-        da boshlanadi. Iltimos, shu sahifada kuting — vaqti kelganda avtomatik
-        davom etadi.
-      </p>
-      <div className="text-5xl sm:text-6xl font-black font-display tabular-nums mb-2">
-        {formatRemaining(remaining)}
-      </div>
-      <p className="text-white/40 text-sm">boshlanishiga qoldi</p>
-    </div>
+      <BigTimer caption={t("proctor.waiting.left")}>{formatRemaining(remaining)}</BigTimer>
+    </TestStatusScreen>
   );
 }
