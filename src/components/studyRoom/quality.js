@@ -21,14 +21,22 @@ export const INCOMING_QUALITY = {
   low: VideoQuality.LOW,
 };
 
-// Yuboriladigan kamera profili. portrait — tik ushlangan telefon.
-// "auto": telefon 540p (arzon telefonlar 720p'ni kodlashda qotadi), kompyuter 720p.
-export function outgoingProfile(id, portrait) {
+// Yuboriladigan kamera profili. device: { phone, portrait }.
+// "auto":
+//   kompyuter — VP9 SVC (Google Meet kabi: bitta oqimda 3 o'lcham x 3 kadr
+//               tezligi qatlami; bir xil trafikda VP8'dan ancha tiniq),
+//               720p/30fps, 2 Mbps gacha. VP9'ni ocha olmaydigan sherikka
+//               (masalan eski Safari) server avtomatik VP8 nusxasini beradi.
+//   telefon   — VP8 (ko'p Android'da apparat kodlash — telefon qizimaydi,
+//               qotmaydi), 720p/24fps, 1.5 Mbps gacha, simulcast.
+// "medium"/"low" — trafikni tejash uchun VP8, kichik o'lcham.
+export function outgoingProfile(id, { phone = false, portrait = false } = {}) {
   const size = (w, h) => (portrait ? { width: h, height: w } : { width: w, height: h });
   if (id === "low") {
     return {
       resolution: { ...size(320, 180), frameRate: 15 },
       encoding: { maxBitrate: 150_000, maxFramerate: 15 },
+      codec: "vp8",
       simulcast: false,
       layers: [],
     };
@@ -37,23 +45,28 @@ export function outgoingProfile(id, portrait) {
     return {
       resolution: { ...size(640, 360), frameRate: 20 },
       encoding: { maxBitrate: 450_000, maxFramerate: 20 },
+      codec: "vp8",
       simulcast: true,
       layers: [VideoPresets.h180],
     };
   }
-  return portrait
-    ? {
-        resolution: { width: 540, height: 960, frameRate: 24 },
-        encoding: { maxBitrate: 900_000, maxFramerate: 24 },
-        simulcast: true,
-        layers: [VideoPresets.h180, VideoPresets.h360],
-      }
-    : {
-        resolution: { width: 1280, height: 720, frameRate: 24 },
-        encoding: { maxBitrate: 1_200_000, maxFramerate: 24 },
-        simulcast: true,
-        layers: [VideoPresets.h180, VideoPresets.h360],
-      };
+  if (phone) {
+    return {
+      resolution: { ...size(1280, 720), frameRate: 24 },
+      encoding: { maxBitrate: 1_500_000, maxFramerate: 24 },
+      codec: "vp8",
+      simulcast: true,
+      layers: [VideoPresets.h180, VideoPresets.h360],
+    };
+  }
+  return {
+    resolution: { ...size(1280, 720), frameRate: 30 },
+    encoding: { maxBitrate: 2_000_000, maxFramerate: 30 },
+    codec: "vp9",
+    scalabilityMode: "L3T3_KEY",
+    simulcast: true,
+    layers: [],
+  };
 }
 
 const STORAGE_KEY = "studyRoom.quality";

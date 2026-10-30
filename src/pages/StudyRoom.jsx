@@ -50,19 +50,20 @@ import { INCOMING_QUALITY, loadQuality, outgoingProfile, useQualitySettings } fr
 // (9:16) ko'rinish; internet sekinlashsa foydalanuvchiga aytiladi.
 // ------------------------------------------------------------------
 
+// Telefon/planshet: asosiy kiritish — barmoq.
+function isPhone() {
+  return typeof window !== "undefined" && Boolean(window.matchMedia?.("(pointer: coarse)").matches);
+}
+
 function isPortraitPhone() {
-  return (
-    typeof window !== "undefined" &&
-    Boolean(window.matchMedia?.("(pointer: coarse)").matches) &&
-    Boolean(window.matchMedia?.("(orientation: portrait)").matches)
-  );
+  return isPhone() && Boolean(window.matchMedia?.("(orientation: portrait)").matches);
 }
 
 // Kameradan kadr nisbatini (aspectRatio) majburlamasdan so'raymiz: aks holda
 // tik ushlangan telefon keng kadr berish uchun sensor o'rtasini kesib oladi va
 // tasvir juda yaqin (zoom) bo'lib qoladi. Profillar: components/studyRoom/quality.js.
 function cameraProfile(outgoing = loadQuality().outgoing) {
-  return outgoingProfile(outgoing, isPortraitPhone());
+  return outgoingProfile(outgoing, { phone: isPhone(), portrait: isPortraitPhone() });
 }
 
 // LiveKit'ga beriladigan kamera sozlamalari (yoqish/qayta e'lon qilishda ham).
@@ -70,6 +71,8 @@ function cameraOptions(profile) {
   return {
     capture: { resolution: profile.resolution, facingMode: "user" },
     publish: {
+      videoCodec: profile.codec,
+      ...(profile.scalabilityMode && { scalabilityMode: profile.scalabilityMode, backupCodec: { codec: "vp8" } }),
       simulcast: profile.simulcast,
       videoEncoding: profile.encoding,
       // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
@@ -399,24 +402,26 @@ function TimeWarning({ endsAt, limitMinutes }) {
   );
 }
 
-// ---------------- Telefon: Meet uslubidagi tik ko'rinish ----------------
-// Kichik suzuvchi tik (9:16) oyna — bosilsa onClick.
-function FloatingTile({ trackRef, onClick, className = "" }) {
+// ---------------- Video ko'rinishi (Meet uslubi) ----------------
+// Kichik suzuvchi oyna — bosilsa onClick. Telefonda tik (9:16), kompyuterda keng (16:9).
+function FloatingTile({ trackRef, onClick, wide = false, className = "" }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label="Videoni almashtirish"
-      className={`absolute z-20 aspect-[9/16] w-[28vw] max-w-[132px] overflow-hidden rounded-2xl shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20 ${className}`}
+      className={`absolute z-20 overflow-hidden rounded-2xl shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20 ${
+        wide ? "aspect-video w-[240px]" : "aspect-[9/16] w-[28vw] max-w-[132px]"
+      } ${className}`}
     >
       <ParticipantTile trackRef={trackRef} className="h-full w-full" compact forceCover={trackRef.participant.isLocal} />
     </button>
   );
 }
 
-// Sherik butun ekranni egallaydi, o'zimiz burchakda kichik oynada (bosilsa
-// o'rin almashadi). Sherik hali kirmagan bo'lsa — o'zimiz to'liq ekranda.
-function MobileStage({ cameraTracks }) {
+// Sherik katta (adaptiveStream to'liq 720p qatlamni so'raydi), o'zimiz burchakda
+// kichik oynada (bosilsa o'rin almashadi). Sherik hali kirmagan bo'lsa — o'zimiz katta.
+function VideoStage({ cameraTracks, wide }) {
   const [swapped, setSwapped] = useState(false);
   const local = cameraTracks.find((t) => t.participant.isLocal);
   const remote = cameraTracks.find((t) => !t.participant.isLocal);
@@ -427,10 +432,10 @@ function MobileStage({ cameraTracks }) {
     <div className="relative h-full w-full">
       {big && <ParticipantTile trackRef={big} className="h-full w-full" />}
       {small && (
-        <FloatingTile trackRef={small} onClick={() => setSwapped((v) => !v)} className="right-3 top-3" />
+        <FloatingTile trackRef={small} wide={wide} onClick={() => setSwapped((v) => !v)} className="right-3 top-3" />
       )}
       {!remote && (
-        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+        <div className="absolute inset-x-4 top-1/2 mx-auto max-w-sm -translate-y-1/2">
           <WaitingTile className="border-white/25 bg-black/45 backdrop-blur" />
         </div>
       )}
@@ -485,7 +490,7 @@ function RemoteNetworkNotice({ participant }) {
 }
 
 // ---------------- Xona ichi ----------------
-// Desktop: o'ng ustunda 16:9 plitkalar. Telefon: MobileStage (tik ko'rinish).
+// Desktop, doska/ekran ochiq paytda: o'ng ustunda 16:9 plitkalar.
 const TILE_CLASS = "aspect-video w-full shrink-0";
 function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const room = useRoomContext();
@@ -500,10 +505,11 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const remoteParticipant = participants.find((p) => !p.isLocal);
   const isDesktop = useIsDesktop();
 
-  // Telefon: "video" | "board" | "screen" (video'dan boshlanadi — Meet kabi);
-  // desktop asosiy maydon: "board" | "screen" (videolar doim o'ng ustunda).
-  const [view, setView] = useState(() => (window.matchMedia("(min-width: 1024px)").matches ? "board" : "video"));
-  const mobileVideo = !isDesktop && view === "video";
+  // "video" | "board" | "screen". Hamma qurilmada video'dan boshlanadi (Meet kabi):
+  // sherik katta ko'rinsa, adaptiveStream to'liq sifatli qatlamni so'raydi.
+  // Doska/ekran ochiq bo'lsa — desktopda videolar o'ng ustunda, telefonda burchakda.
+  const [view, setView] = useState("video");
+  const videoView = view === "video";
 
   // ---------------- Video sifati ----------------
   const [quality, updateQuality] = useQualitySettings();
@@ -546,10 +552,10 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Yangi ekran ulashilsa — avtomatik o'sha ko'rinishga o'tamiz; tugasa doskaga qaytamiz.
+  // Yangi ekran ulashilsa — avtomatik o'sha ko'rinishga o'tamiz; tugasa videoga qaytamiz.
   const screenSid = screen?.publication.trackSid;
   useEffect(() => {
-    setView((v) => (screenSid ? "screen" : v === "screen" ? "board" : v));
+    setView((v) => (screenSid ? "screen" : v === "screen" ? "video" : v));
   }, [screenSid]);
 
   const toggle = async (fn) => {
@@ -597,7 +603,7 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
       </div>
       {showScreen && <ParticipantTile trackRef={screen} className="h-full w-full" />}
       {/* Telefonda doska/ekran ochiq bo'lsa ham sherik kichik oynada ko'rinadi. */}
-      {!isDesktop && !mobileVideo && remoteCamera && (
+      {!isDesktop && !videoView && remoteCamera && (
         <FloatingTile trackRef={remoteCamera} onClick={() => setView("video")} className="bottom-3 right-3" />
       )}
     </>
@@ -637,9 +643,9 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         </button>
         <TimeLeft endsAt={endsAt} />
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
+          {tab("video", `Video · ${participants.length}`, LuVideo)}
           {tab("board", "Doska", LuPencilLine)}
           {screen && tab("screen", "Ekran", LuMonitorUp)}
-          {!isDesktop && tab("video", `Video · ${participants.length}`, LuVideo)}
         </div>
       </header>
 
@@ -659,15 +665,15 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
 
       {/* Asosiy qism */}
       <div className="flex min-h-0 flex-1 gap-3 px-2 pb-2 sm:px-3">
-        <main className={`relative min-h-0 flex-1 ${mobileVideo ? "hidden" : ""}`}>{mainArea}</main>
+        <main className={`relative min-h-0 flex-1 ${videoView ? "hidden" : ""}`}>{mainArea}</main>
 
-        {/* Telefon: tik (9:16) Meet uslubi. Desktop: o'ng ustunda videolar. */}
-        {mobileVideo && (
+        {/* Video ko'rinishi: sherik katta, o'zimiz burchakda (telefonda tik oyna). */}
+        {videoView && (
           <div className="min-h-0 flex-1">
-            <MobileStage cameraTracks={cameraTracks} />
+            <VideoStage cameraTracks={cameraTracks} wide={isDesktop} />
           </div>
         )}
-        {isDesktop && (
+        {isDesktop && !videoView && (
           <aside className="flex min-h-0 w-[300px] flex-col gap-3 overflow-y-auto xl:w-[340px]">{tiles}</aside>
         )}
       </div>
