@@ -1,0 +1,29 @@
+PREPZONE — INSTAGRAM REEL (9:16, 15 soniya, ovozsiz — faqat sound effectlar)
+Format: 1080x1920, 30 fps | Video: prepzone-reel.mp4 | Manba: reel/src/Reel.jsx
+
+[0.0–2.5s] HOOK (qora fon)
+Ekranda: "SAT'ga tayyorlanyapsizmi?"
+SFX:     whoosh + bass hit (matn urilib tushadi, ekran silkinadi)
+
+[2.5–5.0s] LOGO (ko'k doira bilan o'tish)
+Ekranda: Prepzone logotipi, "Digital SAT mock testlar", chiplar: Online • Bluebook formati • Adaptiv
+SFX:     swoosh, shimmer, pop-pop
+
+[5.0–8.5s] REAL FORMAT
+Ekranda: "Haqiqiy imtihon formatida"
+         Module 1 → Module 2 Hard / Module 2 Easy
+         Ball 400 → 1520 (400–1600 shkala), taymer 32:00
+SFX:     click (har bir karta), tick-tock, ding
+
+[8.5–11.5s] TAHLIL
+Ekranda: "Qayerda xato qilayotganingizni ko'ring"
+         Algebra 86% • Advanced Math 64% • Craft & Structure 52% ("E'tibor bering")
+SFX:     swoosh, yozish ovozi, 3 ta pop, ding
+
+[11.5–13.0s] IMKONIYATLAR
+Ekranda: "Hammasi bir joyda" — Study Plan • Oylik to'plamlar • Vocabulary • Reyting
+SFX:     4 ta pop + riser
+
+[13.0–15.0s] CTA (ko'k fon)
+Ekranda: oq logo, "Hoziroq boshlang", tugma "prep-zone.uz →"
+SFX:     impact + shimmer
