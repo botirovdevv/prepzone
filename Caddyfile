@@ -10,6 +10,10 @@
 	handle /socket.io/* {
 		reverse_proxy api:4000
 	}
+	# Study Room video signali (LiveKit). Media 7881/7882 portlardan to'g'ridan-to'g'ri.
+	handle /rtc* {
+		reverse_proxy livekit:7880
+	}
 
 	# Qolgan hamma narsa — React ilova (SPA: noma'lum yo'llar index.html'ga)
 	handle {
@@ -28,7 +32,8 @@
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-Frame-Options "DENY"
-		Permissions-Policy "camera=(), geolocation=(), payment=(), usb=(), microphone=()"
+		# Study Room: kamera, mikrofon va ekran ulashish faqat o'z saytimizda.
+		Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=(), usb=()"
 		# Google kirish oynasi (popup) natijani qaytara olishi uchun.
 		Cross-Origin-Opener-Policy "same-origin-allow-popups"
 		-Server

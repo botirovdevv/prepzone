@@ -18,6 +18,7 @@ import analyticsRouter from "./routes/analytics.js";
 import adminRouter from "./routes/admin.js";
 import aiRouter from "./routes/ai.js";
 import presenceRouter from "./routes/presence.js";
+import studyRoomRouter from "./routes/studyRoom.js";
 import avatarsRouter from "./routes/avatars.js";
 import { resultsRouter, leaderboardRouter } from "./routes/results.js";
 import { questionSetsRouter, desmosRouter } from "./routes/content.js";
@@ -56,6 +57,7 @@ app.use("/api/leaderboard", requireVerified, leaderboardRouter);
 app.use("/api/sessions", requireVerified, sessionsRouter);
 app.use("/api/question-sets", requireVerified, questionSetsRouter);
 app.use("/api/desmos", requireVerified, desmosRouter);
+app.use("/api/study-room", requireVerified, studyRoomRouter);
 
 app.use("/api", (_req, res) => {
   res.status(404).json({ code: "not-found", message: "Bunday API manzili yo'q." });

@@ -10,7 +10,7 @@ import { API_URL } from "./client";
 
 let socket = null;
 
-function getSocket() {
+export function getSocket() {
   if (!socket) {
     socket = io(API_URL || undefined, { withCredentials: true, autoConnect: true });
   }

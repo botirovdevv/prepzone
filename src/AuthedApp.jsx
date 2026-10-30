@@ -28,6 +28,8 @@ const pages = {
   PracticeSet: () => import("./pages/PracticeSet"),
   Vocabulary: () => import("./pages/Vocabulary"),
   StudyPlan: () => import("./pages/StudyPlan"),
+  StudyRoomLobby: () => import("./pages/StudyRoomLobby"),
+  StudyRoom: () => import("./pages/StudyRoom"),
   AdminDashboard: () => import("./pages/admin/AdminDashboard"),
   SessionForm: () => import("./pages/admin/SessionForm"),
   SessionMonitor: () => import("./pages/admin/SessionMonitor"),
@@ -54,6 +56,8 @@ const Leaderboard = lazy(pages.Leaderboard);
 const PracticeSet = lazy(pages.PracticeSet);
 const Vocabulary = lazy(pages.Vocabulary);
 const StudyPlan = lazy(pages.StudyPlan);
+const StudyRoomLobby = lazy(pages.StudyRoomLobby);
+const StudyRoom = lazy(pages.StudyRoom);
 const AdminDashboard = lazy(pages.AdminDashboard);
 const SessionForm = lazy(pages.SessionForm);
 const SessionMonitor = lazy(pages.SessionMonitor);
@@ -103,6 +107,8 @@ const ADMIN_PAGES = [
   "Analytics",
   "DesmosDashboard",
   "DesmosForm",
+  // LiveKit kutubxonasi og'ir — faqat xonaga kirilganda yuklanadi.
+  "StudyRoom",
 ];
 const PREFETCH = Object.entries(pages)
   .filter(([name]) => !ADMIN_PAGES.includes(name))
@@ -190,6 +196,22 @@ export default function AuthedApp() {
             <DashboardRoute>
               <StudyPlan />
             </DashboardRoute>
+          }
+        />
+        <Route
+          path="study-room"
+          element={
+            <DashboardRoute>
+              <StudyRoomLobby />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="study-room/:code"
+          element={
+            <ProtectedRoute>
+              <StudyRoom />
+            </ProtectedRoute>
           }
         />
         <Route

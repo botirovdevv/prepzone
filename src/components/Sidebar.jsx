@@ -19,6 +19,7 @@ import {
   LuChartColumn,
   LuHouse,
   LuCalculator,
+  LuVideo,
 } from "react-icons/lu";
 import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
@@ -31,7 +32,7 @@ const NAV = [
     label: "MAIN",
     items: [
       { to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-[#0096c7]" },
-      { to: "/study-plan", label: "Study Plan", icon: LuCompass, iconColor: "text-[#7c3aed]" },
+      { to: "/study-plan", label: "Study Plan", icon: LuCompass, iconColor: "text-[#7c3aed]", badge: "Beta" },
     ],
   },
   {
@@ -47,6 +48,7 @@ const NAV = [
     items: [
       { to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" },
       { to: "/desmos", label: "Desmos darslari", icon: LuCalculator, iconColor: "text-[#16a34a]" },
+      { to: "/study-room", label: "Study Room", icon: LuVideo, iconColor: "text-[#db2777]", badge: "Beta" },
     ],
   },
   {
@@ -109,8 +111,22 @@ function NavItem({ item, collapsed, onNavigate }) {
     >
       {({ isActive }) => (
         <>
-          <Icon size={18} className={`shrink-0 ${isActive ? "text-white" : item.iconColor || ""}`} />
+          <span className="relative shrink-0">
+            <Icon size={18} className={isActive ? "text-white" : item.iconColor || ""} />
+            {collapsed && item.badge && (
+              <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#7c3aed] ring-2 ring-white" />
+            )}
+          </span>
           {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+          {!collapsed && item.badge && (
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                isActive ? "bg-white/15 text-white" : "bg-[#7c3aed]/10 text-[#7c3aed]"
+              }`}
+            >
+              {item.badge}
+            </span>
+          )}
         </>
       )}
     </NavLink>

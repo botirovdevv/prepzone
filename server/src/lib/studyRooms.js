@@ -1,0 +1,85 @@
+import { randomInt } from "node:crypto";
+
+// ------------------------------------------------------------------
+// Study Room xonalari va ularning doskasi — faqat xotirada saqlanadi
+// (server qayta ishga tushsa xonalar yo'qoladi; hozircha shu yetarli).
+// Video/ovoz LiveKit Cloud orqali, doska esa Socket.IO orqali (realtime.js).
+// ------------------------------------------------------------------
+
+// Bir-biriga o'xshash belgilar (0/O, 1/I/L) yo'q — kodni og'zaki aytish oson.
+const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const CODE_LENGTH = 6;
+export const CODE_RE = /^[A-HJKMNP-Z2-9]{6}$/;
+
+// Oxirgi faollikdan keyin xona shuncha vaqt saqlanadi.
+const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
+export const MAX_PARTICIPANTS = 2;
+
+// Bitta xona (dars) davomiyligi. Premium akkaunt qo'shilganda roomLimitMinutes()
+// xona ochgan foydalanuvchining tarifiga qarab PREMIUM_MINUTES qaytaradi.
+export const FREE_MINUTES = 40;
+export const PREMIUM_MINUTES = 90;
+
+export const MAX_STROKES = 5000;
+export const MAX_POINTS_PER_STROKE = 4000;
+
+// code -> { createdBy, createdAt, touchedAt, limitMs, startedAt, endTimer, strokes: Map<id, stroke> }
+const rooms = new Map();
+
+// Hozircha hamma uchun bepul limit. Premium qo'shilganda:
+//   return user.is_premium ? PREMIUM_MINUTES : FREE_MINUTES;
+export function roomLimitMinutes(_user) {
+  return FREE_MINUTES;
+}
+
+function newCode() {
+  let code;
+  do {
+    code = Array.from({ length: CODE_LENGTH }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
+  } while (rooms.has(code));
+  return code;
+}
+
+export function createRoom(user) {
+  const code = newCode();
+  const now = Date.now();
+  rooms.set(code, {
+    createdBy: user.id,
+    createdAt: now,
+    touchedAt: now,
+    limitMs: roomLimitMinutes(user) * 60_000,
+    startedAt: null, // birinchi kishi kirganda boshlanadi
+    endTimer: null,
+    strokes: new Map(),
+  });
+  return code;
+}
+
+// Xona vaqtini birinchi kirishda boshlaydi va tugash vaqtida onEnd'ni chaqiradi.
+// Tugash vaqtini (ms) qaytaradi.
+export function startRoomClock(room, onEnd) {
+  if (!room.startedAt) {
+    room.startedAt = Date.now();
+    room.endTimer = setTimeout(onEnd, room.limitMs);
+    room.endTimer.unref?.();
+  }
+  return room.startedAt + room.limitMs;
+}
+
+export function getRoom(code) {
+  const room = rooms.get(code);
+  if (!room) return null;
+  room.touchedAt = Date.now();
+  return room;
+}
+
+// Muddati o'tgan xonalarni (doskasi bilan) tozalaydi.
+setInterval(() => {
+  const cutoff = Date.now() - ROOM_TTL_MS;
+  for (const [code, room] of rooms) {
+    if (room.touchedAt < cutoff) {
+      clearTimeout(room.endTimer);
+      rooms.delete(code);
+    }
+  }
+}, 10 * 60 * 1000).unref();
