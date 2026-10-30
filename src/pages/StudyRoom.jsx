@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   LiveKitRoom,
@@ -38,51 +38,77 @@ import Whiteboard from "../components/studyRoom/Whiteboard";
 
 // ------------------------------------------------------------------
 // Study Room — ikki talaba uchun video dars xonasi.
-//   Video/ovoz/ekran: LiveKit Cloud (token: POST /api/study-room/:code/token)
+//   Video/ovoz/ekran: o'z LiveKit serverimiz (token: POST /api/study-room/:code/token)
 //   Doska: Socket.IO (components/studyRoom/Whiteboard.jsx)
 //
 // Sifat va qotmaslik uchun: adaptiveStream (ekran zichligiga mos sifat qatlami),
-// dynacast (hech kim ko'rmayotgan qatlam yuborilmaydi), simulcast (720p +
-// 360p + 180p), ekran 1080p/15fps ("detail" — matn tiniq qoladi).
+// dynacast (hech kim ko'rmayotgan qatlam yuborilmaydi), simulcast, ekran
+// 1080p/15fps ("detail" — matn tiniq qoladi). Telefonda Meet uslubidagi tik
+// (9:16) ko'rinish; internet sekinlashsa foydalanuvchiga aytiladi.
 // ------------------------------------------------------------------
+
+function isPortraitPhone() {
+  return (
+    typeof window !== "undefined" &&
+    Boolean(window.matchMedia?.("(pointer: coarse)").matches) &&
+    Boolean(window.matchMedia?.("(orientation: portrait)").matches)
+  );
+}
 
 // Kameradan kadr nisbatini (aspectRatio) majburlamasdan so'raymiz: aks holda
 // tik ushlangan telefon keng kadr berish uchun sensor o'rtasini kesib oladi va
 // tasvir juda yaqin (zoom) bo'lib qoladi. Telefon tik bo'lsa — tik kadr.
-function cameraResolution() {
-  const portraitPhone =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(pointer: coarse)").matches &&
-    window.matchMedia?.("(orientation: portrait)").matches;
-  return portraitPhone ? { width: 720, height: 1280, frameRate: 24 } : { width: 1280, height: 720, frameRate: 24 };
+// Telefonlar 540p yuboradi: arzonroq Android'lar 720p'ni uch qatlamda
+// kodlashga qiynalib, videosi qotadi; telefon ekranida 540p baribir tiniq.
+function cameraProfile() {
+  return isPortraitPhone()
+    ? { resolution: { width: 540, height: 960, frameRate: 24 }, maxBitrate: 900_000 }
+    : { resolution: { width: 1280, height: 720, frameRate: 24 }, maxBitrate: 1_200_000 };
 }
 
-const CAMERA_RESOLUTION = cameraResolution();
+// Xonaga kirish paytida (telefonning o'sha paytdagi holatiga qarab) quriladi.
+function buildRoomOptions() {
+  const camera = cameraProfile();
+  return {
+    // "screen" — telefonning haqiqiy piksel zichligi hisobga olinadi (aks holda
+    // kichik plitka uchun 180p tanlanib, video xira ko'rinadi).
+    adaptiveStream: { pixelDensity: "screen" },
+    dynacast: true,
+    videoCaptureDefaults: { resolution: camera.resolution, facingMode: "user" },
+    audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    publishDefaults: {
+      simulcast: true,
+      videoEncoding: { maxBitrate: camera.maxBitrate, maxFramerate: 24 },
+      // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
+      videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+      degradationPreference: "balanced",
+      screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
+      dtx: true,
+      red: true,
+    },
+  };
+}
 
-const ROOM_OPTIONS = {
-  // "screen" — telefonning haqiqiy piksel zichligi hisobga olinadi (aks holda
-  // kichik plitka uchun 180p tanlanib, video xira ko'rinadi).
-  adaptiveStream: { pixelDensity: "screen" },
-  dynacast: true,
-  videoCaptureDefaults: { resolution: CAMERA_RESOLUTION, facingMode: "user" },
-  audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-  publishDefaults: {
-    simulcast: true,
-    videoEncoding: { maxBitrate: 1_200_000, maxFramerate: 24 },
-    // Qatlamlar kadrning qisqa tomoniga qarab hisoblanadi — tik video ham to'g'ri.
-    videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
-    degradationPreference: "balanced",
-    screenShareEncoding: ScreenSharePresets.h1080fps15.encoding,
-    dtx: true,
-    red: true,
-  },
-};
+// lg (1024px) va undan keng — desktop ko'rinishi.
+function useIsDesktop() {
+  const query = "(min-width: 1024px)";
+  const [desktop, setDesktop] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return desktop;
+}
 
 const canScreenShare = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getDisplayMedia);
 
 // ---------------- Kirishdan oldin: kamera/mikrofon tekshiruvi ----------------
 function PreJoin({ code, onJoin, joining, error }) {
   const videoRef = useRef(null);
+  const [profile] = useState(cameraProfile);
+  const portrait = profile.resolution.height > profile.resolution.width;
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [mediaError, setMediaError] = useState("");
@@ -94,8 +120,8 @@ function PreJoin({ code, onJoin, joining, error }) {
     navigator.mediaDevices
       ?.getUserMedia({
         video: {
-          width: { ideal: CAMERA_RESOLUTION.width },
-          height: { ideal: CAMERA_RESOLUTION.height },
+          width: { ideal: profile.resolution.width },
+          height: { ideal: profile.resolution.height },
           facingMode: "user",
         },
       })
@@ -113,7 +139,7 @@ function PreJoin({ code, onJoin, joining, error }) {
       cancelled = true;
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [camOn]);
+  }, [camOn, profile]);
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4 py-8">
@@ -125,7 +151,10 @@ function PreJoin({ code, onJoin, joining, error }) {
           <LuArrowLeft size={16} /> Orqaga
         </Link>
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
-          <div className="relative aspect-video bg-[#12213D]">
+          {/* Telefonda oldindan ko'rish ham tik (9:16) — yuboriladigan kadrning o'zi. */}
+          <div
+            className={`relative mx-auto bg-[#12213D] ${portrait ? "aspect-[9/16] h-[58dvh] max-w-full" : "aspect-video"}`}
+          >
             {camOn ? (
               <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-contain" />
             ) : (
@@ -226,7 +255,9 @@ function useVideoFit() {
   return { boxRef, onVideoSize, cover: ratio < 1.35 };
 }
 
-function ParticipantTile({ trackRef, className = "" }) {
+// compact — kichik suzuvchi oyna (faqat ism va mikrofon belgisi);
+// forceCover — kadrni doim to'ldiradi (o'z kichik oynamiz uchun).
+function ParticipantTile({ trackRef, className = "", compact = false, forceCover = false }) {
   const participant = trackRef.participant;
   const speaking = useIsSpeaking(participant);
   const hasVideo = isTrackReference(trackRef) && !trackRef.publication.isMuted;
@@ -246,26 +277,34 @@ function ParticipantTile({ trackRef, className = "" }) {
           trackRef={trackRef}
           onLoadedMetadata={onVideoSize}
           onResize={onVideoSize}
-          className={`h-full w-full ${cover && !isScreen ? "object-cover" : "object-contain"} ${
+          className={`h-full w-full ${(cover || forceCover) && !isScreen ? "object-cover" : "object-contain"} ${
             participant.isLocal && !isScreen ? "-scale-x-100" : ""
           }`}
         />
       ) : (
         <div className="flex h-full items-center justify-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#087fd1] font-display text-2xl font-bold text-white">
+          <span
+            className={`flex items-center justify-center rounded-full bg-[#087fd1] font-display font-bold text-white ${
+              compact ? "h-9 w-9 text-base" : "h-16 w-16 text-2xl"
+            }`}
+          >
             {name.slice(0, 1).toUpperCase()}
           </span>
         </div>
       )}
-      <div className="absolute inset-x-2 bottom-2 flex items-center gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 rounded-lg bg-black/45 px-2 py-1 text-xs font-semibold text-white backdrop-blur">
+      <div className={`absolute flex items-center gap-2 ${compact ? "inset-x-1 bottom-1" : "inset-x-2 bottom-2"}`}>
+        <span
+          className={`flex min-w-0 items-center gap-1.5 rounded-lg bg-black/45 font-semibold text-white backdrop-blur ${
+            compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
+          }`}
+        >
           {!isScreen && !participant.isMicrophoneEnabled && <LuMicOff size={12} className="shrink-0 text-red-300" />}
           <span className="truncate">
             {isScreen ? `${name} — ekran` : name}
             {participant.isLocal && " (siz)"}
           </span>
         </span>
-        {!isScreen && (
+        {!isScreen && !compact && (
           <span className="ml-auto rounded-lg bg-black/45 px-1.5 py-1 backdrop-blur">
             <QualityBars participant={participant} />
           </span>
@@ -350,10 +389,89 @@ function TimeWarning({ endsAt, limitMinutes }) {
   );
 }
 
+// ---------------- Telefon: Meet uslubidagi tik ko'rinish ----------------
+// Kichik suzuvchi tik (9:16) oyna — bosilsa onClick.
+function FloatingTile({ trackRef, onClick, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Videoni almashtirish"
+      className={`absolute z-20 aspect-[9/16] w-[28vw] max-w-[132px] overflow-hidden rounded-2xl shadow-[0_10px_30px_-8px_rgba(0,0,0,0.6)] ring-1 ring-white/20 ${className}`}
+    >
+      <ParticipantTile trackRef={trackRef} className="h-full w-full" compact forceCover={trackRef.participant.isLocal} />
+    </button>
+  );
+}
+
+// Sherik butun ekranni egallaydi, o'zimiz burchakda kichik oynada (bosilsa
+// o'rin almashadi). Sherik hali kirmagan bo'lsa — o'zimiz to'liq ekranda.
+function MobileStage({ cameraTracks }) {
+  const [swapped, setSwapped] = useState(false);
+  const local = cameraTracks.find((t) => t.participant.isLocal);
+  const remote = cameraTracks.find((t) => !t.participant.isLocal);
+  const big = remote && !swapped ? remote : local;
+  const small = remote ? (swapped ? remote : local) : null;
+
+  return (
+    <div className="relative h-full w-full">
+      {big && <ParticipantTile trackRef={big} className="h-full w-full" />}
+      {small && (
+        <FloatingTile trackRef={small} onClick={() => setSwapped((v) => !v)} className="right-3 top-3" />
+      )}
+      {!remote && (
+        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2">
+          <WaitingTile className="border-white/25 bg-black/45 backdrop-blur" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------- Internet sifati haqida ogohlantirish ----------------
+const NOTICE_DELAY_MS = 3000;
+
+// Holat 3 soniya o'zgarmay tursa — ko'rsatiladi/yashiriladi (miltillamaydi).
+function useSustained(flag) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (flag === shown) return;
+    const t = setTimeout(() => setShown(flag), NOTICE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [flag, shown]);
+  return shown;
+}
+
+const isBad = (q) => q === ConnectionQuality.Poor || q === ConnectionQuality.Lost;
+
+function LocalNetworkNotice({ participant, cameraOn, onCameraOff }) {
+  const { quality } = useConnectionQualityIndicator({ participant });
+  if (!useSustained(isBad(quality))) return null;
+  return (
+    <div className="flex items-center justify-center gap-3 bg-red-500 px-4 py-1.5 text-center text-xs font-semibold text-white">
+      <span>Internetingiz sekin — video qotishi yoki xiralashishi mumkin.</span>
+      {cameraOn && (
+        <button type="button" onClick={onCameraOff} className="shrink-0 rounded-lg bg-white/20 px-2 py-1 hover:bg-white/30">
+          Kamerani o'chirish
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RemoteNetworkNotice({ participant }) {
+  const { quality } = useConnectionQualityIndicator({ participant });
+  if (!useSustained(isBad(quality))) return null;
+  return (
+    <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+      {participant.name || "Sherigingiz"}ning interneti sekin — uning videosi qotishi mumkin.
+    </div>
+  );
+}
+
 // ---------------- Xona ichi ----------------
-// Telefondagi "Video" tabida ikki plitka ekranni teng bo'lishadi (tik video uchun
-// balandlik yetarli); desktopda o'ng ustunda 16:9.
-const TILE_CLASS = "min-h-0 w-full flex-1 lg:flex-none lg:aspect-video";
+// Desktop: o'ng ustunda 16:9 plitkalar. Telefon: MobileStage (tik ko'rinish).
+const TILE_CLASS = "aspect-video w-full shrink-0";
 function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const room = useRoomContext();
   const connectionState = useConnectionState();
@@ -363,9 +481,14 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
   const cameraTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], { onlySubscribed: false });
   const screenTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }]).filter(isTrackReference);
   const screen = screenTracks[0];
+  const remoteCamera = cameraTracks.find((t) => !t.participant.isLocal);
+  const remoteParticipant = participants.find((p) => !p.isLocal);
+  const isDesktop = useIsDesktop();
 
-  // Mobil: "board" | "video" | "screen";  desktop asosiy maydon: "board" | "screen".
-  const [view, setView] = useState("board");
+  // Telefon: "video" | "board" | "screen" (video'dan boshlanadi — Meet kabi);
+  // desktop asosiy maydon: "board" | "screen" (videolar doim o'ng ustunda).
+  const [view, setView] = useState(() => (window.matchMedia("(min-width: 1024px)").matches ? "board" : "video"));
+  const mobileVideo = !isDesktop && view === "video";
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -419,6 +542,10 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         <Whiteboard code={code} />
       </div>
       {showScreen && <ParticipantTile trackRef={screen} className="h-full w-full" />}
+      {/* Telefonda doska/ekran ochiq bo'lsa ham sherik kichik oynada ko'rinadi. */}
+      {!isDesktop && remoteCamera && (
+        <FloatingTile trackRef={remoteCamera} onClick={() => setView("video")} className="bottom-3 right-3" />
+      )}
     </>
   );
 
@@ -454,11 +581,17 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
         <div className="ml-auto flex items-center gap-1 rounded-2xl bg-white/[0.06] p-1">
           {tab("board", "Doska", LuPencilLine)}
           {screen && tab("screen", "Ekran", LuMonitorUp)}
-          <span className="lg:hidden">{tab("video", `Video (${participants.length})`, LuVideo)}</span>
+          {!isDesktop && tab("video", `Video (${participants.length})`, LuVideo)}
         </div>
       </header>
 
       <TimeWarning endsAt={endsAt} limitMinutes={limitMinutes} />
+      <LocalNetworkNotice
+        participant={localParticipant}
+        cameraOn={isCameraEnabled}
+        onCameraOff={() => toggle(() => localParticipant.setCameraEnabled(false))}
+      />
+      {remoteParticipant && <RemoteNetworkNotice participant={remoteParticipant} />}
       {connectionState === ConnectionState.Reconnecting && (
         <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
           Aloqa uzildi — qayta ulanmoqda…
@@ -467,16 +600,17 @@ function RoomView({ code, endsAt, limitMinutes, onLeave }) {
 
       {/* Asosiy qism */}
       <div className="flex min-h-0 flex-1 gap-3 px-2 pb-2 sm:px-3">
-        <main className={`min-h-0 flex-1 ${view === "video" ? "hidden lg:block" : ""}`}>{mainArea}</main>
+        <main className={`relative min-h-0 flex-1 ${mobileVideo ? "hidden" : ""}`}>{mainArea}</main>
 
-        {/* Desktop: o'ng ustunda videolar. Mobil: "Video" tabida to'liq ekran. */}
-        <aside
-          className={`min-h-0 flex-col gap-3 overflow-y-auto lg:flex lg:w-[300px] xl:w-[340px] ${
-            view === "video" ? "flex w-full" : "hidden"
-          }`}
-        >
-          {tiles}
-        </aside>
+        {/* Telefon: tik (9:16) Meet uslubi. Desktop: o'ng ustunda videolar. */}
+        {mobileVideo && (
+          <div className="min-h-0 flex-1">
+            <MobileStage cameraTracks={cameraTracks} />
+          </div>
+        )}
+        {isDesktop && (
+          <aside className="flex min-h-0 w-[300px] flex-col gap-3 overflow-y-auto xl:w-[340px]">{tiles}</aside>
+        )}
       </div>
 
       {/* Boshqaruv paneli */}
@@ -556,6 +690,8 @@ export default function StudyRoom() {
 
   const [conn, setConn] = useState(null); // { token, url, endsAt, limitMinutes, camOn, micOn }
   const [timeUp, setTimeUp] = useState(""); // xona vaqti tugagan bo'lsa — xabar
+  // Kamera sozlamalari xonaga kirish paytidagi telefon holatiga qarab.
+  const roomOptions = useMemo(() => (conn ? buildRoomOptions() : null), [conn]);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
 
@@ -583,7 +719,7 @@ export default function StudyRoom() {
       connect
       video={conn.camOn}
       audio={conn.micOn}
-      options={ROOM_OPTIONS}
+      options={roomOptions}
       onError={(err) => setError(err.message)}
       onDisconnected={(reason) => {
         // Server xona vaqti tugaganda xonani o'chiradi.
