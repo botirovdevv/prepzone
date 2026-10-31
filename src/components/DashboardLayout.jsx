@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
+import TelegramPromo from "./TelegramPromo";
 import { PageLoader } from "./ui";
 
 export default function DashboardLayout({ children }) {
@@ -29,6 +30,7 @@ export default function DashboardLayout({ children }) {
         {/* Sahifa chunk'i yuklanayotganda sidebar joyida qoladi. */}
         <Suspense fallback={<PageLoader />}>{children}</Suspense>
       </div>
+      <TelegramPromo />
     </div>
   );
 }

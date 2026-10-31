@@ -63,6 +63,13 @@ export default {
       saving: "Saqlanmoqda...",
       start: "Boshlash",
     },
+    telegramPromo: {
+      title: "Telegram kanalimizga qo'shiling",
+      text: "Sayt haqidagi yangiliklar, foydali ma'lumotlar va kerakli fayllar — hammasi @prepzonesat kanalida.",
+      join: "Kanalga o'tish",
+      later: "Keyinroq",
+      close: "Yopish",
+    },
   },
   en: {
     notFound: {
@@ -126,6 +133,13 @@ export default {
       back: "Back",
       saving: "Saving...",
       start: "Start",
+    },
+    telegramPromo: {
+      title: "Join our Telegram channel",
+      text: "News about the site, useful info and the files you need — all on the @prepzonesat channel.",
+      join: "Open channel",
+      later: "Later",
+      close: "Close",
     },
   },
 };
