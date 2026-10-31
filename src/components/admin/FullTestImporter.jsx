@@ -215,7 +215,7 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
             <p className="text-xs leading-relaxed text-[#12213D]/55">
               Jami <strong>{all.length}</strong> ta savol.{" "}
               {result.rw.module2Mixed.length + result.math.module2Mixed.length > 0 &&
-                "PDF'da Module 2 oson/qiyin deb ajratilmagan — u barcha talabalar oladigan bitta Module 2 sifatida qo'yiladi. "}
+                "PDF'da Module 2 oson/qiyin deb ajratilmagan — joylagandan keyin \"Testni adaptiv qilish\" tugmasi bilan ikkinchi variantni savol bankidan qo'shing. "}
               {flagged > 0 && (
                 <>
                   <strong className="text-violet-700">{flagged} ta savol</strong> (grafikli, kalitsiz yoki shubhali) "AI · tekshirish kerak"

@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import QuestionEditor from "../../components/admin/QuestionEditor";
 import AdaptiveBuilder from "../../components/admin/AdaptiveBuilder";
 import FullTestImporter from "../../components/admin/FullTestImporter";
+import MakeAdaptive from "../../components/admin/MakeAdaptive";
 import { RW_DOMAINS, RW_PROMPT_TEMPLATES } from "../../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../../data/mathDomains";
 import { LuArrowLeft, LuInfo, LuShieldCheck } from "react-icons/lu";
@@ -291,6 +292,29 @@ export default function SessionForm() {
             setMathM2E(math.module2Easy);
             setMathM2H(math.module2Hard);
             setMathM2Mix(math.module2Mixed);
+          }}
+        />
+
+        <MakeAdaptive
+          sections={Object.fromEntries(
+            [
+              ["rw", rwM1, rwM2Mix, rwM2E, rwM2H],
+              ["math", mathM1, mathM2Mix, mathM2E, mathM2H],
+            ]
+              .filter(([, m1, mix, e, h]) => m1.length > 0 && mix.length > 0 && e.length === 0 && h.length === 0)
+              .map(([id, m1, mix]) => [id, { module1: m1, module2Mixed: mix }])
+          )}
+          onApply={({ rw, math }) => {
+            if (rw) {
+              setRwM2E(rw.module2Easy);
+              setRwM2H(rw.module2Hard);
+              setRwM2Mix([]);
+            }
+            if (math) {
+              setMathM2E(math.module2Easy);
+              setMathM2H(math.module2Hard);
+              setMathM2Mix([]);
+            }
           }}
         />
 

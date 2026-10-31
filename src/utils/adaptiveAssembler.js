@@ -190,6 +190,55 @@ export function assembleAdaptive({ subject, pool, bank = [], size = MODULE_SIZE[
   };
 }
 
+const promptKey = (q) =>
+  String(q.prompt || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .slice(0, 160);
+
+/**
+ * Real imtihondan (PDF) olingan testni adaptiv qilish. Bunday testda
+ * Module 1 va bitta Module 2 bor. Ikkalasi ham o'zgarmaydi: PDF'dagi
+ * Module 2 qiyinlik tarkibiga qarab "Qiyin" (odatda) yoki "Oson" variant
+ * bo'ladi, ikkinchi variant esa savol bankidan shu hajmda yig'iladi.
+ *
+ * @returns {{ module1, module2Easy, module2Hard, pdfRoute, report, missing }}
+ *   pdfRoute — PDF'dagi Module 2 qaysi variantga qo'yildi.
+ */
+export function adaptFixedTest({ subject, module1, module2, bank = [], rand = Math.random }) {
+  const size = module2.length || MODULE_SIZE[subject];
+  const count = (l) => module2.filter((q) => level(q) === l).length;
+  const pdfRoute = count("hard") >= count("easy") ? "module2Hard" : "module2Easy";
+  const other = pdfRoute === "module2Hard" ? "module2Easy" : "module2Hard";
+
+  const existing = [...module1, ...module2];
+  const usedIds = new Set(existing.map((q) => q.sourceId).filter(Boolean));
+  const usedPrompts = new Set(existing.map(promptKey));
+  const pool = shuffle(
+    bank.filter((q) => !usedIds.has(q.sourceId) && !usedPrompts.has(promptKey(q))),
+    rand
+  );
+
+  const st = slotState(subject, other, size);
+  fillFrom(st, pool, { strict: true });
+  fillFrom(st, pool);
+
+  const items = ordered(subject, st.items);
+  const report = {
+    pdf: { total: module2.length, easy: count("easy"), medium: count("medium"), hard: count("hard") },
+    bank: {
+      total: items.length,
+      size,
+      easy: items.filter((q) => level(q) === "easy").length,
+      medium: items.filter((q) => level(q) === "medium").length,
+      hard: items.filter((q) => level(q) === "hard").length,
+    },
+  };
+  return { module1, [pdfRoute]: module2, [other]: items, pdfRoute, report, missing: missingSpecs(st) };
+}
+
 // AI yaratgan savollarni yetishmagan joylarga qo'shib, tartibni yangilaydi.
 export function addToModule(subject, items, extra) {
   return ordered(subject, [...items, ...extra]);
