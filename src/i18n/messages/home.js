@@ -19,9 +19,9 @@ export default {
       heroText:
         "Bluebook formatidagi adaptiv Digital SAT mock testlari, mavzular bo'yicha tahlil va maqsad ballingizga moslashgan reja — hammasi bitta platformada.",
       heroLogin: "Hisobim bor — kirish",
-      desmosSoon: "Desmos · tez orada",
+      desmosSoon: "Desmos kalkulyator",
       tests: [
-        { name: "Digital SAT", text: "Reading & Writing va Math. Adaptiv modullar, Desmos (tez orada), 400–1600 ball." },
+        { name: "Digital SAT", text: "Reading & Writing va Math. Adaptiv modullar, Desmos kalkulyatori, 400–1600 ball." },
         { name: "Amaliyot to'plamlari", text: "Har oylik rasmiy SAT sanasi uchun mavzular bo'yicha savollar — vaqt cheklovisiz, darhol javob bilan." },
         { name: "Kod bilan mock", text: "O'qituvchingiz bergan 6 xonali kod bilan belgilangan vaqtda nazorat ostidagi test." },
       ],
@@ -75,7 +75,7 @@ export default {
       faq: [
         [
           "Mock testlar haqiqiy imtihonga qanchalik o'xshash?",
-          "Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, formulalar varag'i, Annotate va Line Reader, rasmiy vaqt chegaralari va to'liq ekran rejimi. Desmos kalkulyatori tez orada qo'shiladi.",
+          "Bluebook ilovasidagi kabi 2 bo'lim, har birida adaptiv 2 modul, formulalar varag'i, Annotate va Line Reader, rasmiy vaqt chegaralari va to'liq ekran rejimi hamda Math bo'limida Desmos kalkulyatori.",
         ],
         [
           "Ball qanday hisoblanadi?",
@@ -131,9 +131,9 @@ export default {
       heroText:
         "Adaptive Digital SAT mock tests in the Bluebook format, topic-by-topic analysis and a plan tailored to your target score — all on one platform.",
       heroLogin: "I have an account — log in",
-      desmosSoon: "Desmos · coming soon",
+      desmosSoon: "Desmos calculator",
       tests: [
-        { name: "Digital SAT", text: "Reading & Writing and Math. Adaptive modules, Desmos (coming soon), 400–1600 score." },
+        { name: "Digital SAT", text: "Reading & Writing and Math. Adaptive modules, the Desmos calculator, 400–1600 score." },
         { name: "Practice sets", text: "Questions by topic for each official monthly SAT date — untimed, with instant answers." },
         { name: "Mock with key", text: "A proctored test at a set time, opened with the 6-digit code from your teacher." },
       ],
@@ -185,7 +185,7 @@ export default {
       faq: [
         [
           "How close are the mock tests to the real exam?",
-          "Like the Bluebook app: 2 sections with 2 adaptive modules each, the reference sheet, Annotate and Line Reader, official time limits and full-screen mode. The Desmos calculator is coming soon.",
+          "Like the Bluebook app: 2 sections with 2 adaptive modules each, the reference sheet, Annotate and Line Reader, official time limits, full-screen mode and the Desmos calculator in Math.",
         ],
         [
           "How is the score calculated?",

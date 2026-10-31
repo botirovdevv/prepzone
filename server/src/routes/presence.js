@@ -16,7 +16,7 @@ const router = Router();
 router.use(
   rateLimit({
     windowMs: 60_000,
-    limit: 300,
+    limit: 1500,
     standardHeaders: "draft-8",
     legacyHeaders: false,
   })

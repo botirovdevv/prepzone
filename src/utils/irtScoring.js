@@ -104,13 +104,71 @@ export function decideRouteIrt(module1Questions, module1Answers) {
   return theta >= ROUTING_THETA ? "hard" : "easy";
 }
 
-// theta -> 200..800 (10 ga yaxlitlangan)
+// theta -> 200..800 (10 ga yaxlitlangan). Nuqtalar simulyatsiya bilan
+// pastdagi RAW_CURVES'ga moslangan: bir xil javoblar naqshi moslashuvchan
+// va oddiy testda taxminan bir xil ball beradi (avvalgi chiziqli
+// 510 + 118·theta o'rta darajada ~100 ball past chiqarardi).
+const THETA_CURVE = [
+  [-2.8, 200], [-2.3, 330], [-1.9, 400], [-1.5, 450], [-0.9, 515],
+  [-0.2, 565], [0.7, 625], [1.6, 700], [2.4, 800],
+];
+
 export function thetaToScaled(theta) {
-  const scaled = 510 + 118 * theta;
+  const c = THETA_CURVE;
+  let scaled;
+  if (theta <= c[0][0]) scaled = c[0][1];
+  else if (theta >= c[c.length - 1][0]) scaled = c[c.length - 1][1];
+  else {
+    let i = 1;
+    while (c[i][0] < theta) i++;
+    const [x0, y0] = c[i - 1];
+    const [x1, y1] = c[i];
+    scaled = y0 + ((theta - x0) / (x1 - x0)) * (y1 - y0);
+  }
   return Math.round(Math.min(800, Math.max(200, scaled)) / 10) * 10;
 }
 
 // Bo'limning ikkala moduli bo'yicha yakuniy bal.
 export function scoreSection(responses) {
   return thetaToScaled(estimateTheta(responses));
+}
+
+// ------------------------------------------------------------------
+// Moslashuvchan bo'lmagan (Module 2 bitta, "mixed") testlar uchun
+// raw -> 200..800 jadvali.
+//
+// PDF'dan import qilingan real imtihon testlarida Module 2 yo'nalishi yo'q
+// va savol qiyinligi AI taxmini — IRT bunday testda ballni ~100 ga past
+// chiqarardi. O'rniga College Board'ning Bluebook practice testlaridagi
+// konversiya jadvallariga yaqin egri chiziq ishlatiladi (taxminiy, rasmiy
+// emas — har bir testning jadvali biroz farq qiladi). Savollar soni
+// standartdan farq qilsa, to'g'ri javoblar ulushi bo'yicha o'lchanadi.
+// ------------------------------------------------------------------
+const RAW_CURVES = {
+  // 54 savol (27 + 27)
+  rw: [
+    [0, 200], [3, 210], [5, 230], [10, 300], [15, 360], [20, 410], [25, 450],
+    [30, 500], [35, 540], [40, 590], [45, 640], [48, 680], [50, 710],
+    [52, 750], [53, 770], [54, 800],
+  ],
+  // 44 savol (22 + 22)
+  math: [
+    [0, 200], [3, 220], [5, 260], [10, 350], [15, 420], [20, 470], [25, 520],
+    [30, 570], [35, 630], [38, 670], [40, 700], [42, 740], [43, 770], [44, 800],
+  ],
+};
+
+export const hasRawCurve = (sectionId) => !!RAW_CURVES[sectionId];
+
+export function rawToScaled(sectionId, correct, total) {
+  const curve = RAW_CURVES[sectionId];
+  if (!curve || !total) return 200;
+  const full = curve[curve.length - 1][0];
+  const raw = (Math.max(0, Math.min(correct, total)) / total) * full;
+  let i = 1;
+  while (i < curve.length - 1 && curve[i][0] < raw) i++;
+  const [x0, y0] = curve[i - 1];
+  const [x1, y1] = curve[i];
+  const scaled = y0 + ((raw - x0) / (x1 - x0)) * (y1 - y0);
+  return Math.round(Math.min(800, Math.max(200, scaled)) / 10) * 10;
 }

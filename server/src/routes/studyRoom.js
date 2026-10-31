@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
+import { perUserLimit } from "../lib/limiters.js";
 import { config } from "../config.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import { CODE_RE, MAX_PARTICIPANTS, createRoom, getRoom, isTimeUp } from "../lib/studyRooms.js";
@@ -17,14 +17,9 @@ import { CODE_RE, MAX_PARTICIPANTS, createRoom, getRoom, isTimeUp } from "../lib
 
 const router = Router();
 
-router.use(
-  rateLimit({
-    windowMs: 60_000,
-    limit: 30,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-  })
-);
+// Foydalanuvchi bo'yicha (IP emas): bitta Wi-Fi ortidagi ko'p talaba
+// bir-birining limitini yeb qo'ymasin.
+router.use(perUserLimit({ windowMs: 60_000, limit: 30 }));
 
 // coturn "use-auth-secret" (TURN REST API) uchun vaqtinchalik login/parol:
 // username = "<tugash vaqti>:<userId>", parol = HMAC-SHA1(secret, username).

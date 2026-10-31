@@ -9,7 +9,14 @@
 // Docker image'da ham repo tuzilishi saqlanadi (/repo/server, /repo/content,
 // /repo/src/utils) — shuning uchun yo'llar lokal va serverda bir xil.
 import { SAT_TESTS } from "../../../content/sat/index.js";
-import { buildResponses, decideRouteIrt, isAnswerCorrect, scoreSection } from "../../../src/utils/irtScoring.js";
+import {
+  buildResponses,
+  decideRouteIrt,
+  hasRawCurve,
+  isAnswerCorrect,
+  rawToScaled,
+  scoreSection,
+} from "../../../src/utils/irtScoring.js";
 
 const nonEmpty = (arr) => Array.isArray(arr) && arr.length > 0;
 
@@ -103,11 +110,23 @@ export function scoreSectionAttempt(section, attempt) {
   addDomainStats(domains, section.module1, m1Answers);
   if (reachedM2) addDomainStats(domains, m2Questions, m2Answers);
 
+  // Moslashuvchan (easy/hard) testda — IRT; bitta Module 2 yoki bitta
+  // modulli testda — raw jadval (irtScoring.js dagi izohga qarang).
+  const adaptive = multi && route != null;
+  const totalQuestions = section.module1.length + m2Questions.length;
+  const totalCorrect = responses.reduce((n, r) => n + (r.correct ? 1 : 0), 0);
+  const scaledScore =
+    !adaptive && hasRawCurve(section.id)
+      ? rawToScaled(section.id, totalCorrect, totalQuestions)
+      : scoreSection(responses);
+
   const result = {
     module1Correct: countCorrect(section.module1, m1Answers),
     module1Total: section.module1.length,
     module1Answers: m1Answers,
-    scaledScore: scoreSection(responses),
+    scaledScore,
+    rawCorrect: totalCorrect,
+    rawTotal: totalQuestions,
     domains,
   };
   if (multi) result.route = route ?? "mixed";

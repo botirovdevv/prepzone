@@ -10,7 +10,7 @@ import { LanguageSwitch, useI18n } from "../i18n";
 // ------------------------------------------------------------------
 
 const CONTACT_EMAIL = "support@prep-zone.uz";
-const TELEGRAM = "https://t.me/prepzone";
+const TELEGRAM = "https://t.me/prepzonesat";
 
 export default function LegalPage({ page }) {
   const { t, tr } = useI18n();
@@ -69,7 +69,7 @@ export default function LegalPage({ page }) {
               className="rounded-2xl border border-[#111827]/10 p-5 transition hover:border-[#087fd1] hover:bg-[#087fd1]/[0.03]"
             >
               <p className="text-xs font-semibold uppercase tracking-wider text-[#566176]">Telegram</p>
-              <p className="mt-1 font-semibold text-[#087fd1]">@prepzone</p>
+              <p className="mt-1 font-semibold text-[#087fd1]">@prepzonesat</p>
             </a>
           </div>
         )}

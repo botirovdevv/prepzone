@@ -26,11 +26,14 @@ const tooManyAttempts = (_req, res) =>
     message: "Juda ko'p urinish. Birozdan keyin qaytadan urinib ko'ring.",
   });
 
-// IP bo'yicha umumiy limit. Maktab yoki mobil operator ortidagi ko'p
-// o'quvchi bitta IP'dan chiqadi — limit shuni hisobga olib kengroq.
+// IP bo'yicha umumiy limit. Maktab, o'quv markazi yoki mobil operator
+// ortidagi ko'p o'quvchi bitta IP'dan chiqadi: zalda 200 kishi bir vaqtda
+// ro'yxatdan o'tsa (register + otp/send + otp/verify) ~600 so'rov bo'ladi.
+// Parol/kodni taxmin qilishdan himoya alohida — loginLimiter (IP + email)
+// va OTP urinishlar soni (lib/otp.js).
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 60,
+  limit: 1500,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   handler: tooManyAttempts,

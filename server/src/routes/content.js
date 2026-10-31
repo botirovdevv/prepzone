@@ -33,19 +33,28 @@ const authorFields = (user) => ({
 export const questionSetsRouter = Router();
 
 // Ro'yxat uchun savollarsiz (rasmlar base64 bo'lgani uchun og'ir) —
-// har bir bo'limda faqat savollar soni qaytariladi.
+// har bir bo'limda faqat savollar soni qaytariladi. Ro'yxat xotirada
+// keshlanadi: to'plam qo'shilsa/o'zgarsa/o'chirilsa tozalanadi (API bitta
+// jarayon). Shunda har bir talaba sahifani ochganda bazadan barcha
+// savollar o'qilmaydi.
+let setsListCache = null;
+const clearSetsCache = () => {
+  setsListCache = null;
+};
+
 questionSetsRouter.get("/", async (_req, res) => {
-  const { rows } = await query("SELECT * FROM question_sets ORDER BY created_at DESC");
-  res.json(
-    rows.map((row) => {
+  if (!setsListCache) {
+    const { rows } = await query("SELECT * FROM question_sets ORDER BY created_at DESC");
+    setsListCache = rows.map((row) => {
       const doc = questionSetDoc(row);
       const sections = (doc.sections || []).map(({ questions, ...sec }) => ({
         ...sec,
         questionCount: Array.isArray(questions) ? questions.length : 0,
       }));
       return { ...doc, sections, questionCount: sections.reduce((n, s) => n + s.questionCount, 0) };
-    })
-  );
+    });
+  }
+  res.json(setsListCache);
 });
 
 questionSetsRouter.get("/:id", async (req, res) => {
@@ -60,6 +69,7 @@ questionSetsRouter.post("/", requirePerm("sets"), async (req, res) => {
     crypto.randomUUID(),
     { ...body, ...authorFields(req.user) },
   ]);
+  clearSetsCache();
   res.status(201).json(questionSetDoc(row));
 });
 
@@ -70,11 +80,13 @@ questionSetsRouter.put("/:id", requirePerm("sets"), async (req, res) => {
     [req.params.id, body]
   );
   if (!row) throw notFound("To'plam topilmadi.");
+  clearSetsCache();
   res.json(questionSetDoc(row));
 });
 
 questionSetsRouter.delete("/:id", requirePerm("sets"), async (req, res) => {
   await query("DELETE FROM question_sets WHERE id = $1", [req.params.id]);
+  clearSetsCache();
   res.json({ ok: true });
 });
 

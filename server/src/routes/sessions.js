@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import zlib from "node:zlib";
 import { Router } from "express";
 import { z } from "zod";
 import { one, query, tx } from "../db/index.js";
@@ -81,23 +82,60 @@ async function hasFinishedOnce(s, userId) {
 const alreadyFinished = () =>
   new HttpError(409, "already-finished", "Siz bu testni allaqachon topshirgansiz.");
 
-// Ishtirokchiga beriladigan savollar — to'g'ri javoblar va tushuntirishlarsiz.
-const publicContent = (s) => ({ sections: stripSections(s.content?.sections) });
-
-// Baholash uchun bo'limlar (kalitlar bilan) — barcha modul massivlari mavjud.
-const keyedSections = (s) =>
-  (s.content?.sections || []).map((sec) => ({
-    id: sec.id,
-    module1: sec.module1 || [],
-    module2Easy: sec.module2Easy || [],
-    module2Hard: sec.module2Hard || [],
-    module2Mixed: sec.module2Mixed || [],
-  }));
+// `content` (savollar, rasmlar base64) og'ir — ro'yxat va meta so'rovlari
+// uni o'qimaydi. Kerak bo'lganda getContent() orqali olinadi.
+const META_COLUMNS = "id, code, access_type, status, scheduled_at, meta, created_at, updated_at";
 
 async function getSession(id) {
-  const s = await one("SELECT * FROM test_sessions WHERE id = $1", [id]);
+  const s = await one(`SELECT ${META_COLUMNS} FROM test_sessions WHERE id = $1`, [id]);
   if (!s) throw notFound("Test topilmadi.");
   return s;
+}
+
+// Savollar xotirada keshlanadi (updated_at bo'yicha): test boshlanganda
+// yuzlab talaba bir vaqtda /join, /content, /route, /finish chaqiradi —
+// har safar bazadan bir necha MB JSON o'qib, kalitlarni olib tashlash
+// o'rniga tayyor nusxa ishlatiladi. Tahrirlansa updated_at o'zgaradi.
+const contentCache = new Map();
+
+async function getContent(s) {
+  const version = new Date(s.updated_at).getTime();
+  const hit = contentCache.get(s.id);
+  if (hit && hit.version === version) return hit;
+  const row = await one("SELECT content, updated_at FROM test_sessions WHERE id = $1", [s.id]);
+  if (!row) throw notFound("Test topilmadi.");
+  const sections = row.content?.sections || [];
+  // Ishtirokchiga beriladigan savollar — to'g'ri javoblar va tushuntirishlarsiz.
+  // Rasmlar bilan bir necha MB bo'ladi: JSON va uning gzip nusxasi bir marta
+  // tayyorlanadi, har so'rovda qayta stringify/siqish qilinmaydi.
+  const publicJson = JSON.stringify({ sections: stripSections(sections) });
+  const entry = {
+    version: new Date(row.updated_at).getTime(),
+    full: row.content,
+    publicJson,
+    publicGzip: zlib.gzipSync(publicJson, { level: 6 }),
+    // Baholash uchun bo'limlar (kalitlar bilan) — barcha modul massivlari mavjud.
+    keyed: sections.map((sec) => ({
+      id: sec.id,
+      module1: sec.module1 || [],
+      module2Easy: sec.module2Easy || [],
+      module2Hard: sec.module2Hard || [],
+      module2Mixed: sec.module2Mixed || [],
+    })),
+  };
+  contentCache.set(s.id, entry);
+  return entry;
+}
+
+function sendJson(res, json, gzip) {
+  res.type("application/json");
+  res.set("Cache-Control", "private, no-store");
+  if (gzip && res.req.acceptsEncodings("gzip") === "gzip") {
+    res.set("Content-Encoding", "gzip");
+    res.set("Vary", "Accept-Encoding");
+    return res.send(gzip);
+  }
+  return res.send(json);
 }
 
 function broadcast(s) {
@@ -127,8 +165,8 @@ router.get("/", async (req, res) => {
   const isAdmin = hasPerm(req.user, "sessions");
   const { rows } = await query(
     isAdmin
-      ? "SELECT * FROM test_sessions ORDER BY scheduled_at DESC NULLS LAST, created_at DESC"
-      : `SELECT * FROM test_sessions WHERE access_type = 'open' AND status <> 'closed'
+      ? `SELECT ${META_COLUMNS} FROM test_sessions ORDER BY scheduled_at DESC NULLS LAST, created_at DESC`
+      : `SELECT ${META_COLUMNS} FROM test_sessions WHERE access_type = 'open' AND status <> 'closed'
          ORDER BY created_at DESC`
   );
   res.json(rows.map((s) => sessionDoc(s, { includeCode: isAdmin })));
@@ -137,7 +175,7 @@ router.get("/", async (req, res) => {
 // Kod bo'yicha qidirish (JoinSession sahifasi).
 router.post("/lookup", codeLimit, async (req, res) => {
   const { code } = parseBody(z.object({ code: z.string().trim().regex(/^\d{6}$/) }), req.body);
-  const s = await one("SELECT * FROM test_sessions WHERE code = $1", [code]);
+  const s = await one(`SELECT ${META_COLUMNS} FROM test_sessions WHERE code = $1`, [code]);
   if (!s) throw notFound("Bunday kod bilan test topilmadi.");
   res.json(sessionDoc(s));
 });
@@ -161,7 +199,7 @@ router.post("/", requireSessions, async (req, res) => {
     try {
       const s = await one(
         `INSERT INTO test_sessions (id, code, access_type, status, scheduled_at, meta, content)
-         VALUES ($1, $2, $3, 'scheduled', $4, $5, $6) RETURNING *`,
+         VALUES ($1, $2, $3, 'scheduled', $4, $5, $6) RETURNING ${META_COLUMNS}`,
         [
           crypto.randomUUID(),
           randomCode(),
@@ -191,7 +229,7 @@ router.put("/:id", requireSessions, async (req, res) => {
     `UPDATE test_sessions
        SET access_type = $2, scheduled_at = $3,
            meta = meta || $4::jsonb, content = $5, updated_at = now()
-     WHERE id = $1 RETURNING *`,
+     WHERE id = $1 RETURNING ${META_COLUMNS}`,
     [
       req.params.id,
       body.accessType,
@@ -211,7 +249,7 @@ router.patch("/:id/status", requireSessions, async (req, res) => {
     req.body
   );
   const s = await one(
-    "UPDATE test_sessions SET status = $2, updated_at = now() WHERE id = $1 RETURNING *",
+    `UPDATE test_sessions SET status = $2, updated_at = now() WHERE id = $1 RETURNING ${META_COLUMNS}`,
     [req.params.id, status]
   );
   if (!s) throw notFound("Test topilmadi.");
@@ -224,7 +262,7 @@ router.post("/:id/regenerate-code", requireSessions, async (req, res) => {
   for (let attempt = 0; attempt < 20; attempt++) {
     try {
       const s = await one(
-        "UPDATE test_sessions SET code = $2, updated_at = now() WHERE id = $1 RETURNING *",
+        `UPDATE test_sessions SET code = $2, updated_at = now() WHERE id = $1 RETURNING ${META_COLUMNS}`,
         [req.params.id, randomCode()]
       );
       broadcast(s);
@@ -238,6 +276,7 @@ router.post("/:id/regenerate-code", requireSessions, async (req, res) => {
 
 router.delete("/:id", requireSessions, async (req, res) => {
   await query("DELETE FROM test_sessions WHERE id = $1", [req.params.id]);
+  contentCache.delete(req.params.id);
   res.json({ ok: true });
 });
 
@@ -299,18 +338,22 @@ router.post("/:id/join", codeLimit, async (req, res) => {
     ]
   );
   emitToAdmins(s.id, "participant:update", participantDoc(rows[0]));
-  const content = isAdmin ? s.content : notStarted(s) ? null : publicContent(s);
-  res.json({ participant: participantDoc(rows[0]), content });
+  const participant = participantDoc(rows[0]);
+  if (isAdmin) return res.json({ participant, content: (await getContent(s)).full });
+  if (notStarted(s)) return res.json({ participant, content: null });
+  const { publicJson } = await getContent(s);
+  sendJson(res, `{"participant":${JSON.stringify(participant)},"content":${publicJson}}`);
 });
 
 // Admin — to'liq (tahrirlash uchun, kalitlar bilan); ishtirokchi — kalitsiz.
 router.get("/:id/content", async (req, res) => {
   const s = await getSession(req.params.id);
-  if (hasPerm(req.user, "sessions")) return res.json(s.content);
+  if (hasPerm(req.user, "sessions")) return res.json((await getContent(s)).full);
   if (!(await getParticipant(s.id, req.user.id))) throw forbidden("Avval testga qo'shiling.");
   if (s.status === "closed") throw new HttpError(403, "failed-precondition", "Bu test yakunlangan.");
   if (notStarted(s)) throw new HttpError(403, "not-started", "Test hali boshlanmagan.");
-  res.json(publicContent(s));
+  const { publicJson, publicGzip } = await getContent(s);
+  sendJson(res, publicJson, publicGzip);
 });
 
 // Ishtirokchi o'z holatini yangilaydi (admin monitoringi uchun). Faqat
@@ -361,7 +404,7 @@ router.post("/:id/route", async (req, res) => {
   await requireParticipant(req);
   const s = await getSession(req.params.id);
   const body = parseBody(z.object({ sectionId: z.string().max(20), module1Answers: answers }), req.body);
-  const section = keyedSections(s).find((sec) => sec.id === body.sectionId);
+  const section = (await getContent(s)).keyed.find((sec) => sec.id === body.sectionId);
   if (!section) throw notFound("Bo'lim topilmadi.");
   res.json({ route: routeFor(section, body.module1Answers) });
 });
@@ -400,7 +443,7 @@ router.post("/:id/finish", async (req, res) => {
   // Admin testni yopgan yoki talaba chetlatilgan bo'lsa — natija "to'xtatilgan".
   const terminated = !!body.terminated || s.status === "closed" || participant.data?.status === "terminated";
   const reason = body.terminationReason || (s.status === "closed" ? "closed_by_admin" : "unknown");
-  const sections = keyedSections(s);
+  const { keyed: sections } = await getContent(s);
   const { results, total, complete } = scoreAttempt(sections, body.attempts, { terminated });
   const termFields = terminated ? { terminated: true, terminationReason: String(reason).slice(0, 40) } : {};
   const title = s.meta?.title || "";

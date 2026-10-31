@@ -3,7 +3,15 @@ import { config } from "../config.js";
 
 export const pool = new pg.Pool({
   connectionString: config.databaseUrl,
-  max: 10,
+  // Bir vaqtda ~200 talaba: so'rovlar navbatda kutib qolmasin.
+  max: Number(process.env.PG_POOL_MAX) || 20,
+});
+
+// Bo'sh turgan ulanish uzilsa (Postgres qayta ishga tushdi, tarmoq uzildi)
+// pool 'error' chiqaradi — handler bo'lmasa butun API jarayoni yiqiladi.
+// Pool o'sha ulanishni o'zi tashlab yuboradi, keyingi so'rov yangisini ochadi.
+pool.on("error", (err) => {
+  console.error("[db] bo'sh ulanishda xato:", err.message);
 });
 
 export function query(text, params) {
