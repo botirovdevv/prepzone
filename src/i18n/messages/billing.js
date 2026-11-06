@@ -5,7 +5,7 @@ export default {
       perMonth: "/oy",
       months: { 1: "1 oy", 3: "3 oy" },
       save: "{pct}% tejash",
-      saveUpTo: "−23% gacha",
+      saveUpTo: "−20% gacha",
       popular: "Eng ommabop",
       current: "Joriy tarif",
       free: "Bepul",
@@ -35,7 +35,7 @@ export default {
       compareTitle: "PrepZone boshqalardan nimasi bilan farq qiladi",
       compareCols: ["PrepZone Pro", "O'quv markazi", "Boshqa onlayn platformalar"],
       compareRows: [
-        ["Narx (oyiga)", "129 000 so'm", "650 000 – 1 200 000 so'm", "80 000 – 150 000 so'm"],
+        ["Narx (oyiga)", "69 000 so'm", "650 000 – 1 200 000 so'm", "80 000 – 150 000 so'm"],
         ["Bluebook kabi adaptiv mock + Desmos", "✓ cheksiz", "haftasiga 1", "✓"],
         ["Har bir savolga o'zbekcha AI tushuntirish", "✓", "—", "qisman"],
         ["Xatolar daftari + aqlli takrorlash", "✓", "—", "qisman"],
@@ -53,7 +53,7 @@ export default {
       faqTitle: "Savollar",
       faq: [
         { q: "Pul avtomatik yechib olinadimi?", a: "Yo'q. To'lov bir martalik. Muddat tugagach, xohlasangiz o'zingiz uzaytirasiz." },
-        { q: "Nega summa yaxlit emas (masalan 129 437)?", a: "Oxirgi raqamlar to'lovingizni aniqlash uchun kerak. Shu tufayli to'lov odam aralashmasdan, bir necha daqiqada tasdiqlanadi." },
+        { q: "Nega summa yaxlit emas (masalan 69 437)?", a: "Oxirgi raqamlar to'lovingizni aniqlash uchun kerak. Shu tufayli to'lov odam aralashmasdan, bir necha daqiqada tasdiqlanadi." },
         { q: "Tarifni uzaytirsam, qolgan kunlarim yo'qoladimi?", a: "Yo'q. Yangi muddat joriy muddat oxiriga qo'shiladi." },
         { q: "Pul o'tkazdim, lekin tarif yoqilmadi", a: "Chekni botga yuborganingizni tekshiring. 10 daqiqada avtomatik tasdiqlanmasa, admin qo'lda ko'rib chiqadi. Botga yozib qo'ysangiz ham bo'ladi." },
       ],
@@ -174,7 +174,7 @@ export default {
       perMonth: "/mo",
       months: { 1: "1 month", 3: "3 months" },
       save: "Save {pct}%",
-      saveUpTo: "up to −23%",
+      saveUpTo: "up to −20%",
       popular: "Most popular",
       current: "Current plan",
       free: "Free",
@@ -204,7 +204,7 @@ export default {
       compareTitle: "How PrepZone compares",
       compareCols: ["PrepZone Pro", "Learning center", "Other online platforms"],
       compareRows: [
-        ["Price (per month)", "129,000 UZS", "650,000–1,200,000 UZS", "80,000–150,000 UZS"],
+        ["Price (per month)", "69,000 UZS", "650,000–1,200,000 UZS", "80,000–150,000 UZS"],
         ["Bluebook-style adaptive mocks + Desmos", "✓ unlimited", "1 per week", "✓"],
         ["AI explanation for every question, in Uzbek", "✓", "—", "partial"],
         ["Mistake notebook + smart review", "✓", "—", "partial"],
@@ -222,7 +222,7 @@ export default {
       faqTitle: "Questions",
       faq: [
         { q: "Will I be charged automatically?", a: "No. Each payment is one-time. When it ends, you can extend it yourself if you want." },
-        { q: "Why isn't the amount round (e.g. 129,437)?", a: "The last digits identify your payment, so it can be confirmed in minutes without anyone checking by hand." },
+        { q: "Why isn't the amount round (e.g. 69,437)?", a: "The last digits identify your payment, so it can be confirmed in minutes without anyone checking by hand." },
         { q: "If I extend, do I lose my remaining days?", a: "No. The new period is added to the end of your current one." },
         { q: "I paid but my plan didn't turn on", a: "Make sure you sent the receipt to the bot. If it isn't confirmed automatically within 10 minutes, an admin reviews it by hand. You can also message the bot." },
       ],

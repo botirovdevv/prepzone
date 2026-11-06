@@ -20,18 +20,18 @@ export const PLANS = {
   },
   sprint: {
     id: "sprint",
-    prices: { 1: 59_000, 3: 149_000 },
+    prices: { 1: 15_000, 3: 36_000 },
     limits: { mocksPerWeek: null, mocksPerMonth: 4, aiPerDay: 10, practiceSets: null, roomMinutes: 40, mistakeReview: true, predictor: true, mentor: false },
   },
   pro: {
     id: "pro",
     popular: true,
-    prices: { 1: 129_000, 3: 299_000 },
+    prices: { 1: 69_000, 3: 165_000 },
     limits: { mocksPerWeek: null, mocksPerMonth: null, aiPerDay: 50, practiceSets: null, roomMinutes: 90, mistakeReview: true, predictor: true, mentor: false },
   },
   elite: {
     id: "elite",
-    prices: { 1: 249_000, 3: 599_000 },
+    prices: { 1: 150_000, 3: 360_000 },
     // "Cheksiz" AI — adolatli foydalanish chegarasi bilan.
     limits: { mocksPerWeek: null, mocksPerMonth: null, aiPerDay: 150, practiceSets: null, roomMinutes: 90, mistakeReview: true, predictor: true, mentor: true },
   },

@@ -10,9 +10,9 @@ import { useI18n, formatNumber } from "../../i18n";
 
 const FALLBACK = [
   { id: "free", prices: {} },
-  { id: "sprint", prices: { 1: 59000, 3: 149000 } },
-  { id: "pro", prices: { 1: 129000, 3: 299000 }, popular: true },
-  { id: "elite", prices: { 1: 249000, 3: 599000 } },
+  { id: "sprint", prices: { 1: 15000, 3: 36000 } },
+  { id: "pro", prices: { 1: 69000, 3: 165000 }, popular: true },
+  { id: "elite", prices: { 1: 150000, 3: 360000 } },
 ];
 
 let cache = null;

@@ -7,7 +7,7 @@ import { config } from "../config.js";
 
 // ------------------------------------------------------------------
 // Karta-to'lovlar oqimi:
-//   1. Saytda "To'lash" → createPayment(): unikal summa (narx + 1..999 so'm).
+//   1. Saytda "To'lash" → createPayment(): unikal summa (narx + 1..499 so'm).
 //   2. Telegram bot karta raqami va aniq summani beradi, user chek yuboradi
 //      → onReceipt().
 //   3. Android SMS-agent bank SMS'ini yuboradi → onSms().
@@ -51,7 +51,7 @@ export async function createPayment(user, plan, months) {
   // Avvalgi chek yuborilmagan to'lovlari bekor — summa band bo'lib turmasin.
   await query("UPDATE payments SET status = 'expired' WHERE user_id = $1 AND status = 'pending'", [user.id]);
   for (let attempt = 0; attempt < 20; attempt++) {
-    const amount = base + randomInt(1, 1000);
+    const amount = base + randomInt(1, 500);
     try {
       return await one(
         `INSERT INTO payments (id, user_id, plan, months, base_amount, amount, expires_at)
