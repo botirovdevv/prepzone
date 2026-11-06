@@ -5,7 +5,6 @@ import { z } from "zod";
 import { one, pool, query, tx } from "../db/index.js";
 import { HttpError, notFound, parseBody } from "../lib/errors.js";
 import { dayKey } from "../lib/limits.js";
-import { planLimitError, planLimits } from "../lib/plans.js";
 import { addXp, streakDoc, XP } from "../lib/streaks.js";
 import { avatarUrl } from "../lib/serialize.js";
 
@@ -70,7 +69,6 @@ router.get("/mistakes", async (req, res) => {
     due: rows.filter((m) => !m.mastered_at && new Date(m.due_at).getTime() <= now).length,
     open: rows.filter((m) => !m.mastered_at).length,
     mastered: rows.filter((m) => m.mastered_at).length,
-    canReview: planLimits(req.user).mistakeReview,
   });
 });
 
@@ -120,9 +118,6 @@ router.post("/mistakes/sync", async (req, res) => {
 
 router.post("/mistakes/review", async (req, res) => {
   const body = parseBody(z.object({ key: z.string().min(1).max(160), correct: z.boolean() }), req.body);
-  if (!planLimits(req.user).mistakeReview) {
-    throw planLimitError("Xatolarni takrorlash rejimi Sprint va undan yuqori tariflarda.", "mistakes");
-  }
   const out = await tx(async (client) => {
     const { rows } = await client.query(
       "SELECT * FROM mistakes WHERE user_id = $1 AND question_key = $2 FOR UPDATE",

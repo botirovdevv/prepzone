@@ -4,7 +4,6 @@
 // qaytadi (frontendda src/utils/dates.js orqali o'qiladi).
 // ------------------------------------------------------------------
 import { effectivePerms } from "./permissions.js";
-import { activePlan } from "./plans.js";
 
 // Profil rasmi manzili. `v` — rasm almashganda brauzer keshini yangilash uchun.
 export function avatarUrl(userId, updatedAt) {
@@ -25,9 +24,6 @@ export function publicUser(u) {
     avatarUrl: avatarUrl(u.id, u.avatar_updated_at),
     onboarding: u.onboarding || null,
     studyPlan: u.study_plan || null,
-    plan: activePlan(u),
-    planEndsAt: activePlan(u) !== "free" && !u.is_admin ? u.plan_ends_at : null,
-    telegramLinked: !!u.telegram_chat_id,
     createdAt: u.created_at,
   };
 }

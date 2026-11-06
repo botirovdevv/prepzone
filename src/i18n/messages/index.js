@@ -13,6 +13,6 @@ import studyPlan from "./studyPlan";
 import account from "./account";
 import legal from "./legal";
 import studyRoom from "./studyRoom";
-import billing from "./billing";
+import growth from "./growth";
 
-export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, billing];
+export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, growth];

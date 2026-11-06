@@ -199,7 +199,6 @@ export default function Dashboard() {
           <Predictor
             attempts={attempts}
             target={user?.onboarding?.targets?.sat ?? null}
-            locked={user?.plan === "free"}
           />
           <MistakesCard />
           <div className="relative overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white">

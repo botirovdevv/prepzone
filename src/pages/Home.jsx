@@ -25,11 +25,10 @@ import {
 } from "react-icons/lu";
 import { nextTestDate, daysLeft } from "../data/testDates";
 import { LanguageSwitch, useI18n } from "../i18n";
-import { PricingSection } from "./Pricing";
 
 const logo = "/Logo.png";
 
-const NAV_LINKS = ["tests", "features", "pricing", "faq"];
+const NAV_LINKS = ["tests", "features", "how", "faq"];
 
 const scrollToSection = (id) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -867,9 +866,6 @@ export default function Home() {
 
       <Features />
 
-      <div className="mx-auto max-w-[1280px] px-5 pt-24 sm:px-8 lg:pt-32">
-        <PricingSection />
-      </div>
 
       {/* Qanday ishlaydi */}
       <section id="how" className="scroll-mt-24 mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">

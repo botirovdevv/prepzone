@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { LuNotebookPen, LuRotateCcw, LuTrash2, LuLock, LuCircleCheck } from "react-icons/lu";
+import { LuNotebookPen, LuRotateCcw, LuTrash2, LuCircleCheck } from "react-icons/lu";
 import { api } from "../api/client";
 import { isAnswerCorrect } from "../utils/irtScoring";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
@@ -126,11 +126,9 @@ export default function Mistakes() {
         title={t("mistakes.title")}
         subtitle={t("mistakes.subtitle")}
         actions={
-          data.canReview ? (
-            <Button onClick={() => setReviewing(dueItems)} disabled={!dueItems.length}>
-              <LuRotateCcw size={16} /> {dueItems.length ? t("mistakes.start", { n: dueItems.length }) : t("mistakes.nothingDue")}
-            </Button>
-          ) : null
+          <Button onClick={() => setReviewing(dueItems)} disabled={!dueItems.length}>
+            <LuRotateCcw size={16} /> {dueItems.length ? t("mistakes.start", { n: dueItems.length }) : t("mistakes.nothingDue")}
+          </Button>
         }
       />
 
@@ -139,17 +137,6 @@ export default function Mistakes() {
         <StatTile label={t("mistakes.open")} value={data.open} tone="red" />
         <StatTile label={t("mistakes.mastered")} value={data.mastered} tone="emerald" />
       </div>
-
-      {!data.canReview && data.open > 0 && (
-        <Card className="mb-6 flex flex-col items-start gap-4 border-[#087fd1]/20 bg-[#087fd1]/[0.04] p-5 sm:flex-row sm:items-center">
-          <LuLock size={22} className="shrink-0 text-[#087fd1]" />
-          <div className="flex-1">
-            <p className="font-bold text-[#12213D]">{t("mistakes.lockedTitle")}</p>
-            <p className="text-sm text-[#12213D]/60">{t("mistakes.lockedText")}</p>
-          </div>
-          <Button to="/pricing">{t("paywall.seePlans")}</Button>
-        </Card>
-      )}
 
       {data.items.length === 0 ? (
         <EmptyState

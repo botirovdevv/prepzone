@@ -5,7 +5,6 @@ import { one, query } from "../db/index.js";
 import { notFound, parseBody } from "../lib/errors.js";
 import { desmosDoc, questionSetDoc } from "../lib/serialize.js";
 import { requirePerm } from "../middleware/auth.js";
-import { planLimitError, planLimits } from "../lib/plans.js";
 
 // ------------------------------------------------------------------
 // O'quv kontenti: amaliyot to'plamlari va Desmos darsliklari. Har bir
@@ -43,7 +42,7 @@ const clearSetsCache = () => {
   setsListCache = null;
 };
 
-questionSetsRouter.get("/", async (req, res) => {
+questionSetsRouter.get("/", async (_req, res) => {
   if (!setsListCache) {
     const { rows } = await query("SELECT * FROM question_sets ORDER BY created_at DESC");
     setsListCache = rows.map((row) => {
@@ -55,21 +54,12 @@ questionSetsRouter.get("/", async (req, res) => {
       return { ...doc, sections, questionCount: sections.reduce((n, s) => n + s.questionCount, 0) };
     });
   }
-  // Bepul tarifda faqat eng yangi `practiceSets` ta to'plam ochiq.
-  const open = planLimits(req.user).practiceSets;
-  res.json(open == null ? setsListCache : setsListCache.map((s, i) => (i < open ? s : { ...s, locked: true })));
+  res.json(setsListCache);
 });
 
 questionSetsRouter.get("/:id", async (req, res) => {
   const row = await one("SELECT * FROM question_sets WHERE id = $1", [req.params.id]);
   if (!row) throw notFound("To'plam topilmadi.");
-  const open = planLimits(req.user).practiceSets;
-  if (open != null) {
-    const { rows } = await query("SELECT id FROM question_sets ORDER BY created_at DESC LIMIT $1", [open]);
-    if (!rows.some((r) => r.id === row.id)) {
-      throw planLimitError("Bu to'plam pullik tariflarda ochiq. Sprint tarifdan boshlab barcha to'plamlar cheksiz.", "practice");
-    }
-  }
   res.json(questionSetDoc(row));
 });
 

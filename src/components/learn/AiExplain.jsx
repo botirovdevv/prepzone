@@ -5,8 +5,7 @@ import { useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
 // "AI tushuntirish" tugmasi: savolni serverga (POST /api/tutor/explain)
-// yuboradi va bosqichma-bosqich yechimni ko'rsatadi. Limit tarifga bog'liq;
-// tugasa server 402 qaytaradi va global Paywall ochiladi.
+// yuboradi va bosqichma-bosqich yechimni ko'rsatadi. Kunlik limit serverda.
 // ------------------------------------------------------------------
 
 const pickQuestion = (q) => ({
@@ -26,7 +25,7 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
       const data = await api.post("/tutor/explain", { lang, question: pickQuestion(question), userAnswer: userAnswer ?? null });
       setState({ status: "done", data });
     } catch (err) {
-      setState({ status: err.code === "plan-limit" ? "idle" : "error", message: err.message });
+      setState({ status: "error", message: err.message });
     }
   };
 

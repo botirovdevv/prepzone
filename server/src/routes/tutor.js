@@ -66,7 +66,7 @@ router.post("/explain", perUserLimit({ windowMs: 60_000, limit: 12 }), async (re
   const hash = createHash("sha256").update(text).digest("hex");
 
   const cached = await one("SELECT data FROM question_explanations WHERE question_hash = $1 AND lang = $2", [hash, body.lang]);
-  // Kesh ham limitga kiradi (tarif qiymati — tushuntirishlar soni).
+  // Kesh ham kunlik limitga kiradi.
   await consumeAi(pool, req.user);
   if (cached) return res.json({ ...cached.data, cached: true, quota: await aiQuota(pool, req.user) });
 

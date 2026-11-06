@@ -47,17 +47,6 @@ export const config = {
     .split(",")
     .map((u) => u.trim())
     .filter(Boolean),
-  // To'lov boti (BotFather). Token bo'sh bo'lsa bot ishga tushmaydi.
-  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
-  telegramBotUsername: (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, ""),
-  // To'lovlarni tasdiqlaydigan adminlarning Telegram ID'lari (vergul bilan).
-  telegramAdminIds: (process.env.TELEGRAM_ADMIN_IDS || "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean),
-  payCardNumber: process.env.PAY_CARD_NUMBER || "",
-  payCardHolder: process.env.PAY_CARD_HOLDER || "",
-  // Android SMS-agent shu token bilan /api/sms/ingest'ga yuboradi.
-  smsIngestToken: strongSecret("SMS_INGEST_TOKEN", process.env.SMS_INGEST_TOKEN || ""),
+  // CSRF tekshiruvi uchun saytning asosiy manzili (middleware/security.js).
   publicUrl: process.env.PUBLIC_URL || "https://prep-zone.uz",
 };

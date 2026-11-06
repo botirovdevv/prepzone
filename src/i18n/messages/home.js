@@ -2,7 +2,7 @@
 export default {
   uz: {
     home: {
-      nav: { tests: "Imtihonlar", features: "Imkoniyatlar", pricing: "Tariflar", how: "Qanday ishlaydi", faq: "Savollar" },
+      nav: { tests: "Imtihonlar", features: "Imkoniyatlar", how: "Qanday ishlaydi", faq: "Savollar" },
       toTop: "Prepzone — sahifa boshiga",
       login: "Kirish",
       start: "Boshlash",
@@ -14,11 +14,11 @@ export default {
       today: "bugun",
       daysLeft: "{n} kun",
       heroBadge: "O'zbek tilida AI tutor bilan SAT tayyorgarlik",
-      heroTitle: "SAT'da 1500+ ball —",
-      heroAccent: "o'quv markazidan 5x arzon.",
+      heroTitle: "SAT'da 1500+ ball uchun",
+      heroAccent: "bepul tayyorlaning.",
       heroText:
         "Bluebook'dagi kabi adaptiv mocklar, har bir xatoni o'zbekcha tushuntiradigan AI tutor, xatolar daftari va real ballingizni oldindan aytadigan predictor. Kuniga 15 daqiqa, istalgan joyda.",
-      heroFree: "Bepul boshlash — karta shart emas",
+      heroFree: "To'liq bepul — karta shart emas",
       growthEyebrow: "Nega PrepZone",
       growthTitle: "Test ishlash yetmaydi. Xatodan o'rganish kerak.",
       growthText: "Boshqa platformalar sizga test beradi. PrepZone esa nima uchun xato qilganingizni tushuntiradi, o'sha mavzuni qayta so'raydi va natijangizni oldindan aytadi.",
@@ -29,10 +29,10 @@ export default {
         { title: "Kun savollari + streak", text: "Har kuni 5 ta savol, XP va 🔥 streak. Kuniga 5 daqiqa ham yetarli, asosiysi har kuni." },
       ],
       stats: [
-        { value: "5x", label: "o'quv markazidan arzon" },
         { value: "24/7", label: "AI tutor tayyor" },
-        { value: "1–5 daq", label: "to'lov tasdiqlanadi" },
-        { value: "0 so'm", label: "bepul boshlash" },
+        { value: "1, 3, 7", label: "kunda xatolar takrorlanadi" },
+        { value: "5 ta", label: "kunlik savol" },
+        { value: "0 so'm", label: "hammasi bepul" },
       ],
       heroLogin: "Hisobim bor — kirish",
       desmosSoon: "Desmos kalkulyator",
@@ -130,7 +130,7 @@ export default {
   },
   en: {
     home: {
-      nav: { tests: "Exams", features: "Features", pricing: "Pricing", how: "How it works", faq: "FAQ" },
+      nav: { tests: "Exams", features: "Features", how: "How it works", faq: "FAQ" },
       toTop: "Prepzone — back to top",
       login: "Log in",
       start: "Get started",
@@ -142,11 +142,11 @@ export default {
       today: "today",
       daysLeft: "{n} days",
       heroBadge: "SAT prep with an AI tutor that speaks Uzbek",
-      heroTitle: "Score 1500+ on the SAT,",
-      heroAccent: "5x cheaper than a learning center.",
+      heroTitle: "Prep for a 1500+ SAT score",
+      heroAccent: "for free.",
       heroText:
         "Bluebook-style adaptive mocks, an AI tutor that explains every mistake, a mistake notebook and a predictor that tells you your real score in advance. 15 minutes a day, anywhere.",
-      heroFree: "Start free, no card needed",
+      heroFree: "Completely free, no card needed",
       growthEyebrow: "Why PrepZone",
       growthTitle: "Taking tests isn't enough. You have to learn from mistakes.",
       growthText: "Other platforms give you tests. PrepZone explains why you got a question wrong, asks you that topic again and predicts your score.",
@@ -157,10 +157,10 @@ export default {
         { title: "Daily questions + streaks", text: "5 questions a day, XP and a 🔥 streak. Even 5 minutes is enough, as long as it's every day." },
       ],
       stats: [
-        { value: "5x", label: "cheaper than a learning center" },
         { value: "24/7", label: "AI tutor on call" },
-        { value: "1–5 min", label: "to confirm payment" },
-        { value: "0 UZS", label: "to start" },
+        { value: "1, 3, 7", label: "days until a mistake comes back" },
+        { value: "5", label: "daily questions" },
+        { value: "0 UZS", label: "everything is free" },
       ],
       heroLogin: "I have an account — log in",
       desmosSoon: "Desmos calculator",

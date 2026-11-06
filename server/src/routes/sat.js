@@ -5,7 +5,6 @@ import { HttpError, notFound, parseBody } from "../lib/errors.js";
 import { getStaticSections, reviewKeys, routeFor, scoreAttempt } from "../lib/satScoring.js";
 import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
 import { consumeDaily } from "../lib/limits.js";
-import { assertMockQuota } from "../lib/quota.js";
 import { addXp, XP } from "../lib/streaks.js";
 import { resultDoc } from "../lib/serialize.js";
 import { hasPerm } from "../lib/permissions.js";
@@ -71,7 +70,6 @@ router.post("/finish", async (req, res) => {
 
   const out = await tx(async (client) => {
     await consumeDaily(client, req.user.id, "satFinish", 15, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
-    await assertMockQuota(client, req.user);
     const previous = complete
       ? await client.query(
           "SELECT 1 FROM results WHERE user_id = $1 AND test_id = $2 AND complete LIMIT 1",

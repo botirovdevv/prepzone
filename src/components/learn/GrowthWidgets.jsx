@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { LuFlame, LuSun, LuArrowRight, LuTarget, LuLock, LuTrendingUp, LuTrendingDown, LuMinus, LuNotebookPen } from "react-icons/lu";
+import { LuFlame, LuSun, LuArrowRight, LuTarget, LuTrendingUp, LuTrendingDown, LuMinus, LuNotebookPen } from "react-icons/lu";
 import { api } from "../../api/client";
-import { Card, Button } from "../ui";
+import { Card } from "../ui";
 import { useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
@@ -77,7 +77,7 @@ export function predictScore(attempts) {
   };
 }
 
-export function Predictor({ attempts, target, locked }) {
+export function Predictor({ attempts, target }) {
   const { t } = useI18n();
   const p = predictScore(attempts);
   const TrendIcon = p?.trend === "up" ? LuTrendingUp : p?.trend === "down" ? LuTrendingDown : LuMinus;
@@ -96,7 +96,7 @@ export function Predictor({ attempts, target, locked }) {
       {!p ? (
         <p className="mt-5 text-sm text-[#12213D]/55">{t("predictor.noData")}</p>
       ) : (
-        <div className={locked ? "pointer-events-none select-none blur-[6px]" : ""}>
+        <div>
           <p className="mt-4 text-[12px] font-semibold uppercase tracking-wide text-[#12213D]/45">{t("predictor.range")}</p>
           <p className="font-display text-[34px] font-extrabold leading-tight tabular-nums text-[#12213D]">
             {p.low}–{p.high}
@@ -111,16 +111,6 @@ export function Predictor({ attempts, target, locked }) {
               <p className="mt-0.5">{t("predictor.plan", { n: perWeek })}</p>
             </div>
           )}
-        </div>
-      )}
-      {locked && p && (
-        <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-3 rounded-xl bg-white/95 p-3 shadow-sm">
-          <span className="flex items-center gap-2 text-[13px] font-semibold text-[#12213D]">
-            <LuLock size={14} /> {t("predictor.locked")}
-          </span>
-          <Button size="sm" to="/pricing">
-            {t("paywall.seePlans")}
-          </Button>
         </div>
       )}
     </Card>

@@ -24,13 +24,8 @@ import studyRoomRouter from "./routes/studyRoom.js";
 import avatarsRouter from "./routes/avatars.js";
 import { resultsRouter, leaderboardRouter } from "./routes/results.js";
 import { questionSetsRouter, desmosRouter } from "./routes/content.js";
-import billingRouter from "./routes/billing.js";
-import smsIngestRouter from "./routes/smsIngest.js";
-import adminBillingRouter from "./routes/adminBilling.js";
 import tutorRouter from "./routes/tutor.js";
 import learnRouter from "./routes/learn.js";
-import { startPayBot } from "./lib/payBot.js";
-import { sweep } from "./lib/payments.js";
 
 const app = express();
 
@@ -62,9 +57,6 @@ app.use("/api/me", requireAuth, meRouter);
 app.use("/api/analytics", requireAuth, analyticsRouter);
 app.use("/api/presence", presenceRouter);
 app.use("/api/avatars", avatarsRouter);
-app.use("/api/billing", billingRouter);
-app.use("/api/sms", smsIngestRouter);
-app.use("/api/admin/billing", requireAdmin, requirePerm("billing"), adminBillingRouter);
 app.use("/api/tutor", requireVerified, tutorRouter);
 app.use("/api/learn", requireVerified, learnRouter);
 app.use("/api/admin/ai", requireAdmin, requirePerm("sessions", "sets"), aiRouter);
@@ -109,8 +101,6 @@ await migrate();
 server.listen(config.port, () => {
   console.log(`[prepzone] API http://localhost:${config.port} da ishlayapti`);
 });
-startPayBot().catch((err) => console.error("[bot]", err.message));
-setInterval(() => sweep().catch((err) => console.warn("[pay] sweep:", err.message)), 60_000).unref();
 
 const shutdown = () => {
   server.close(() => pool.end().then(() => process.exit(0)));

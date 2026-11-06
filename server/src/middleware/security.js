@@ -11,12 +11,8 @@ import { HttpError } from "../lib/errors.js";
 // Rasmli savollar, PDF import va avatar — katta body kerak bo'lgan yo'llar.
 const LARGE_BODY = [/^\/api\/admin\//, /^\/api\/question-sets/, /^\/api\/desmos/, /^\/api\/sessions/, /^\/api\/me\/avatar/, /^\/api\/learn\/mistakes\/sync/];
 
-// rawBody — SMS-agent imzosini tekshirish uchun (lib/signature.js).
-const keepRaw = (req, _res, buf) => {
-  if (req.originalUrl.startsWith("/api/sms/")) req.rawBody = buf.toString("utf8");
-};
-const largeJson = express.json({ limit: "25mb", verify: keepRaw });
-const smallJson = express.json({ limit: "1mb", verify: keepRaw });
+const largeJson = express.json({ limit: "25mb" });
+const smallJson = express.json({ limit: "1mb" });
 
 export function jsonBody(req, res, next) {
   const parser = LARGE_BODY.some((re) => re.test(req.path)) ? largeJson : smallJson;
@@ -63,7 +59,6 @@ function requestOrigin(req) {
 // (curl, server-to-server) cookie'siz bo'ladi, ularni sessiya himoya qiladi.
 export function originCheck(req, _res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
-  if (req.originalUrl.startsWith("/api/sms/")) return next(); // imzo bilan himoyalangan
   const origin = requestOrigin(req);
   if (!origin) return next();
   origins ||= allowedOrigins();
