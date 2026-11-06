@@ -1,6 +1,9 @@
 package uz.prepzone.smsagent
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 
 // Sozlamalar: server manzili, maxfiy token va kuzatiladigan jo'natuvchilar.
 object Prefs {
@@ -12,18 +15,35 @@ object Prefs {
 
     private fun sp(c: Context) = c.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
+    // Maxfiy token Android Keystore kaliti bilan shifrlangan holda saqlanadi.
+    @Volatile private var secure: SharedPreferences? = null
+    private fun secret(c: Context): SharedPreferences = secure ?: synchronized(this) {
+        secure ?: EncryptedSharedPreferences.create(
+            "agent_secret",
+            MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
+            c.applicationContext,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        ).also { secure = it }
+    }
+
     fun server(c: Context): String = sp(c).getString("server", "https://prep-zone.uz") ?: ""
-    fun token(c: Context): String = sp(c).getString("token", "") ?: ""
+    fun token(c: Context): String = secret(c).getString("token", "") ?: ""
+
+    // Server soati bilan farq (ms) — imzo vaqti uchun.
+    fun clockOffset(c: Context): Long = sp(c).getLong("offset", 0L)
+    fun setClockOffset(c: Context, v: Long) = sp(c).edit().putLong("offset", v).apply()
     fun senders(c: Context): List<String> =
         (sp(c).getString("senders", null) ?: DEFAULT_SENDERS.joinToString(","))
             .split(",").map { it.trim().uppercase() }.filter { it.isNotEmpty() }
 
-    fun save(c: Context, server: String, token: String, senders: String) {
-        sp(c).edit()
-            .putString("server", server.trim().trimEnd('/'))
-            .putString("token", token.trim())
-            .putString("senders", senders)
-            .apply()
+    // Faqat https — token va SMS'lar ochiq tarmoqda yurmasin.
+    fun save(c: Context, server: String, token: String, senders: String): Boolean {
+        val url = server.trim().trimEnd('/')
+        if (!url.startsWith("https://")) return false
+        sp(c).edit().putString("server", url).putString("senders", senders).apply()
+        if (token.isNotBlank()) secret(c).edit().putString("token", token.trim()).apply()
+        return true
     }
 
     // Jo'natuvchi bankmi? Bo'sh ro'yxat = hammasi.

@@ -105,6 +105,7 @@ router.post("/grant", async (req, res) => {
   const user = await one("SELECT id FROM users WHERE lower(email) = lower($1)", [body.email]);
   if (!user) throw notFound("Bu email bilan foydalanuvchi topilmadi.");
   const result = await tx((client) => grantPlan(client, user.id, body.plan, body.months, { grantedBy: req.user.id }));
+  console.info(`[audit] plan ${body.plan} x${body.months} granted to ${user.id} by ${req.user.id}`);
   res.json(result);
 });
 

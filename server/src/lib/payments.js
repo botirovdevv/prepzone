@@ -1,4 +1,4 @@
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import { one, query, tx } from "../db/index.js";
 import { HttpError } from "./errors.js";
 import { grantPlan, priceFor } from "./plans.js";
@@ -24,7 +24,8 @@ const SMS_BEFORE_MS = 2 * 60 * 1000; // SMS to'lov yaratilishidan biroz oldin ha
 const SMS_AFTER_RECEIPT_MS = 15 * 60 * 1000; // bank SMS'i kechikishi
 const ADMIN_AFTER_MS = 10 * 60 * 1000; // shuncha kutib SMS topilmasa — adminga
 
-const newId = () => Date.now().toString(36).slice(-5) + randomInt(36 ** 5).toString(36).padStart(5, "0");
+// 128-bit tasodifiy ID: /start pay_<id> havolasini taxmin qilib bo'lmaydi.
+const newId = () => randomBytes(16).toString("base64url");
 
 export function paymentDoc(p) {
   return {
@@ -85,6 +86,7 @@ export async function approvePayment(paymentId, { auto = false, decidedBy = null
     const p = rows[0];
     if (!p) throw new HttpError(404, "not-found", "To'lov topilmadi.");
     if (p.status === "approved") return null;
+    console.info(`[audit] payment ${p.id} approved by ${decidedBy || (auto ? "auto-sms" : "?")} sms=${smsId ?? "-"}`);
     const result = await grantPlan(client, p.user_id, p.plan, p.months, { paymentId: p.id, grantedBy: decidedBy });
     const { rows: upd } = await client.query(
       `UPDATE payments SET status = 'approved', auto = $2, decided_by = $3, decided_at = now(),
@@ -106,6 +108,7 @@ export async function rejectPayment(paymentId, { decidedBy = null, note = null }
     [paymentId, decidedBy, note]
   );
   if (p) {
+    console.info(`[audit] payment ${p.id} rejected by ${decidedBy || "?"}`);
     await send(
       p.tg_chat_id,
       `❌ <b>To'lov tasdiqlanmadi.</b>\n\nKartaga <b>${fmtSum(p.amount)} so'm</b> tushgani topilmadi.` +

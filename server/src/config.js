@@ -8,11 +8,22 @@ function required(name, devFallback) {
   throw new Error(`Muhit o'zgaruvchisi topilmadi: ${name}`);
 }
 
+// Production'da zaif maxfiy kalit. `fatal` — yangi kalitlar uchun (ishga tushmaydi);
+// JWT_SECRET uchun faqat ogohlantirish, aks holda mavjud sayt to'xtab qolardi.
+function strongSecret(name, value, { min = 32, fatal = true } = {}) {
+  if (isProd && value && value.length < min) {
+    const msg = `${name} kamida ${min} belgi bo'lishi kerak (uzun tasodifiy satr qo'ying).`;
+    if (fatal) throw new Error(msg);
+    console.warn(`[config] OGOHLANTIRISH: ${msg}`);
+  }
+  return value;
+}
+
 export const config = {
   isProd,
   port: Number(process.env.PORT) || 4000,
   databaseUrl: required("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/prepzone"),
-  jwtSecret: required("JWT_SECRET", "dev-only-secret-change-me"),
+  jwtSecret: strongSecret("JWT_SECRET", required("JWT_SECRET", "dev-only-secret-change-me"), { fatal: false }),
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   resendApiKey: process.env.RESEND_API_KEY || "",
   fromEmail: process.env.FROM_EMAIL || "Prepzone <verify@mail.prep-zone.uz>",
@@ -47,6 +58,6 @@ export const config = {
   payCardNumber: process.env.PAY_CARD_NUMBER || "",
   payCardHolder: process.env.PAY_CARD_HOLDER || "",
   // Android SMS-agent shu token bilan /api/sms/ingest'ga yuboradi.
-  smsIngestToken: process.env.SMS_INGEST_TOKEN || "",
+  smsIngestToken: strongSecret("SMS_INGEST_TOKEN", process.env.SMS_INGEST_TOKEN || ""),
   publicUrl: process.env.PUBLIC_URL || "https://prep-zone.uz",
 };

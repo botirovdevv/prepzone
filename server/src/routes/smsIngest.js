@@ -1,4 +1,3 @@
-import { timingSafeEqual, createHash } from "node:crypto";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
@@ -6,25 +5,41 @@ import { one, query } from "../db/index.js";
 import { config } from "../config.js";
 import { HttpError, parseBody } from "../lib/errors.js";
 import { parseBankSms } from "../lib/smsParser.js";
+import { verifySignature } from "../lib/signature.js";
 import { PLAN_NAMES, onSms } from "../lib/payments.js";
 
 // ------------------------------------------------------------------
 // Android SMS-agent (sms-agent/) uchun. Kartaga kelgan bank SMS'lari shu
 // yerga keladi, summa ajratiladi va kutilayotgan to'lov bilan moslanadi.
-// Ruxsat: Authorization: Bearer <SMS_INGEST_TOKEN>.
+// Ruxsat: HMAC imzo (lib/signature.js), token tarmoqda yuborilmaydi.
 // ------------------------------------------------------------------
 
 const router = Router();
 
 router.use(rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: "draft-8", legacyHeaders: false }));
 
-const digest = (s) => createHash("sha256").update(String(s)).digest();
+// Telefon soati noto'g'ri bo'lsa ham imzo ishlashi uchun agent server vaqtini oladi.
+router.get("/time", (_req, res) => res.json({ now: Date.now() }));
 
-router.use((req, _res, next) => {
-  const token = (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!config.smsIngestToken || !token || !timingSafeEqual(digest(token), digest(config.smsIngestToken))) {
-    throw new HttpError(401, "auth/unauthenticated", "Token noto'g'ri.");
-  }
+// Noto'g'ri imzo — token topishga urinish: IP bo'yicha 15 daqiqada 10 ta xato.
+const badSignature = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  handler: (_req, res) => res.status(429).json({ code: "resource-exhausted", message: "Juda ko'p xato urinish." }),
+});
+
+router.use(badSignature, (req, _res, next) => {
+  const ok = verifySignature(config.smsIngestToken, {
+    ts: req.get("x-pz-timestamp"),
+    signature: req.get("x-pz-signature"),
+    method: req.method,
+    path: req.originalUrl.split("?")[0],
+    body: req.rawBody || "",
+  });
+  if (!ok) throw new HttpError(401, "auth/unauthenticated", "Imzo noto'g'ri yoki eskirgan.");
   next();
 });
 

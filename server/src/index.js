@@ -9,6 +9,7 @@ import { migrate } from "./db/migrate.js";
 import { HttpError } from "./lib/errors.js";
 import { localizeErrors } from "./lib/i18n.js";
 import { initRealtime } from "./lib/realtime.js";
+import { globalLimiter, jsonBody, originCheck } from "./middleware/security.js";
 import { loadUser, requireAdmin, requireAuth, requirePerm, requireVerified } from "./middleware/auth.js";
 import authRouter from "./routes/auth.js";
 import qrRouter from "./routes/qr.js";
@@ -43,10 +44,12 @@ if (config.clientOrigin) {
 }
 // Xato xabarlari brauzer tilida (X-Lang) — body parser xatolari ham.
 app.use(localizeErrors);
-// Savollarda siqilgan rasmlar (base64) bo'lishi mumkin — limit katta.
-app.use(express.json({ limit: "25mb" }));
+app.use("/api", globalLimiter);
+// Body hajmi yo'lga qarab: rasmli savollar/PDF uchun 25 MB, qolgani 1 MB.
+app.use(jsonBody);
 app.use(cookieParser());
 app.use(loadUser);
+app.use("/api", originCheck);
 
 app.get("/api/health", async (_req, res) => {
   await pool.query("SELECT 1");

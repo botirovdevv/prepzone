@@ -34,7 +34,12 @@ const mistakeQuestion = z
     explanation: z.string().max(5_000).optional(),
     skill: z.string().max(200).optional(),
     domain: z.string().max(60).optional(),
-    image: z.string().max(400_000).optional(),
+    // Faqat base64 rasm yoki saytdagi nisbiy yo'l (tashqi URL/javascript: emas).
+    image: z
+      .string()
+      .max(400_000)
+      .regex(/^(data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+|\/(?!\/)[\w\-./]+)$/, "Rasm noto'g'ri.")
+      .optional(),
   })
   .passthrough();
 

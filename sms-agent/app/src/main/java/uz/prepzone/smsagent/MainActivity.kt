@@ -58,14 +58,23 @@ class MainActivity : AppCompatActivity() {
 
         label("Server manzili")
         server = input(Prefs.server(this))
-        label("Maxfiy token (SMS_INGEST_TOKEN)")
-        token = input(Prefs.token(this), secret = true)
+        label("Maxfiy token (botga /agent yozib oling)")
+        // Saqlangan token ekranga qaytarib chiqarilmaydi.
+        token = input("", secret = true).apply {
+            hint = if (Prefs.token(this@MainActivity).isNotBlank()) "•••••• saqlangan (o'zgartirish uchun yangisini kiriting)" else "Token"
+        }
         label("Bank jo'natuvchilari (vergul bilan; bo'sh = hammasi)")
         senders = input(Prefs.senders(this).joinToString(","))
 
         button("Saqlash") {
-            Prefs.save(this, server.text.toString(), token.text.toString(), senders.text.toString())
+            if (!Prefs.save(this, server.text.toString(), token.text.toString(), senders.text.toString())) {
+                Toast.makeText(this, "Server manzili https:// bilan boshlanishi kerak", Toast.LENGTH_LONG).show()
+                return@button
+            }
+            token.setText("")
+            token.hint = "•••••• saqlangan"
             Toast.makeText(this, "Saqlandi", Toast.LENGTH_SHORT).show()
+            thread { Api.syncClock(this) }
             check()
         }
         button("🔍 Tekshirish — kutilayotgan cheklar") { check() }

@@ -16,11 +16,24 @@ import { OPEN, PLAN_NAMES, adminButtons, approvePayment, onReceipt, rejectPaymen
 const isAdmin = (id) => config.telegramAdminIds.includes(String(id));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Chat bo'yicha oddiy limit: 1 daqiqada 20 xabar (spam, bot'ni bosib yuborish).
+const hits = new Map();
+function flooded(chatId) {
+  const now = Date.now();
+  const list = (hits.get(chatId) || []).filter((t) => now - t < 60_000);
+  list.push(now);
+  hits.set(chatId, list);
+  if (hits.size > 5000) hits.clear();
+  return list.length > 20;
+}
+
+const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
+
 const fmtCard = (n) => n.replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1 ");
 
 async function handleStart(msg, payload) {
   const chatId = msg.chat.id;
-  const m = /^pay_([a-z0-9]{6,20})$/.exec(payload || "");
+  const m = /^pay_([A-Za-z0-9_-]{16,32})$/.exec(payload || "");
   if (!m) {
     return send(
       chatId,
@@ -32,8 +45,12 @@ async function handleStart(msg, payload) {
   if (!p) return send(chatId, "To'lov topilmadi. Saytdan qaytadan boshlang.");
   if (p.status === "approved") return send(chatId, "✅ Bu to'lov allaqachon tasdiqlangan.");
   if (!OPEN.includes(p.status)) return send(chatId, `⌛ Bu to'lov yopilgan. Qaytadan boshlang: ${config.publicUrl}/pricing`);
+  // To'lov birinchi ochgan chatga bog'lanadi — havola boshqa qo'lga tushsa ham egallab bo'lmaydi.
+  if (p.tg_chat_id && String(p.tg_chat_id) !== String(chatId)) {
+    return send(chatId, "Bu to'lov boshqa Telegram hisobiga bog'langan. Saytdan yangi to'lov boshlang.");
+  }
 
-  await query("UPDATE payments SET tg_chat_id = $2 WHERE id = $1", [p.id, chatId]);
+  await query("UPDATE payments SET tg_chat_id = $2 WHERE id = $1 AND tg_chat_id IS NULL", [p.id, chatId]);
   await query("UPDATE users SET telegram_chat_id = $2 WHERE id = $1", [p.user_id, chatId]);
 
   if (p.status === "receipt_sent") return send(chatId, "🧾 Chekingiz qabul qilingan, tekshirilmoqda.");
@@ -68,6 +85,7 @@ async function handleReceipt(msg) {
   if (doc && !/^(image\/|application\/pdf)/.test(doc.mime_type || "")) {
     return send(chatId, "Chekni rasm (skrinshot) yoki PDF ko'rinishida yuboring.");
   }
+  if ((doc?.file_size || 0) > MAX_RECEIPT_BYTES) return send(chatId, "Fayl juda katta (10 MB gacha).");
   const fileId = msg.photo ? msg.photo[msg.photo.length - 1].file_id : doc.file_id;
   const kind = msg.photo ? "photo" : "document";
   const updated = await one(
@@ -131,14 +149,36 @@ async function handlePending(msg) {
   }
 }
 
+// SMS-agent sozlamasi uchun token — faqat adminga, 60 soniyadan keyin o'chiriladi.
+async function handleAgentToken(msg) {
+  if (!config.smsIngestToken) return send(msg.chat.id, "SMS_INGEST_TOKEN serverda sozlanmagan.");
+  const sent = await send(
+    msg.chat.id,
+    `🔐 SMS-agent tokeni (nusxa oling, 60 soniyada o'chadi):
+
+<code>${config.smsIngestToken}</code>
+
+Server: <code>${config.publicUrl}</code>`
+  );
+  console.info(`[audit] agent token shown to tg:${msg.from.id}`);
+  if (sent) {
+    setTimeout(() => {
+      tg("deleteMessage", { chat_id: msg.chat.id, message_id: sent.message_id }).catch(() => {});
+      tg("deleteMessage", { chat_id: msg.chat.id, message_id: msg.message_id }).catch(() => {});
+    }, 60_000).unref();
+  }
+}
+
 async function handleUpdate(u) {
   if (u.callback_query) return handleCallback(u.callback_query);
   const msg = u.message;
   if (!msg || msg.chat?.type !== "private") return;
   const text = msg.text || "";
+  if (!isAdmin(msg.from.id) && flooded(msg.chat.id)) return;
   if (text.startsWith("/start")) return handleStart(msg, text.split(/\s+/)[1]);
   if (text === "/id") return send(msg.chat.id, `Sizning Telegram ID: <code>${msg.from.id}</code>`);
   if (text === "/pending" && isAdmin(msg.from.id)) return handlePending(msg);
+  if (text === "/agent" && isAdmin(msg.from.id)) return handleAgentToken(msg);
   if (msg.photo || msg.document) return handleReceipt(msg);
   if (text && !isAdmin(msg.from.id)) {
     // Savol/e'tiroz — adminlarga yetkazamiz.
