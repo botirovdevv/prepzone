@@ -40,6 +40,9 @@ const pages = {
   DesmosIndex: () => import("./pages/DesmosIndex"),
   DesmosDashboard: () => import("./pages/admin/DesmosDashboard"),
   DesmosForm: () => import("./pages/admin/DesmosForm"),
+  Mistakes: () => import("./pages/Mistakes"),
+  Daily: () => import("./pages/Daily"),
+  Billing: () => import("./pages/admin/Billing"),
 };
 const Dashboard = lazy(pages.Dashboard);
 const SATTest = lazy(pages.SATTest);
@@ -67,6 +70,9 @@ const ChooseExam = lazy(pages.ChooseExam);
 const DesmosIndex = lazy(pages.DesmosIndex);
 const DesmosDashboard = lazy(pages.DesmosDashboard);
 const DesmosForm = lazy(pages.DesmosForm);
+const Mistakes = lazy(pages.Mistakes);
+const Daily = lazy(pages.Daily);
+const Billing = lazy(pages.Billing);
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -105,6 +111,7 @@ const ADMIN_PAGES = [
   "Analytics",
   "DesmosDashboard",
   "DesmosForm",
+  "Billing",
 ];
 const PREFETCH = Object.entries(pages)
   .filter(([name]) => !ADMIN_PAGES.includes(name))
@@ -216,6 +223,30 @@ export default function AuthedApp() {
             <DashboardRoute>
               <Vocabulary />
             </DashboardRoute>
+          }
+        />
+        <Route
+          path="mistakes"
+          element={
+            <DashboardRoute>
+              <Mistakes />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="daily"
+          element={
+            <DashboardRoute>
+              <Daily />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="admin/billing"
+          element={
+            <AdminDashboardRoute perm="billing">
+              <Billing />
+            </AdminDashboardRoute>
           }
         />
         <Route

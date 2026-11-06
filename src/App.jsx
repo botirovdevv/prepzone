@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import PresencePing from "./components/PresencePing";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
+// Home ichida narxlar bo'limi bor — Pricing bir chunk'da.
+import Pricing from "./pages/Pricing";
 import { onIdle, prefetchAll } from "./utils/idle";
 
 // Code splitting: har bir sahifa alohida chunk bo'lib, faqat ochilganda
@@ -21,6 +23,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const QrApprove = lazy(() => import("./pages/QrApprove"));
+const Paywall = lazy(() => import("./components/billing/Paywall"));
 const AuthedApp = lazy(loadAuthedApp);
 
 // "/" manzili: login qilmagan foydalanuvchiga ochiq bosh sahifa (Home),
@@ -60,6 +63,7 @@ export default function App() {
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/qr" element={<QrApprove />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/terms" element={<LegalPage page="terms" />} />
               <Route path="/privacy" element={<LegalPage page="privacy" />} />
               <Route path="/contact" element={<LegalPage page="contact" />} />
@@ -68,6 +72,9 @@ export default function App() {
             </Routes>
           </Suspense>
           <PresencePing />
+          <Suspense fallback={null}>
+            <Paywall />
+          </Suspense>
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

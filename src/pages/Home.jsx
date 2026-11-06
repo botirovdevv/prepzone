@@ -18,13 +18,18 @@ import {
   LuTarget,
   LuTrophy,
   LuX,
+  LuSparkles,
+  LuNotebookPen,
+  LuGauge,
+  LuFlame,
 } from "react-icons/lu";
 import { nextTestDate, daysLeft } from "../data/testDates";
 import { LanguageSwitch, useI18n } from "../i18n";
+import { PricingSection } from "./Pricing";
 
 const logo = "/Logo.png";
 
-const NAV_LINKS = ["tests", "features", "how", "faq"];
+const NAV_LINKS = ["tests", "features", "pricing", "faq"];
 
 const scrollToSection = (id) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -164,6 +169,57 @@ function Navbar({ onLogin, onRegister }) {
         </div>
       )}
     </header>
+  );
+}
+
+// ---------------- Nega PrepZone: 4 ta asosiy farq ----------------
+const GROWTH_STYLE = [
+  { icon: LuSparkles, cls: "bg-[#7c3aed]" },
+  { icon: LuNotebookPen, cls: "bg-[#dc2626]" },
+  { icon: LuGauge, cls: "bg-[#087fd1]" },
+  { icon: LuFlame, cls: "bg-orange-500" },
+];
+
+function GrowthSection() {
+  const { t, tr } = useI18n();
+  return (
+    <section className="bg-[#111827] text-white">
+      <div className="mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-28">
+        <div className="home-reveal max-w-[720px]">
+          <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#53b7f5]">{t("home.growthEyebrow")}</p>
+          <h2 className="mt-4 font-['Inter_Tight'] text-4xl font-semibold leading-[1.02] tracking-[-0.045em] sm:text-5xl">
+            {t("home.growthTitle")}
+          </h2>
+          <p className="mt-5 text-[16px] leading-7 text-white/60">{t("home.growthText")}</p>
+        </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {(tr("home.growth") || []).map((g, i) => {
+            const { icon: Icon, cls } = GROWTH_STYLE[i];
+            return (
+              <div
+                key={g.title}
+                className="home-reveal rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+                style={{ "--reveal-delay": `${i * 80}ms` }}
+              >
+                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${cls}`}>
+                  <Icon size={20} />
+                </span>
+                <h3 className="mt-6 text-[18px] font-bold tracking-tight">{g.title}</h3>
+                <p className="mt-2 text-[14px] leading-6 text-white/60">{g.text}</p>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-12 grid grid-cols-2 gap-6 border-t border-white/10 pt-10 lg:grid-cols-4">
+          {(tr("home.stats") || []).map((s) => (
+            <div key={s.label}>
+              <p className="font-['Inter_Tight'] text-4xl font-semibold tracking-tight text-white">{s.value}</p>
+              <p className="mt-1 text-[13px] text-white/50">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -724,18 +780,10 @@ export default function Home() {
               {t("home.heroBadge")}
             </span>
 
-            <h1 className="mt-7 max-w-[640px] font-['Inter_Tight'] text-[46px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[64px] lg:text-[72px]">
+            <h1 className="mt-7 max-w-[640px] font-['Inter_Tight'] text-[40px] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-[56px] lg:text-[62px]">
               {t("home.heroTitle")}{" "}
-              <span className="relative whitespace-nowrap text-[#087fd1]">
+              <span className="text-[#087fd1]">
                 {t("home.heroAccent")}
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 300 12"
-                  className="absolute -bottom-2 left-0 h-3 w-full text-[#087fd1]/30"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M2 9 C 80 2, 220 2, 298 8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
-                </svg>
               </span>
             </h1>
 
@@ -758,6 +806,10 @@ export default function Home() {
                 {t("home.heroLogin")}
               </button>
             </div>
+
+            <p className="mt-4 flex items-center gap-2 text-[13px] font-medium text-[#667085]">
+              <LuCheck size={15} className="text-emerald-600" /> {t("home.heroFree")}
+            </p>
 
             <TestDayPills />
           </div>
@@ -811,7 +863,13 @@ export default function Home() {
         </div>
       </section>
 
+      <GrowthSection />
+
       <Features />
+
+      <div className="mx-auto max-w-[1280px] px-5 pt-24 sm:px-8 lg:pt-32">
+        <PricingSection />
+      </div>
 
       {/* Qanday ishlaydi */}
       <section id="how" className="scroll-mt-24 mx-auto max-w-[1280px] px-5 py-24 sm:px-8 lg:py-32">

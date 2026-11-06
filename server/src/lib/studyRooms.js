@@ -1,4 +1,5 @@
 import { randomInt } from "node:crypto";
+import { planLimits } from "./plans.js";
 
 // ------------------------------------------------------------------
 // Study Room xonalari, ularning doskasi va qo'ng'iroq ishtirokchilari — faqat
@@ -16,10 +17,8 @@ export const CODE_RE = /^[A-HJKMNP-Z2-9]{6}$/;
 const ROOM_TTL_MS = 6 * 60 * 60 * 1000;
 export const MAX_PARTICIPANTS = 2;
 
-// Bitta xona (dars) davomiyligi. Premium akkaunt qo'shilganda roomLimitMinutes()
-// xona ochgan foydalanuvchining tarifiga qarab PREMIUM_MINUTES qaytaradi.
-export const FREE_MINUTES = 40;
-export const PREMIUM_MINUTES = 90;
+// Bitta xona (dars) davomiyligi xona ochgan foydalanuvchining tarifiga
+// bog'liq (lib/plans.js: roomMinutes — 40 yoki 90 daqiqa).
 
 export const MAX_STROKES = 5000;
 export const MAX_POINTS_PER_STROKE = 4000;
@@ -28,10 +27,8 @@ export const MAX_POINTS_PER_STROKE = 4000;
 //           strokes: Map<id, stroke>, peers: Map<socketId, { userId, name }> }
 const rooms = new Map();
 
-// Hozircha hamma uchun bepul limit. Premium qo'shilganda:
-//   return user.is_premium ? PREMIUM_MINUTES : FREE_MINUTES;
-export function roomLimitMinutes(_user) {
-  return FREE_MINUTES;
+export function roomLimitMinutes(user) {
+  return planLimits(user).roomMinutes;
 }
 
 function newCode() {

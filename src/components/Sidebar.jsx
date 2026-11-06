@@ -20,6 +20,10 @@ import {
   LuHouse,
   LuCalculator,
   LuVideo,
+  LuSun,
+  LuNotebookPen,
+  LuWallet,
+  LuCrown,
 } from "react-icons/lu";
 import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
@@ -33,6 +37,7 @@ const NAV = [
     label: "main",
     items: [
       { to: "/dashboard", label: "today", icon: LuHouse, iconColor: "text-[#0096c7]" },
+      { to: "/daily", label: "daily", icon: LuSun, iconColor: "text-[#f59e0b]" },
       { to: "/study-plan", label: "studyPlan", icon: LuCompass, iconColor: "text-[#7c3aed]", badge: "beta" },
     ],
   },
@@ -41,6 +46,7 @@ const NAV = [
     items: [
       { to: "/sat/select", label: "practiceTests", icon: LuFileText, iconColor: "text-[#94a3b8]" },
       { to: "/practice", label: "examQuestions", icon: LuZap, iconColor: "text-[#e07a5f]" },
+      { to: "/mistakes", label: "mistakes", icon: LuNotebookPen, iconColor: "text-[#dc2626]" },
       { to: "/join", label: "mockWithKey", icon: LuKeyRound, iconColor: "text-[#94a3b8]" },
     ],
   },
@@ -69,7 +75,49 @@ const ADMIN_ITEMS = [
   { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary, perm: "sets", admin: true },
   { to: "/admin/desmos", label: "Desmos (admin)", icon: LuCalculator, perm: "desmos", admin: true },
   { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn, perm: ["analytics", "users"], admin: true },
+  { to: "/admin/billing", label: "To'lovlar (admin)", icon: LuWallet, perm: "billing", admin: true },
 ];
+
+// Sidebar pastidagi tarif kartasi: bepul userga — upgrade, pullikka — tarif nomi.
+function PlanBadge({ user, collapsed, onNavigate }) {
+  const { t } = useI18n();
+  const plan = user?.plan || "free";
+  if (collapsed) {
+    return (
+      <NavLink
+        to="/pricing"
+        onClick={onNavigate}
+        title={t(`plans.names.${plan}`)}
+        className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#087fd1]/10 text-[#087fd1]"
+      >
+        <LuCrown size={16} />
+      </NavLink>
+    );
+  }
+  if (plan === "free") {
+    return (
+      <NavLink
+        to="/pricing"
+        onClick={onNavigate}
+        className="mb-2 block rounded-2xl bg-gradient-to-br from-[#12213D] to-[#087fd1] p-3.5 text-white transition hover:opacity-95"
+      >
+        <p className="flex items-center gap-1.5 text-[13px] font-bold">
+          <LuCrown size={14} className="text-amber-300" /> {t("plans.names.pro")}
+        </p>
+        <p className="mt-0.5 text-[11px] leading-4 text-white/70">{t("paywall.perks.0")} · {t("paywall.perks.1")}</p>
+      </NavLink>
+    );
+  }
+  return (
+    <NavLink
+      to="/account"
+      onClick={onNavigate}
+      className="mb-2 flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-[12px] font-bold text-amber-700"
+    >
+      <LuCrown size={14} /> {t(`plans.names.${plan}`)}
+    </NavLink>
+  );
+}
 
 
 function NavItem({ item, collapsed, onNavigate }) {
@@ -212,6 +260,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
 
       {/* Foydalanuvchi */}
       <div className="shrink-0 p-3">
+        {!isAdmin && <PlanBadge user={user} collapsed={isCollapsed} onNavigate={onCloseMobile} />}
         {!isCollapsed && (
           <div className="mb-2 flex justify-center">
             <LanguageSwitch />

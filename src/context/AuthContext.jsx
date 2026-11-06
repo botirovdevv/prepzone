@@ -130,9 +130,19 @@ export function AuthProvider({ children }) {
   const qrApprove = (id, scanCode) => api.post("/auth/qr/approve", { id, scanCode });
   const qrDeny = (id, scanCode) => api.post("/auth/qr/deny", { id, scanCode });
 
+  // Tarif o'zgargach (to'lov tasdiqlandi) — userni qayta o'qish.
+  const refreshUser = useCallback(
+    () => api.get("/auth/me").then((d) => {
+      setUser(d.user);
+      return d.user;
+    }),
+    []
+  );
+
   const value = {
     user,
     loading,
+    refreshUser,
     register,
     login,
     googleLogin,

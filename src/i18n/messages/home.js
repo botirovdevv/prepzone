@@ -2,7 +2,7 @@
 export default {
   uz: {
     home: {
-      nav: { tests: "Imtihonlar", features: "Imkoniyatlar", how: "Qanday ishlaydi", faq: "Savollar" },
+      nav: { tests: "Imtihonlar", features: "Imkoniyatlar", pricing: "Tariflar", how: "Qanday ishlaydi", faq: "Savollar" },
       toTop: "Prepzone — sahifa boshiga",
       login: "Kirish",
       start: "Boshlash",
@@ -13,11 +13,27 @@ export default {
       nextTest: "Keyingi {label}:",
       today: "bugun",
       daysLeft: "{n} kun",
-      heroBadge: "Digital SAT mock testlar",
-      heroTitle: "Imtihonga real formatda",
-      heroAccent: "tayyorlaning.",
+      heroBadge: "O'zbek tilida AI tutor bilan SAT tayyorgarlik",
+      heroTitle: "SAT'da 1500+ ball —",
+      heroAccent: "o'quv markazidan 5x arzon.",
       heroText:
-        "Bluebook formatidagi adaptiv Digital SAT mock testlari, mavzular bo'yicha tahlil va maqsad ballingizga moslashgan reja — hammasi bitta platformada.",
+        "Bluebook'dagi kabi adaptiv mocklar, har bir xatoni o'zbekcha tushuntiradigan AI tutor, xatolar daftari va real ballingizni oldindan aytadigan predictor. Kuniga 15 daqiqa, istalgan joyda.",
+      heroFree: "Bepul boshlash — karta shart emas",
+      growthEyebrow: "Nega PrepZone",
+      growthTitle: "Test ishlash yetmaydi. Xatodan o'rganish kerak.",
+      growthText: "Boshqa platformalar sizga test beradi. PrepZone esa nima uchun xato qilganingizni tushuntiradi, o'sha mavzuni qayta so'raydi va natijangizni oldindan aytadi.",
+      growth: [
+        { title: "AI tutor — o'zbek tilida", text: "Har bir xato savolga bosqichma-bosqich yechim, tuzoq javob tahlili va SAT strategiyasi. Ustoz kutish shart emas." },
+        { title: "Xatolar daftari", text: "Har bir xato avtomatik saqlanadi va 1, 3, 7 kundan keyin qayta so'raladi. Bir xil xatoni ikkinchi marta qilmaysiz." },
+        { title: "Score predictor", text: "Oxirgi natijalaringizdan real ball oralig'i va maqsadgacha qancha qolgani. Imtihonga kirishdan oldin natijangizni bilasiz." },
+        { title: "Kun savollari + streak", text: "Har kuni 5 ta savol, XP va 🔥 streak. Kuniga 5 daqiqa ham yetarli, asosiysi har kuni." },
+      ],
+      stats: [
+        { value: "5x", label: "o'quv markazidan arzon" },
+        { value: "24/7", label: "AI tutor tayyor" },
+        { value: "1–5 daq", label: "to'lov tasdiqlanadi" },
+        { value: "0 so'm", label: "bepul boshlash" },
+      ],
       heroLogin: "Hisobim bor — kirish",
       desmosSoon: "Desmos kalkulyator",
       tests: [
@@ -114,7 +130,7 @@ export default {
   },
   en: {
     home: {
-      nav: { tests: "Exams", features: "Features", how: "How it works", faq: "FAQ" },
+      nav: { tests: "Exams", features: "Features", pricing: "Pricing", how: "How it works", faq: "FAQ" },
       toTop: "Prepzone — back to top",
       login: "Log in",
       start: "Get started",
@@ -125,11 +141,27 @@ export default {
       nextTest: "Next {label}:",
       today: "today",
       daysLeft: "{n} days",
-      heroBadge: "Digital SAT mock tests",
-      heroTitle: "Prepare for the exam in its",
-      heroAccent: "real format.",
+      heroBadge: "SAT prep with an AI tutor that speaks Uzbek",
+      heroTitle: "Score 1500+ on the SAT,",
+      heroAccent: "5x cheaper than a learning center.",
       heroText:
-        "Adaptive Digital SAT mock tests in the Bluebook format, topic-by-topic analysis and a plan tailored to your target score — all on one platform.",
+        "Bluebook-style adaptive mocks, an AI tutor that explains every mistake, a mistake notebook and a predictor that tells you your real score in advance. 15 minutes a day, anywhere.",
+      heroFree: "Start free, no card needed",
+      growthEyebrow: "Why PrepZone",
+      growthTitle: "Taking tests isn't enough. You have to learn from mistakes.",
+      growthText: "Other platforms give you tests. PrepZone explains why you got a question wrong, asks you that topic again and predicts your score.",
+      growth: [
+        { title: "AI tutor, in Uzbek", text: "A step-by-step solution for every question you miss, plus why the trap answer is wrong and an SAT strategy. No waiting for a teacher." },
+        { title: "Mistake notebook", text: "Every mistake is saved automatically and asked again after 1, 3 and 7 days, so you don't make the same mistake twice." },
+        { title: "Score predictor", text: "Your real score range from recent results and how far you are from your goal. Know your score before test day." },
+        { title: "Daily questions + streaks", text: "5 questions a day, XP and a 🔥 streak. Even 5 minutes is enough, as long as it's every day." },
+      ],
+      stats: [
+        { value: "5x", label: "cheaper than a learning center" },
+        { value: "24/7", label: "AI tutor on call" },
+        { value: "1–5 min", label: "to confirm payment" },
+        { value: "0 UZS", label: "to start" },
+      ],
       heroLogin: "I have an account — log in",
       desmosSoon: "Desmos calculator",
       tests: [

@@ -22,6 +22,7 @@ import {
 import TestCountdown from "../components/TestCountdown";
 import { Page, PageHeader, Card, CardHeader, Button, IconTile, StatTile, ScoreTrend, Skeleton, ErrorState } from "../components/ui";
 import { useI18n } from "../i18n";
+import { StreakDaily, Predictor, MistakesCard } from "../components/learn/GrowthWidgets";
 
 function greetingKey() {
   const h = new Date().getHours();
@@ -192,8 +193,15 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* O'ng ustun: kod bilan kirish + tezkor havolalar */}
+        {/* O'ng ustun: streak, predictor, kod bilan kirish + tezkor havolalar */}
         <div className="space-y-6">
+          <StreakDaily />
+          <Predictor
+            attempts={attempts}
+            target={user?.onboarding?.targets?.sat ?? null}
+            locked={user?.plan === "free"}
+          />
+          <MistakesCard />
           <div className="relative overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white">
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#087fd1]/25 blur-2xl" />
             <div className="relative">

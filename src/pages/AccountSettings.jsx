@@ -21,6 +21,7 @@ import {
 } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
 import { LanguageSwitch, formatDate, translate, useI18n } from "../i18n";
+import SubscriptionCard from "../components/billing/SubscriptionCard";
 import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, Skeleton, inputClass, PageLoader } from "../components/ui";
 import Avatar from "../components/Avatar";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -64,6 +65,8 @@ export default function AccountSettings() {
         title={t("account.title")}
         subtitle={t("account.subtitle")}
       />
+
+      <SubscriptionCard />
 
       <div className="grid items-start gap-6 lg:grid-cols-[240px_1fr]">
         {/* Chap ustun: profil xulosasi va bo'limlar */}

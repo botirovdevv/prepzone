@@ -3,7 +3,7 @@
 // adminlar faqat owner bergan bo'limlarni boshqaradi.
 // ------------------------------------------------------------------
 
-export const ADMIN_PERMS = ["sessions", "sets", "desmos", "analytics", "users"];
+export const ADMIN_PERMS = ["sessions", "sets", "desmos", "analytics", "users", "billing"];
 
 export function hasPerm(user, perm) {
   if (!user) return false;

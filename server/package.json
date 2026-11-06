@@ -12,7 +12,8 @@
     "migrate": "node --env-file-if-exists=.env src/db/migrate.js",
     "db:local": "node scripts/local-db.js",
     "make-admin": "node --env-file-if-exists=.env scripts/make-admin.js",
-    "seed:practice": "node --env-file-if-exists=.env scripts/seed-practice-sets.js"
+    "seed:practice": "node --env-file-if-exists=.env scripts/seed-practice-sets.js",
+    "test": "node --test test/smsParser.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

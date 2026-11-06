@@ -44,6 +44,10 @@ async function request(method, path, body) {
   if (res.status === 401 && !path.startsWith("/auth/")) {
     window.dispatchEvent(new Event("auth:expired"));
   }
+  // Tarif limiti — global upgrade oynasi ochiladi (components/Paywall.jsx).
+  if (res.status === 402 && data?.code === "plan-limit") {
+    window.dispatchEvent(new CustomEvent("plan:limit", { detail: { message: data.message, feature: data.feature } }));
+  }
   if (!res.ok) {
     throw new ApiError(
       res.status,

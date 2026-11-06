@@ -12,6 +12,7 @@ import { MATH_DOMAINS } from "../data/mathDomains";
 import { Page, PageHeader, Card, CardHeader, Button, Badge, EmptyState, PageLoader } from "../components/ui";
 import { ScoreSummary, ModuleBreakdown } from "../components/ScoreSummary";
 import { useI18n } from "../i18n";
+import AiExplain from "../components/learn/AiExplain";
 
 const DOMAIN_LABELS = Object.fromEntries([...RW_DOMAINS, ...MATH_DOMAINS].map((d) => [d.id, d.label]));
 
@@ -101,6 +102,7 @@ function ReviewQuestion({ item, showPassage }) {
             {q.explanation}
           </p>
         )}
+        {!correct && <AiExplain question={q} userAnswer={answer} className="mt-3" />}
       </div>
     </details>
   );
@@ -172,6 +174,23 @@ export default function Results() {
       cancelled = true;
     };
   }, [resultId, results, retired]);
+
+  // Noto'g'ri javoblar xatolar daftariga (server takroriy yuborishni e'tiborsiz qoldiradi).
+  useEffect(() => {
+    if (!keys || !resultId || !satTest || retired) return;
+    const items = [];
+    for (const g of satTest.groups) {
+      const r = results?.[g.id];
+      if (!r) continue;
+      for (const m of collectReviewItems(g, r, keys)) {
+        for (const { q, correct } of m.items) {
+          if (correct) continue;
+          items.push({ key: `${testId || "bluebook-1"}:${q.id}`, section: g.type, domain: q.domain || "", question: q });
+        }
+      }
+    }
+    if (items.length) api.post("/learn/mistakes/sync", { source: `mock:${resultId}`, items: items.slice(0, 150) }).catch(() => {});
+  }, [keys, resultId, satTest, retired, results, testId]);
 
   if (loading || (results && satTest === undefined)) return <PageLoader />;
 

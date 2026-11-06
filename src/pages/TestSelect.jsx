@@ -108,7 +108,21 @@ export default function TestSelect() {
       lockKey: t.id,
       title: t.title,
       description: t.description,
-      go: () => navigate("/sat/test", { state: { testId: t.id } }),
+      go: async () => {
+        // Yangi mock: tarif limiti testdan OLDIN tekshiriladi (tugatgandan keyin emas).
+        if (!loadLocalProgress(user.uid, t.id)) {
+          const q = await api.get("/billing/me").catch(() => null);
+          if (q?.mock?.limit != null && q.mock.used >= q.mock.limit) {
+            window.dispatchEvent(
+              new CustomEvent("plan:limit", {
+                detail: { message: translate(`billing.mocksLeft`, { used: q.mock.used, limit: q.mock.limit, period: translate(`billing.period.${q.mock.period}`) }), feature: "mock" },
+              })
+            );
+            return;
+          }
+        }
+        navigate("/sat/test", { state: { testId: t.id } });
+      },
       kind: "builtin",
     })),
     ...openSessions.map((s) => {

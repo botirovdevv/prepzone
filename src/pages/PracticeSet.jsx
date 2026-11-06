@@ -13,6 +13,8 @@ import { HighlightsProvider } from "../context/HighlightsContext";
 import { PageLoader } from "../components/ui";
 import TestStatusScreen from "../components/TestStatusScreen";
 import { useI18n } from "../i18n";
+import AiExplain from "../components/learn/AiExplain";
+import { isAnswerCorrect } from "../utils/irtScoring";
 
 export default function PracticeSet() {
   const { user, loading } = useAuth();
@@ -99,6 +101,23 @@ export default function PracticeSet() {
   // lang: maslahat matnlari tanlangan tilda qayta tuziladi.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const topicAdvice = useMemo(() => buildTopicAdvice(topicAnalysis), [topicAnalysis, lang]);
+
+  // Yakunlanganda noto'g'ri javoblar xatolar daftariga.
+  useEffect(() => {
+    if (!showSummary || !set) return;
+    const items = questions
+      .filter((q) => answers[q.id] != null && !isAnswerCorrect(q, answers[q.id]))
+      .map((q) => ({
+        key: `set:${set.id}:${q.id}`,
+        section: q._sectionType || "",
+        domain: q.domain || "",
+        question: Object.fromEntries(Object.entries(q).filter(([k]) => !k.startsWith("_"))),
+      }));
+    if (items.length) {
+      const stamp = Object.keys(answers).length + ":" + items.map((i) => i.key).join(",").length;
+      api.post("/learn/mistakes/sync", { source: `practice:${set.id}:${stamp}`, items: items.slice(0, 150) }).catch(() => {});
+    }
+  }, [showSummary, set, questions, answers]);
 
   if (loading || !user || setLoading) {
     return <PageLoader fullscreen />;
@@ -219,6 +238,11 @@ export default function PracticeSet() {
         showPassage={question._showPassage}
         feedbackMode
       />
+      {answers[question.id] && answers[question.id] !== question.correctAnswer && (
+        <div className="mx-auto w-full max-w-3xl px-4 pb-4">
+          <AiExplain key={question.id} question={question} userAnswer={answers[question.id]} />
+        </div>
+      )}
 
       <div className="h-16 shrink-0" />
 

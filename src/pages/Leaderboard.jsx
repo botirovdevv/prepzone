@@ -20,19 +20,26 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  // "score" — eng yuqori mock ball, "xp" — faollik (kun savollari, streak).
+  const [tab, setTab] = useState("score");
 
   useEffect(() => {
     setLoading(true);
     setLoadError(false);
-    api
-      .get("/leaderboard?limit=15")
+    const req =
+      tab === "xp"
+        ? api.get("/learn/xp-leaderboard").then((list) =>
+            list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.xp} XP${r.streak ? ` · 🔥${r.streak}` : ""}` }))
+          )
+        : api.get("/leaderboard?limit=15");
+    req
       .then(setRows)
       .catch(() => {
         setRows([]);
         setLoadError(true);
       })
       .finally(() => setLoading(false));
-  }, [reloadKey]);
+  }, [reloadKey, tab]);
 
   const myRank = rows.findIndex((r) => r.uid === user?.uid);
   const rest = rows.slice(3);
@@ -43,8 +50,23 @@ export default function Leaderboard() {
         eyebrow={t("leaderboard.eyebrow")}
         icon={LuTrophy}
         title={t("leaderboard.title")}
-        subtitle={t("leaderboard.subtitle")}
+        subtitle={tab === "xp" ? t("streak.xpBoardSub") : t("leaderboard.subtitle")}
       />
+
+      <div className="mb-5 inline-flex rounded-full bg-[#12213D]/[0.05] p-1 text-sm font-semibold">
+        {[
+          ["score", t("streak.tabScore")],
+          ["xp", t("streak.tabXp")],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`rounded-full px-4 py-2 transition ${tab === id ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/55"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div className="space-y-3">

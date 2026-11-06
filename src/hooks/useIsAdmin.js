@@ -16,6 +16,7 @@ export const ADMIN_PERM_LABELS = {
   desmos: "Desmos",
   analytics: "Analitika",
   users: "Userlarni bloklash",
+  billing: "To'lovlar",
 };
 
 // Ruxsat bo'lmaganda o'tiladigan admin sahifalar (tartib bo'yicha birinchisi).
@@ -25,6 +26,7 @@ export const ADMIN_HOME = [
   ["desmos", "/admin/desmos"],
   ["analytics", "/admin/analytics"],
   ["users", "/admin/analytics"],
+  ["billing", "/admin/billing"],
 ];
 
 export function useIsAdmin() {
