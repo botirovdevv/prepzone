@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../api/client";
-import { LuArrowLeft, LuUsers, LuListChecks, LuGauge, LuRoute, LuNotebookPen, LuTriangleAlert } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuUsers,
+  LuListChecks,
+  LuGauge,
+  LuRoute,
+  LuNotebookPen,
+  LuTriangleAlert,
+  LuActivity,
+  LuPencil,
+} from "react-icons/lu";
 import {
   Page,
   PageHeader,
@@ -13,20 +23,17 @@ import {
   ErrorState,
   PageLoader,
   SegmentedControl,
+  Button,
 } from "../../components/ui";
 
 // ------------------------------------------------------------------
-// Tayyor (statik) test bo'yicha admin tahlili: urinishlar, ball taqsimoti
+// Mock test bo'yicha admin tahlili (tayyor test ham, admin sessiyasi ham): urinishlar, ball taqsimoti
 // va savollar tahlili (har savolni necha foiz to'g'ri yechgani). Savol
 // belgilangan qiyinlikka (E/M/H) mos kelmasa — belgilanadi: IRT
 // parametrlarini keyinchalik real ma'lumot bilan kalibrlash uchun asos.
 // ------------------------------------------------------------------
 
-const MODULES = [
-  { value: "module1", label: "Module 1" },
-  { value: "module2Easy", label: "M2 oson" },
-  { value: "module2Hard", label: "M2 qiyin" },
-];
+const MODULE_LABEL = { module1: "Module 1", module2Easy: "M2 oson", module2Hard: "M2 qiyin", module2Mixed: "Module 2" };
 
 const DIFF_LABEL = { E: "Oson", M: "O'rta", H: "Qiyin", easy: "Oson", medium: "O'rta", hard: "Qiyin" };
 const FLAG_LABEL = { easier: "Belgidan oson", harder: "Belgidan qiyin" };
@@ -128,7 +135,7 @@ export default function BuiltinTestStats() {
     let cancelled = false;
     setError(false);
     api
-      .get(`/admin/builtin-tests/${encodeURIComponent(id)}`)
+      .get(`/admin/tests/${encodeURIComponent(id)}`)
       .then((d) => !cancelled && setData(d))
       .catch(() => !cancelled && setError(true));
     return () => {
@@ -136,8 +143,17 @@ export default function BuiltinTestStats() {
     };
   }, [id, reloadKey]);
 
+  const moduleOptions = useMemo(
+    () =>
+      (data?.modules || [])
+        .filter((m) => m.sectionId === section)
+        .map((m) => ({ value: m.module, label: MODULE_LABEL[m.module] || m.module })),
+    [data, section]
+  );
   const current = useMemo(
-    () => data?.modules.find((m) => m.sectionId === section && m.module === module),
+    () =>
+      data?.modules.find((m) => m.sectionId === section && m.module === module) ||
+      data?.modules.find((m) => m.sectionId === section),
     [data, section, module]
   );
 
@@ -152,7 +168,11 @@ export default function BuiltinTestStats() {
 
   const { summary } = data;
   const flagged = data.modules.reduce((n, m) => n + m.questions.filter((q) => q.flag).length, 0);
-  const sections = summary.sections.map((s) => ({ value: s.id, label: s.id === "rw" ? "Reading & Writing" : "Math" }));
+  const sections = summary.sections.map((s) => ({
+    value: s.id,
+    label: s.id === "rw" ? "Reading & Writing" : s.id === "math" ? "Math" : s.title,
+  }));
+  const isSession = data.kind === "session";
 
   return (
     <Page>
@@ -160,10 +180,22 @@ export default function BuiltinTestStats() {
         <LuArrowLeft size={16} /> Mock testlar
       </Link>
       <PageHeader
-        eyebrow="Tayyor test"
+        eyebrow={isSession ? (data.session?.accessType === "open" ? "Doimiy ochiq" : "Kodli test") : "Doimiy ochiq"}
         icon={LuNotebookPen}
         title={data.title}
-        subtitle={`${data.questions} savol · adaptiv · natijalar va savollar tahlili`}
+        subtitle={`${data.questions} savol · natijalar va savollar tahlili`}
+        actions={
+          isSession && (
+            <>
+              <Button variant="outline" to={`/admin/sessions/${data.id}/edit`}>
+                <LuPencil size={16} /> Tahrirlash
+              </Button>
+              <Button to={`/admin/sessions/${data.id}/monitor`}>
+                <LuActivity size={16} /> Jonli kuzatuv
+              </Button>
+            </>
+          )
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -265,7 +297,14 @@ export default function BuiltinTestStats() {
             />
             <div className="flex flex-wrap gap-2 px-5 pb-4 pt-4 sm:px-6">
               <SegmentedControl options={sections} value={section} onChange={setSection} label="Bo'lim" />
-              <SegmentedControl options={MODULES} value={module} onChange={setModule} label="Modul" />
+              {moduleOptions.length > 1 && (
+                <SegmentedControl
+                  options={moduleOptions}
+                  value={current?.module || module}
+                  onChange={setModule}
+                  label="Modul"
+                />
+              )}
             </div>
             {current && <QuestionTable questions={current.questions} />}
           </Card>

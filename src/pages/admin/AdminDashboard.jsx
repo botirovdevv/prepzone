@@ -1,16 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
-import {
-  LuPlus,
-  LuCalendarClock,
-  LuChevronRight,
-  LuShieldCheck,
-  LuGlobe,
-  LuCalendarX,
-  LuNotebookPen,
-} from "react-icons/lu";
-import { Page, PageHeader, Card, Button, IconTile, Badge, EmptyState, Skeleton, SectionTitle } from "../../components/ui";
+import { LuPlus, LuChevronRight, LuShieldCheck, LuCalendarX } from "react-icons/lu";
+import { Page, PageHeader, Card, Button, Badge, EmptyState, ErrorState, Skeleton } from "../../components/ui";
 
 function formatDateTime(ts) {
   if (!ts) return "-";
@@ -33,25 +25,25 @@ function sessionStatusLabel(session) {
 }
 
 export default function AdminDashboard() {
-  const [sessions, setSessions] = useState([]);
-  const [builtin, setBuiltin] = useState([]);
+  const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // Admin uchun server barcha sessiyalarni kirish kodi bilan qaytaradi;
-  // tayyor (repo'dagi) testlar alohida endpoint'dan — statistikasi bilan.
+  // Barcha mock testlar (tayyor + sessiyalar) — talabalar ko'radigan
+  // tartibda, bir xil ko'rinishda. Har biri bir xil tahlil sahifasiga olib boradi.
   useEffect(() => {
-    Promise.all([
-      api.get("/sessions").catch(() => []),
-      api.get("/admin/builtin-tests").catch(() => []),
-    ])
-      .then(([s, b]) => {
-        setSessions(s);
-        setBuiltin(b);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const total = sessions.length + builtin.length;
+    let cancelled = false;
+    setError(false);
+    api
+      .get("/admin/tests")
+      .then((list) => !cancelled && setTests(list))
+      .catch(() => !cancelled && setError(true))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   return (
     <Page>
@@ -59,10 +51,10 @@ export default function AdminDashboard() {
         eyebrow="Admin panel"
         icon={LuShieldCheck}
         title="Mock testlar"
-        subtitle="Tayyor testlar natijalarini kuzating, vaqti belgilangan va doimiy ochiq testlarni yarating."
+        subtitle="Barcha mock testlar: natijalar, savollar tahlili va boshqaruv bir joyda."
         actions={
           <>
-            {!loading && <Badge tone="blue">{total} ta test</Badge>}
+            {!loading && !error && <Badge tone="blue">{tests.length} ta test</Badge>}
             <Button to="/admin/sessions/new">
               <LuPlus size={17} /> Yangi test
             </Button>
@@ -70,53 +62,18 @@ export default function AdminDashboard() {
         }
       />
 
-      {!loading && builtin.length > 0 && (
-        <section className="mb-8">
-          <SectionTitle>Tayyor testlar</SectionTitle>
-          <Card className="overflow-hidden">
-            <div className="grid divide-y divide-ink/[0.06]">
-              {builtin.map((b) => (
-                <Link
-                  key={b.id}
-                  to={`/admin/tests/${b.id}`}
-                  className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
-                >
-                  <IconTile icon={LuNotebookPen} tone="blue" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-semibold text-ink">{b.title}</p>
-                      <Badge tone="blue">Tayyor test</Badge>
-                    </div>
-                    <p className="mt-0.5 text-sm text-ink/50 tabular-nums">
-                      {b.questions} savol · {b.attempts} urinish · {b.users} talaba
-                      {b.avgTotal != null && ` · o'rtacha ${b.avgTotal}`}
-                    </p>
-                  </div>
-                  <span className="hidden rounded-lg bg-canvas px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-ink/70 sm:inline">
-                    {b.id}
-                  </span>
-                  <LuChevronRight
-                    size={18}
-                    className="shrink-0 text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent"
-                  />
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </section>
-      )}
-
-      {!loading && <SectionTitle>Sessiyalar</SectionTitle>}
-
       {loading ? (
         <div className="space-y-3">
           <Skeleton className="h-[76px]" />
           <Skeleton className="h-[76px]" />
+          <Skeleton className="h-[76px]" />
         </div>
-      ) : sessions.length === 0 ? (
+      ) : error ? (
+        <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
+      ) : tests.length === 0 ? (
         <EmptyState
           icon={LuCalendarX}
-          title="Hali birorta test tashkil qilinmagan"
+          title="Hali birorta test yo'q"
           text="Birinchi testni yarating — talabalar unga kod yoki doimiy ochiq havola orqali kiradi."
           action={
             <Button to="/admin/sessions/new">
@@ -127,26 +84,33 @@ export default function AdminDashboard() {
       ) : (
         <Card className="overflow-hidden">
           <div className="grid divide-y divide-ink/[0.06]">
-            {sessions.map((s) => {
-              const badge = sessionStatusLabel(s);
+            {tests.map((t, i) => {
+              const badge = sessionStatusLabel(t);
               return (
                 <Link
-                  key={s.id}
-                  to={`/admin/sessions/${s.id}/monitor`}
+                  key={t.id}
+                  to={`/admin/tests/${t.id}`}
                   className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
                 >
-                  <IconTile icon={s.accessType === "open" ? LuGlobe : LuCalendarClock} tone="blue" />
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 font-display text-[16px] font-bold text-accent tabular-nums"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-semibold text-ink">{s.title}</p>
+                      <p className="truncate font-semibold text-ink">{t.title}</p>
                       <Badge tone={badge.tone}>{badge.text}</Badge>
                     </div>
-                    <p className="mt-0.5 text-sm text-ink/50">
-                      {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)}
+                    <p className="mt-0.5 text-sm text-ink/50 tabular-nums">
+                      {t.questions} savol · {t.attempts} urinish · {t.users} talaba
+                      {t.avgTotal != null && ` · o'rtacha ${t.avgTotal}`}
+                      {t.accessType !== "open" && t.scheduledAt && ` · ${formatDateTime(t.scheduledAt)}`}
                     </p>
                   </div>
                   <span className="hidden rounded-lg bg-canvas px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-ink/70 sm:inline">
-                    {s.accessType === "open" ? "OPEN" : s.code || "······"}
+                    {t.accessType === "open" ? "OPEN" : t.code || "······"}
                   </span>
                   <LuChevronRight
                     size={18}

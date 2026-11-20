@@ -226,43 +226,98 @@ router.put("/users/:id/admin", requireOwner, async (req, res) => {
 });
 
 // ------------------------------------------------------------------
-// Tayyor (statik, content/sat) testlar: ro'yxat va test bo'yicha tahlil.
-// Admin sessiyalari /api/sessions orqali; bu yerda faqat repo'dagi testlar.
+// Barcha mock testlar bitta ro'yxatda: tayyor (content/sat) testlar va
+// admin sessiyalari — bir xil ko'rinish, bir xil tahlil sahifasi.
 // ------------------------------------------------------------------
 
-const questionCount = (test) =>
-  test.groups.reduce((n, g) => n + g.module1.questions.length + g.module2Hard.questions.length, 0);
+const MODULE_KEYS = ["module1", "module2Easy", "module2Hard", "module2Mixed"];
+const SECTION_TITLES = { rw: "Reading and Writing", math: "Math" };
 
-router.get("/builtin-tests", requirePerm("sessions"), async (_req, res) => {
+// Bo'lim savollari soni (talaba ko'radigan: Module 1 + bitta Module 2).
+const sectionQuestions = (sec) =>
+  (sec.module1 || []).length +
+  Math.max((sec.module2Mixed || []).length, (sec.module2Hard || []).length, (sec.module2Easy || []).length);
+
+// id -> { kind, title, sections (kalitlar bilan), where (results filtri), session? }
+async function loadTest(id) {
+  if (SAT_TESTS[id]) {
+    const test = SAT_TESTS[id];
+    return {
+      kind: "builtin",
+      title: test.testTitle,
+      sections: getStaticSections(id).sections.map((sec) => ({
+        ...sec,
+        title: test.groups.find((g) => g.id === sec.id)?.title || SECTION_TITLES[sec.id] || sec.id,
+      })),
+      where: ["r.test_id = $1", id],
+    };
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const row = await one("SELECT id, access_type, status, code, meta, content FROM test_sessions WHERE id = $1", [id]);
+  if (!row) return null;
+  const metaSections = row.meta?.sections || [];
+  return {
+    kind: "session",
+    title: row.meta?.title || "Test",
+    session: { accessType: row.access_type, status: row.status, code: row.code },
+    sections: (row.content?.sections || []).map((sec) => ({
+      id: sec.id,
+      title: metaSections.find((m) => m.id === sec.id)?.title || SECTION_TITLES[sec.id] || sec.id,
+      ...Object.fromEntries(MODULE_KEYS.map((k) => [k, sec[k] || []])),
+    })),
+    where: ["r.session_id = $1", id],
+  };
+}
+
+router.get("/tests", requirePerm("sessions"), async (_req, res) => {
   const ids = Object.keys(SAT_TESTS);
-  const { rows } = await query(
-    `SELECT test_id,
-            count(*)::int AS attempts,
-            count(DISTINCT user_id)::int AS users,
-            count(*) FILTER (WHERE complete)::int AS complete,
-            round(avg(total) FILTER (WHERE complete))::int AS avg_total,
-            max(total) FILTER (WHERE complete) AS best_total,
-            max(created_at) AS last_at
-     FROM results WHERE test_id = ANY($1) GROUP BY test_id`,
-    [ids]
-  );
-  const byId = Object.fromEntries(rows.map((r) => [r.test_id, r]));
-  res.json(
-    ids.map((id) => {
-      const r = byId[id] || {};
-      return {
+  const [{ rows: sessions }, { rows: stats }] = await Promise.all([
+    query("SELECT id, access_type, status, code, scheduled_at, meta, created_at FROM test_sessions"),
+    query(
+      `SELECT coalesce(test_id, session_id::text) AS key,
+              count(*)::int AS attempts,
+              count(DISTINCT user_id)::int AS users,
+              count(*) FILTER (WHERE complete)::int AS complete,
+              round(avg(total) FILTER (WHERE complete))::int AS avg_total
+       FROM results WHERE test_id = ANY($1) OR session_id IS NOT NULL
+       GROUP BY 1`,
+      [ids]
+    ),
+  ]);
+  const byKey = Object.fromEntries(stats.map((r) => [r.key, r]));
+  const withStats = (item) => {
+    const r = byKey[item.id] || {};
+    return { ...item, attempts: r.attempts || 0, users: r.users || 0, complete: r.complete || 0, avgTotal: r.avg_total ?? null };
+  };
+  // Tartib talabalar ko'radigan ro'yxat bilan bir xil: sessiyalar (eskidan
+  // yangiga), keyin tayyor testlar.
+  const items = [
+    ...sessions
+      .sort((x, y) => new Date(x.created_at) - new Date(y.created_at))
+      .map((s) =>
+        withStats({
+          id: s.id,
+          kind: "session",
+          title: s.meta?.title || "Test",
+          questions: (s.meta?.sections || []).reduce((n, sec) => n + (sec.questionCount || 0), 0),
+          accessType: s.access_type,
+          status: s.status,
+          code: s.code,
+          scheduledAt: s.scheduled_at,
+        })
+      ),
+    ...ids.map((id) =>
+      withStats({
         id,
+        kind: "builtin",
         title: SAT_TESTS[id].testTitle,
-        questions: questionCount(SAT_TESTS[id]),
-        attempts: r.attempts || 0,
-        users: r.users || 0,
-        complete: r.complete || 0,
-        avgTotal: r.avg_total ?? null,
-        bestTotal: r.best_total ?? null,
-        lastAt: r.last_at || null,
-      };
-    })
-  );
+        questions: getStaticSections(id).sections.reduce((n, sec) => n + sectionQuestions(sec), 0),
+        accessType: "open",
+        status: "open",
+      })
+    ),
+  ];
+  res.json(items);
 });
 
 const plain = (html) =>
@@ -285,66 +340,66 @@ function difficultyFlag(label, p, n) {
   return null;
 }
 
-router.get("/builtin-tests/:id", requirePerm("sessions"), async (req, res) => {
-  const test = SAT_TESTS[req.params.id];
-  const data = getStaticSections(req.params.id);
-  if (!test || !data) throw notFound("Test topilmadi.");
+// Natijada saqlangan yo'nalishdan Module 2 kaliti.
+const module2Key = (route) => (route === "hard" ? "module2Hard" : route === "easy" ? "module2Easy" : "module2Mixed");
+
+router.get("/tests/:id", requirePerm("sessions"), async (req, res) => {
+  const test = await loadTest(req.params.id);
+  if (!test) throw notFound("Test topilmadi.");
 
   const { rows } = await query(
     `SELECT r.id, r.user_id, r.total, r.complete, r.created_at, r.data,
             u.display_name, u.email
      FROM results r JOIN users u ON u.id = r.user_id
-     WHERE r.test_id = $1 ORDER BY r.created_at DESC LIMIT 2000`,
-    [req.params.id]
+     WHERE ${test.where[0]} ORDER BY r.created_at DESC LIMIT 2000`,
+    [test.where[1]]
   );
 
   // Savollar tahlili: har modul/savol uchun to'g'ri yechganlar ulushi.
   const stats = {};
-  const bucket = (key, questions) =>
-    (stats[key] ||= questions.map((q) => ({ id: q.id, n: 0, correct: 0 })));
   const routes = {};
+  const add = (key, questions, answers) => {
+    const b = (stats[key] ||= questions.map(() => ({ n: 0, correct: 0 })));
+    const clean = cleanAnswers(answers, questions.length);
+    questions.forEach((q, i) => {
+      if (!b[i]) return;
+      b[i].n += 1;
+      if (isAnswerCorrect(q, clean[i])) b[i].correct += 1;
+    });
+  };
   for (const r of rows) {
-    for (const section of data.sections) {
+    for (const section of test.sections) {
       const sr = r.data?.results?.[section.id];
       if (!sr || !Array.isArray(sr.module1Answers)) continue;
-      const m1 = cleanAnswers(sr.module1Answers, section.module1.length);
-      const b1 = bucket(`${section.id}:module1`, section.module1);
-      section.module1.forEach((q, i) => {
-        b1[i].n += 1;
-        if (isAnswerCorrect(q, m1[i])) b1[i].correct += 1;
-      });
+      add(`${section.id}:module1`, section.module1, sr.module1Answers);
       if (sr.route === "hard" || sr.route === "easy") {
         const rt = (routes[section.id] ||= { hard: 0, easy: 0 });
         rt[sr.route] += 1;
       }
-      if (Array.isArray(sr.module2Answers) && (sr.route === "hard" || sr.route === "easy")) {
-        const m2q = module2For(section, sr.route);
-        const m2 = cleanAnswers(sr.module2Answers, m2q.length);
-        const key = sr.route === "hard" ? "module2Hard" : "module2Easy";
-        const b2 = bucket(`${section.id}:${key}`, m2q);
-        m2q.forEach((q, i) => {
-          b2[i].n += 1;
-          if (isAnswerCorrect(q, m2[i])) b2[i].correct += 1;
-        });
+      if (Array.isArray(sr.module2Answers)) {
+        const key = module2Key(sr.route);
+        const questions = section[key]?.length ? section[key] : module2For(section, sr.route);
+        add(`${section.id}:${key}`, questions, sr.module2Answers);
       }
     }
   }
 
   const modules = [];
-  for (const group of test.groups) {
-    for (const key of ["module1", "module2Easy", "module2Hard"]) {
-      const questions = group[key].questions;
-      const b = stats[`${group.id}:${key}`] || [];
+  for (const section of test.sections) {
+    for (const key of MODULE_KEYS) {
+      const questions = section[key] || [];
+      if (!questions.length) continue;
+      const b = stats[`${section.id}:${key}`] || [];
       modules.push({
-        sectionId: group.id,
-        sectionTitle: group.title,
+        sectionId: section.id,
+        sectionTitle: section.title,
         module: key,
         questions: questions.map((q, i) => {
           const n = b[i]?.n || 0;
           const p = n ? b[i].correct / n : null;
           return {
             index: i + 1,
-            id: q.id,
+            id: q.id ?? `${section.id}-${key}-${i + 1}`,
             type: q.type,
             domain: q.domain || "",
             skill: q.skill || "",
@@ -374,19 +429,21 @@ router.get("/builtin-tests/:id", requirePerm("sessions"), async (req, res) => {
 
   res.json({
     id: req.params.id,
-    title: test.testTitle,
-    questions: questionCount(test),
+    kind: test.kind,
+    session: test.session || null,
+    title: test.title,
+    questions: test.sections.reduce((n, sec) => n + sectionQuestions(sec), 0),
     summary: {
       attempts: rows.length,
       users: new Set(rows.map((r) => r.user_id)).size,
       complete: complete.length,
       avgTotal: avg(complete.map((r) => r.total)),
       bestTotal: complete.length ? Math.max(...complete.map((r) => r.total)) : null,
-      sections: test.groups.map((g) => ({
-        id: g.id,
-        title: g.title,
-        avg: sectionAvg(g.id),
-        hardShare: routes[g.id] ? routes[g.id].hard / (routes[g.id].hard + routes[g.id].easy) : null,
+      sections: test.sections.map((sec) => ({
+        id: sec.id,
+        title: sec.title,
+        avg: sectionAvg(sec.id),
+        hardShare: routes[sec.id] ? routes[sec.id].hard / (routes[sec.id].hard + routes[sec.id].easy) : null,
       })),
     },
     distribution,
@@ -398,9 +455,9 @@ router.get("/builtin-tests/:id", requirePerm("sessions"), async (req, res) => {
       totalLow: r.data?.totalLow ?? null,
       totalHigh: r.data?.totalHigh ?? null,
       sections: Object.fromEntries(
-        test.groups.map((g) => {
-          const sr = r.data?.results?.[g.id];
-          return [g.id, sr ? { score: sr.scaledScore, route: sr.route || null } : null];
+        test.sections.map((sec) => {
+          const sr = r.data?.results?.[sec.id];
+          return [sec.id, sr ? { score: sr.scaledScore, route: sr.route || null } : null];
         })
       ),
       complete: r.complete,
