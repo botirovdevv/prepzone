@@ -19,6 +19,7 @@ import {
   LuNotebookPen,
   LuGauge,
   LuFlame,
+  LuSwords,
 } from "react-icons/lu";
 import { ThemeCycleButton } from "../components/ThemeToggle";
 import { nextTestDate, daysLeft } from "../data/testDates";
@@ -350,6 +351,62 @@ function Benefits() {
   );
 }
 
+// ---------------- SAT Duel ----------------
+function DuelPreview({ onStart }) {
+  const { t, tr } = useI18n();
+  const rows = [
+    { name: "Aziza", score: 612, you: false },
+    { name: t("duel.you"), score: 655, you: true },
+  ];
+  return (
+    <section className="bg-canvas">
+      <div className="mx-auto grid max-w-[1024px] items-center gap-14 px-5 py-24 lg:grid-cols-[1.1fr_0.9fr] lg:py-32">
+        <div className="home-reveal order-2 rounded-[28px] bg-surface p-6 sm:p-8 lg:order-1" style={{ "--reveal-delay": "120ms" }}>
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 rounded-full bg-danger/10 px-3 py-1.5 text-[13px] font-semibold text-danger">
+              <LuSwords size={14} /> SAT Duel
+            </span>
+            <span className="font-display text-[17px] font-semibold tabular-nums text-ink">{t("duel.question", { n: 5, total: 7 })}</span>
+          </div>
+          <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-fill">
+            <div className="h-full w-[62%] rounded-full bg-accent" />
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            {rows.map((r) => (
+              <div key={r.name} className={`rounded-2xl p-4 ${r.you ? "bg-accent/10" : "bg-canvas"}`}>
+                <p className="text-[13px] font-medium text-ink-2">{r.name}</p>
+                <p className="mt-1 font-display text-[34px] font-bold tabular-nums text-ink">{r.score}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-center text-[15px] text-ink-2">{t("duel.opponentAnswered")} ✓</p>
+        </div>
+        <div className="order-1 lg:order-2">
+          <SectionHead eyebrow={`${t("duel.title")} · ${t("common.new")}`} title={t("duel.promoTitle")} text={t("duel.subtitle")} />
+          <ul className="home-reveal mt-7 space-y-3 text-[17px] text-ink">
+            {tr("duel.rules").map((r) => (
+              <li key={r.title} className="flex items-center gap-3">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                  <LuCheck size={12} />
+                </span>
+                <span>
+                  <b className="font-semibold">{r.title}</b> — {r.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={onStart}
+            className="mt-9 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-6 text-[17px] font-medium text-white transition-colors hover:bg-accent-press"
+          >
+            <LuSwords size={18} /> {t("duel.promoBtn")}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ---------------- Natija hisoboti (namuna) ----------------
 function ReportPreview({ onStart }) {
   const { t, tr } = useI18n();
@@ -580,6 +637,7 @@ export default function Home() {
   // Yangi user: ro'yxatdan o'tadi, so'ng /onboarding so'rovnomasida
   // maqsad ballini belgilaydi.
   const handleStart = () => navigate("/register");
+  const handleDuel = () => navigate("/register", { state: { from: "/duel" } });
   const handleLogin = () => navigate("/login");
 
   return (
@@ -645,6 +703,8 @@ export default function Home() {
           </ol>
         </div>
       </section>
+
+      <DuelPreview onStart={handleDuel} />
 
       <ReportPreview onStart={handleStart} />
 

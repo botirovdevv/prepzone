@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
 import { Router } from "express";
 import { z } from "zod";
 import { one, pool, query, tx } from "../db/index.js";
@@ -9,6 +8,7 @@ import { addXp, streakDoc, XP } from "../lib/streaks.js";
 import { avatarUrl } from "../lib/serialize.js";
 import { perUserLimit } from "../lib/limiters.js";
 import { stripQuestion } from "../lib/satScoring.js";
+import { loadBank } from "../lib/questionBank.js";
 
 // ------------------------------------------------------------------
 // O'qish vositalari: xatolar daftari (spaced repetition), kun savollari,
@@ -176,24 +176,6 @@ router.delete("/mistakes/:key", async (req, res) => {
 });
 
 // ---------------- Kun savollari ----------------
-
-let bank = null;
-async function loadBank() {
-  if (bank) return bank;
-  const dir = new URL("../../question-bank/", import.meta.url);
-  const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
-  const all = [];
-  for (const f of files) {
-    const section = f.startsWith("math") ? "math" : "rw";
-    const items = JSON.parse(await readFile(new URL(f, dir), "utf8"));
-    for (const q of items) {
-      if (!Array.isArray(q.choices) || q.choices.length !== 4 || !q.correctAnswer || q.image) continue;
-      all.push({ ...q, section });
-    }
-  }
-  bank = { math: all.filter((q) => q.section === "math"), rw: all.filter((q) => q.section === "rw") };
-  return bank;
-}
 
 // Kun bo'yicha hamma uchun bir xil 5 ta savol (3 RW + 2 Math) — do'stlar bilan solishtirish mumkin.
 async function dailySet(day) {

@@ -11,6 +11,7 @@ const en = {
     continue: "Continue",
     soon: "Soon",
     beta: "Beta",
+    new: "New",
     error: "Something went wrong. Please try again.",
     loadError: "Couldn't load the data. Check your internet connection and try again.",
     networkError: "Couldn't reach the server. Check your internet connection.",

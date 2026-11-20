@@ -35,6 +35,7 @@ import {
 } from "../components/ui";
 import { useI18n } from "../i18n";
 import { StreakDaily, Predictor, MistakesCard } from "../components/learn/GrowthWidgets";
+import { LuSwords } from "react-icons/lu";
 
 function greetingKey() {
   const h = new Date().getHours();
@@ -215,6 +216,16 @@ export default function Dashboard() {
         {/* O'ng ustun: streak, predictor, kod bilan kirish + tezkor havolalar */}
         <div className="space-y-6">
           <StreakDaily />
+          <Card className="p-5 sm:p-6">
+            <IconTile icon={LuSwords} tone="red" />
+            <h2 className="mt-4 font-display text-[20px] font-semibold leading-[25px] tracking-[-0.01em] text-ink">
+              {t("duel.promoTitle")}
+            </h2>
+            <p className="mt-1 text-[15px] leading-[20px] text-ink-2">{t("duel.promoText")}</p>
+            <Button to="/duel" className="mt-5 w-full">
+              <LuSwords size={16} /> {t("duel.promoBtn")}
+            </Button>
+          </Card>
           <Predictor
             attempts={attempts}
             target={user?.onboarding?.targets?.sat ?? null}

@@ -11,6 +11,7 @@ const uz = {
     continue: "Davom etish",
     soon: "Tez orada",
     beta: "Beta",
+    new: "Yangi",
     error: "Xatolik yuz berdi. Qaytadan urinib ko'ring.",
     loadError: "Ma'lumotni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.",
     networkError: "Serverga ulanib bo'lmadi. Internetni tekshiring.",

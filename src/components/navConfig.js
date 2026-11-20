@@ -17,6 +17,8 @@ import {
   LuSun,
   LuNotebookPen,
   LuEllipsis,
+  LuSwords,
+  LuLibraryBig,
 } from "react-icons/lu";
 
 // tone — "Yana" sahifasidagi iOS uslubidagi rangli ikonka foni.
@@ -33,6 +35,7 @@ export const NAV = [
     label: "practice",
     items: [
       { to: "/sat/select", label: "practiceTests", icon: LuFileText, tone: "blue" },
+      { to: "/duel", label: "duel", icon: LuSwords, tone: "red", badge: "new" },
       { to: "/practice", label: "examQuestions", icon: LuZap, tone: "orange" },
       { to: "/mistakes", label: "mistakes", icon: LuNotebookPen, tone: "red" },
       { to: "/join", label: "mockWithKey", icon: LuKeyRound, tone: "gray" },
@@ -41,6 +44,7 @@ export const NAV = [
   {
     label: "learn",
     items: [
+      { to: "/resources", label: "resources", icon: LuLibraryBig, tone: "blue", badge: "new" },
       { to: "/vocabulary", label: "vocabulary", icon: LuBookOpen, tone: "green" },
       // Desmos darsliklari tayyor bo'lgach shu yerga qaytariladi:
       // { to: "/desmos", label: "desmos", icon: LuCalculator, tone: "green" },

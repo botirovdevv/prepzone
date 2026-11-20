@@ -499,3 +499,13 @@ h6 {
 @media (prefers-reduced-motion: reduce) {
   .pz-spinner > span { animation-duration: 1.6s; animation-delay: calc(var(--i) * 0.2s - 1.6s); }
 }
+
+/* SAT Duel — sanoq raqami "pop" (reduced-motion'da o'chadi). */
+@keyframes pz-duel-pop {
+  from { transform: scale(1.35); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.pz-duel-pop { animation: pz-duel-pop 420ms cubic-bezier(0.32, 0.72, 0, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .pz-duel-pop { animation: none; }
+}

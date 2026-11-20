@@ -1,6 +1,6 @@
 import { usePageMeta } from "../hooks/usePageMeta";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import TextField from "../components/auth/TextField";
@@ -57,6 +57,9 @@ export default function Register() {
   const { t } = useI18n();
   usePageMeta({ title: t("auth.seo.register"), path: "/register" });
   const navigate = useNavigate();
+  // Kirishdan oldin ochilgan sahifa (masalan Duel taklifi) — ro'yxatdan keyin o'sha yerga.
+  const rawFrom = useLocation().state?.from;
+  const from = typeof rawFrom === "string" && rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : null;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -67,7 +70,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   if (!authLoading && user) {
-    return <Navigate to={user.emailVerified ? "/dashboard" : "/verify-email"} replace />;
+    return <Navigate to={user.emailVerified ? from || "/dashboard" : "/verify-email"} replace state={{ from }} />;
   }
 
   // Inline tekshiruv — xato yuborishdan oldin, maydonning o'zida ko'rinadi.
@@ -88,7 +91,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(email.trim(), password, fullName.trim());
-      navigate("/verify-email", { replace: true });
+      navigate("/verify-email", { replace: true, state: { from } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -104,7 +107,7 @@ export default function Register() {
       footer={
         <>
           {t("auth.register.haveAccount")}{" "}
-          <Link to="/login" className="font-semibold text-accent hover:underline">
+          <Link to="/login" state={from ? { from } : undefined} className="font-semibold text-accent hover:underline">
             {t("auth.register.login")}
           </Link>
         </>
@@ -112,7 +115,7 @@ export default function Register() {
     >
       {/* Google bilan ro'yxatdan o'tganlar emailni tasdiqlamasdan to'g'ridan-to'g'ri kiradi. */}
       <GoogleButton
-        onSuccess={() => navigate("/dashboard", { replace: true })}
+        onSuccess={() => navigate(from || "/dashboard", { replace: true })}
         onError={setError}
         disabled={loading}
       />

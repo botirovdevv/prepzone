@@ -27,7 +27,11 @@ export default function Leaderboard() {
     setLoading(true);
     setLoadError(false);
     const req =
-      tab === "xp"
+      tab === "duel"
+        ? api.get("/duel/leaderboard").then((list) =>
+            list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.rating}` }))
+          )
+        : tab === "xp"
         ? api.get("/learn/xp-leaderboard").then((list) =>
             list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.xp} XP${r.streak ? ` · 🔥${r.streak}` : ""}` }))
           )
@@ -50,7 +54,7 @@ export default function Leaderboard() {
         eyebrow={t("leaderboard.eyebrow")}
         icon={LuTrophy}
         title={t("leaderboard.title")}
-        subtitle={tab === "xp" ? t("streak.xpBoardSub") : t("leaderboard.subtitle")}
+        subtitle={tab === "duel" ? t("duel.boardSub") : tab === "xp" ? t("streak.xpBoardSub") : t("leaderboard.subtitle")}
       />
 
       <SegmentedControl
@@ -58,6 +62,7 @@ export default function Leaderboard() {
         options={[
           { value: "score", label: t("streak.tabScore") },
           { value: "xp", label: t("streak.tabXp") },
+          { value: "duel", label: t("duel.title") },
         ]}
         value={tab}
         onChange={setTab}

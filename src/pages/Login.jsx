@@ -69,7 +69,7 @@ export default function Login() {
       footer={
         <>
           {t("auth.login.noAccount")}{" "}
-          <Link to="/register" className="font-semibold text-accent hover:underline">
+          <Link to="/register" state={from ? { from } : undefined} className="font-semibold text-accent hover:underline">
             {t("auth.login.signUp")}
           </Link>
         </>

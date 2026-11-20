@@ -43,6 +43,9 @@ const pages = {
   Mistakes: () => import("./pages/Mistakes"),
   Daily: () => import("./pages/Daily"),
   More: () => import("./pages/More"),
+  DuelLobby: () => import("./pages/DuelLobby"),
+  Duel: () => import("./pages/Duel"),
+  Resources: () => import("./pages/Resources"),
 };
 const Dashboard = lazy(pages.Dashboard);
 const SATTest = lazy(pages.SATTest);
@@ -73,6 +76,9 @@ const DesmosForm = lazy(pages.DesmosForm);
 const Mistakes = lazy(pages.Mistakes);
 const Daily = lazy(pages.Daily);
 const More = lazy(pages.More);
+const DuelLobby = lazy(pages.DuelLobby);
+const Duel = lazy(pages.Duel);
+const Resources = lazy(pages.Resources);
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -215,6 +221,30 @@ export default function AuthedApp() {
             <ProtectedRoute>
               <StudyRoom />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="duel"
+          element={
+            <DashboardRoute>
+              <DuelLobby />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="duel/:code"
+          element={
+            <ProtectedRoute>
+              <Duel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="resources"
+          element={
+            <DashboardRoute>
+              <Resources />
+            </DashboardRoute>
           }
         />
         <Route

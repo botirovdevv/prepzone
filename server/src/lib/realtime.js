@@ -13,6 +13,21 @@ import {
   isTimeUp,
   startRoomClock,
 } from "./studyRooms.js";
+import {
+  DUEL_CODE_RE,
+  SECTIONS,
+  dequeue,
+  duelState,
+  enqueue,
+  getDuel,
+  initDuels,
+  joinDuel,
+  leaveSocket,
+  playBot,
+  playerFromUser,
+  submitAnswer,
+  voteRematch,
+} from "./duels.js";
 
 // ------------------------------------------------------------------
 // Jonli yangilanishlar (Firestore onSnapshot o'rnini bosadi).
@@ -98,8 +113,10 @@ export function initRealtime(httpServer) {
     });
     registerBoard(socket);
     registerCall(socket);
+    registerDuel(socket);
   });
 
+  initDuels(io);
   return io;
 }
 
@@ -286,6 +303,93 @@ function registerCall(socket) {
 
   socket.on("call:leave", leave);
   socket.on("disconnect", leave);
+}
+
+// ------------------------------------------------------------------
+// SAT Duel (lib/duels.js). Socket bir vaqtda bitta jangda bo'ladi.
+//   duel:join(code, ack)        — jangga ulanish / bo'sh o'ringa o'tirish
+//   duel:answer({round, choice}, ack)
+//   duel:leave({forfeit})        — chiqish (o'yin paytida forfeit: true → texnik mag'lubiyat)
+//   duel:rematch(ack)            — revansh ovozi; ikkalasi bossa duel:rematch {code}
+//   duel:queue(section, ack) / duel:unqueue / duel:bot(section, ack)
+// ------------------------------------------------------------------
+
+function registerDuel(socket) {
+  let code = null;
+  const user = socket.data.user;
+  const reply = (ack) => (typeof ack === "function" ? ack : () => {});
+  const current = () => (code ? getDuel(code) : null);
+
+  const leave = (opts) => {
+    const duel = current();
+    if (duel) leaveSocket(duel, user.id, socket.id, opts);
+    if (code) socket.leave(`duel:${code}`);
+    code = null;
+  };
+
+  socket.on("duel:join", (raw, ack) => {
+    const next = typeof raw === "string" ? raw.toUpperCase() : "";
+    const duel = DUEL_CODE_RE.test(next) ? getDuel(next) : null;
+    if (!duel || duel.status === "cancelled") return reply(ack)({ ok: false, reason: "not-found" });
+    if (code && code !== next) leave();
+    // Avval xonaga — joinDuel yuboradigan holatni shu socket ham olsin.
+    socket.join(`duel:${next}`);
+    const res = joinDuel(duel, playerFromUser(user), socket.id);
+    if (!res.ok) {
+      socket.leave(`duel:${next}`);
+      return reply(ack)(res);
+    }
+    code = next;
+    reply(ack)({ ok: true, state: duelState(duel, user.id) });
+  });
+
+  socket.on("duel:answer", (msg, ack) => {
+    const duel = current();
+    if (!duel || !msg || !Number.isInteger(msg.round) || typeof msg.choice !== "string") {
+      return reply(ack)({ ok: false });
+    }
+    reply(ack)(submitAnswer(duel, user.id, { round: msg.round, choice: msg.choice.slice(0, 4) }));
+  });
+
+  socket.on("duel:leave", (msg) => leave({ forfeit: Boolean(msg?.forfeit) }));
+
+  socket.on("duel:rematch", async (ack) => {
+    const duel = current();
+    if (!duel) return reply(ack)({ ok: false });
+    try {
+      reply(ack)({ ok: true, code: await voteRematch(duel, user.id) });
+    } catch (err) {
+      console.error("[duel] revansh", err);
+      reply(ack)({ ok: false });
+    }
+  });
+
+  socket.on("duel:queue", async (section, ack) => {
+    if (!SECTIONS.has(section)) return reply(ack)({ ok: false });
+    try {
+      reply(ack)({ ok: true, code: await enqueue(section, playerFromUser(user), socket.id) });
+    } catch (err) {
+      console.error("[duel] navbat", err);
+      reply(ack)({ ok: false });
+    }
+  });
+
+  socket.on("duel:unqueue", () => dequeue(user.id));
+
+  socket.on("duel:bot", async (section, ack) => {
+    if (!SECTIONS.has(section)) return reply(ack)({ ok: false });
+    try {
+      reply(ack)({ ok: true, code: await playBot(section, playerFromUser(user)) });
+    } catch (err) {
+      console.error("[duel] bot", err);
+      reply(ack)({ ok: false });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    dequeue(user.id);
+    leave();
+  });
 }
 
 export function emitSessionUpdate(sessionId, publicDoc, adminDoc) {

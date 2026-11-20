@@ -5,7 +5,7 @@ import { dayKey } from "./limits.js";
 // takrorlash, mock) streakni davom ettiradi.
 // ------------------------------------------------------------------
 
-export const XP = { dailyCorrect: 10, dailyDone: 20, mistakeFixed: 5, mockComplete: 100, mockSection: 40 };
+export const XP = { dailyCorrect: 10, dailyDone: 20, mistakeFixed: 5, mockComplete: 100, mockSection: 40, duelPlay: 10, duelWin: 30 };
 
 const yesterday = () => dayKey(new Date(Date.now() - 86400_000));
 
