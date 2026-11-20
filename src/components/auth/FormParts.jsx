@@ -2,17 +2,17 @@
 
 export function OrDivider({ children = "yoki" }) {
   return (
-    <div className="my-5 flex items-center gap-3 text-[13px] text-[#86868b]" role="separator">
-      <span className="h-px flex-1 bg-black/[0.08]" />
+    <div className="my-5 flex items-center gap-3 text-[13px] text-ink-3" role="separator">
+      <span className="h-px flex-1 bg-ink/[0.1]" />
       {children}
-      <span className="h-px flex-1 bg-black/[0.08]" />
+      <span className="h-px flex-1 bg-ink/[0.1]" />
     </div>
   );
 }
 
 export function FormAlert({ children, tone = "error" }) {
   if (!children) return null;
-  const styles = tone === "error" ? "bg-[#fff1f1] text-[#c4252b]" : "bg-[#eef6ff] text-[#0a5d99]";
+  const styles = tone === "error" ? "bg-danger/[0.08] text-danger" : "bg-accent/[0.08] text-accent-press";
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
@@ -38,7 +38,7 @@ export function PrimaryButton({ children, loading, loadingText, disabled, classN
       type="submit"
       disabled={loading || disabled}
       aria-busy={loading || undefined}
-      className={`pz-press flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#087fd1] text-[17px] font-semibold tracking-[-0.01em] text-white hover:bg-[#0673bd] active:bg-[#066fb8] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`pz-press flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-accent text-[17px] font-semibold tracking-[-0.01em] text-white hover:bg-accent active:bg-accent-press disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       {...props}
     >
       {loading && <Spinner />}

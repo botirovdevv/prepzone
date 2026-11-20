@@ -47,7 +47,7 @@ export default function Login() {
       footer={
         <>
           Hisobingiz yo'qmi?{" "}
-          <Link to="/register" className="font-semibold text-[#087fd1] hover:underline">
+          <Link to="/register" className="font-semibold text-accent hover:underline">
             Ro'yxatdan o'ting
           </Link>
         </>
@@ -82,7 +82,7 @@ export default function Login() {
             <Link
               to="/forgot-password"
               state={{ email }}
-              className="text-[13px] font-medium text-[#087fd1] hover:underline"
+              className="text-[13px] font-medium text-accent hover:underline"
             >
               Parolni unutdingizmi?
             </Link>

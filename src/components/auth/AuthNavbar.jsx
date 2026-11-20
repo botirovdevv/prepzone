@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { LuArrowLeft } from "react-icons/lu";
 import logo from "../../../public/Logo.png";
+import { ThemeCycleButton } from "../ThemeToggle";
 
 // ------------------------------------------------------------------
 // Auth sahifalari navbari: chapda logo (bosh sahifaga), o'ngda
@@ -24,25 +25,27 @@ export default function AuthNavbar() {
       <div className="mx-auto flex h-16 max-w-[1120px] items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-8">
         <div className="flex min-w-0 items-center gap-6">
           <Link to="/" className="pz-press flex shrink-0 items-center rounded-lg" aria-label="Prepzone — bosh sahifa">
-            <img src={logo} alt="Prepzone" className="h-auto w-[92px] object-contain sm:w-32" />
+            <img src={logo} alt="Prepzone" className="pz-logo h-auto w-[92px] object-contain sm:w-32" />
           </Link>
           <Link
             to="/"
-            className="pz-press hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-[#6e6e73] transition-colors hover:bg-[#1d1d1f]/[0.04] hover:text-[#1d1d1f] md:inline-flex"
+            className="pz-press hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-ink-2 transition-colors hover:bg-ink/[0.04] hover:text-ink md:inline-flex"
           >
             <LuArrowLeft size={15} aria-hidden="true" />
             Bosh sahifa
           </Link>
         </div>
 
+        <div className="flex items-center gap-1.5">
+        <ThemeCycleButton className="h-9 w-9 rounded-full" />
         <nav
           aria-label="Hisob"
-          className="relative grid grid-cols-2 rounded-full bg-black/[0.06] p-1 text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px] sm:tracking-normal"
+          className="relative grid grid-cols-2 rounded-full bg-ink/[0.06] p-1 text-[13px] font-semibold tracking-[-0.01em] sm:text-[14px] sm:tracking-normal"
         >
           {activeIndex >= 0 && (
             <span
               aria-hidden="true"
-              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.04)]"
+              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.04)] dark:bg-elevated"
               style={{ transform: `translateX(${activeIndex * 100}%)` }}
             />
           )}
@@ -55,7 +58,7 @@ export default function AuthNavbar() {
                 replace
                 aria-current={active ? "page" : undefined}
                 className={`pz-press relative z-10 whitespace-nowrap rounded-full px-3.5 py-1.5 text-center transition-colors sm:px-4 ${
-                  active ? "text-[#1d1d1f]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
+                  active ? "text-ink" : "text-ink-2 hover:text-ink"
                 }`}
               >
                 {tab.short ? (
@@ -70,6 +73,7 @@ export default function AuthNavbar() {
             );
           })}
         </nav>
+        </div>
       </div>
     </header>
   );

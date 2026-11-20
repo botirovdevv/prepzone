@@ -15,7 +15,7 @@ export default function PasswordStrength({ check, show }) {
           {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition ${i < Math.max(1, score) ? BAR_COLORS[score] : "bg-[#12213D]/10"}`}
+              className={`h-1.5 flex-1 rounded-full transition ${i < Math.max(1, score) ? BAR_COLORS[score] : "bg-ink/10"}`}
             />
           ))}
         </div>
@@ -23,7 +23,7 @@ export default function PasswordStrength({ check, show }) {
       </div>
       <ul className="mt-2 grid gap-1 sm:grid-cols-2">
         {rules.map((r) => (
-          <li key={r.id} className={`flex items-center gap-1.5 text-[12px] ${r.ok ? "text-emerald-700" : "text-[#12213D]/55"}`}>
+          <li key={r.id} className={`flex items-center gap-1.5 text-[12px] ${r.ok ? "text-emerald-700" : "text-ink/55"}`}>
             {r.ok ? <LuCheck size={13} className="shrink-0" /> : <LuX size={13} className="shrink-0 text-red-400" />}
             {r.label}
           </li>

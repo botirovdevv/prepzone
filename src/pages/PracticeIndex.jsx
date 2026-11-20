@@ -53,26 +53,26 @@ export default function PracticeIndex() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="grid divide-y divide-[#12213D]/[0.06]">
+          <div className="grid divide-y divide-ink/[0.06]">
             {sets.map((s, i) => (
               <Link
                 key={s.id}
                 to={`/practice/${s.id}`}
-                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
               >
-                <span className="w-7 shrink-0 font-display text-sm font-bold tabular-nums text-[#12213D]/30">
+                <span className="w-7 shrink-0 font-display text-sm font-bold tabular-nums text-ink/30">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-display text-[16px] font-bold text-[#12213D]">{s.title}</h3>
+                  <h3 className="truncate font-display text-[16px] font-bold text-ink">{s.title}</h3>
                   {s.description && (
-                    <p className="mt-0.5 truncate text-sm text-[#12213D]/45">{s.description}</p>
+                    <p className="mt-0.5 truncate text-sm text-ink/45">{s.description}</p>
                   )}
                 </div>
                 <Badge tone="blue" icon={LuBookOpen} className="hidden sm:inline-flex">
                   {countQuestions(s)} ta savol
                 </Badge>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/25 transition group-hover:bg-[#087fd1] group-hover:text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink/25 transition group-hover:bg-accent group-hover:text-white">
                   <LuArrowRight size={17} />
                 </span>
               </Link>

@@ -108,7 +108,7 @@ export default function DesmosForm() {
   };
 
   if (loadingExisting) {
-    return <div className="p-10 text-[#12213D]/40">Yuklanmoqda...</div>;
+    return <div className="p-10 text-ink/40">Yuklanmoqda...</div>;
   }
 
   const embedPreview = youtubeEmbedUrl(videoUrl);
@@ -117,64 +117,64 @@ export default function DesmosForm() {
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
       <button
         onClick={() => navigate("/admin/desmos")}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
+        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink mb-6"
       >
         <LuArrowLeft size={16} /> Desmos darsliklari
       </button>
 
-      <h1 className="text-2xl font-extrabold text-[#12213D] mb-1">
+      <h1 className="text-2xl font-extrabold text-ink mb-1">
         {isEdit ? "Darslikni tahrirlash" : "Yangi Desmos darsligi"}
       </h1>
-      <p className="text-sm text-[#12213D]/50 mb-8">
+      <p className="text-sm text-ink/50 mb-8">
         Talabalarga Desmos'dan qanday foydalanishni tushuntiruvchi qisqa dars — video, matn yoki
         ikkalasi birga.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-5 space-y-4">
+        <div className="bg-surface rounded-2xl border border-ink/8 p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-ink/50 mb-1.5">
               Darslik nomi
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Masalan: Chiziqli tenglama grafigini chizish"
-              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
+              className="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm outline-none focus:border-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-ink/50 mb-1.5">
               Qisqa tavsif (ixtiyoriy)
             </label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Masalan: y = mx + b formulasi bilan tanishish"
-              className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
+              className="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm outline-none focus:border-accent"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink/50 mb-1.5">
                 YouTube video havolasi (ixtiyoriy)
               </label>
               <input
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
+                className="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm outline-none focus:border-accent"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink/50 mb-1.5">
                 Tartib raqami
               </label>
               <input
                 type="number"
                 value={order}
                 onChange={(e) => setOrder(e.target.value)}
-                className="w-full rounded-xl border border-[#12213D]/15 px-4 py-2.5 text-sm outline-none focus:border-[#087fd1]"
+                className="w-full rounded-xl border border-ink/15 px-4 py-2.5 text-sm outline-none focus:border-accent"
               />
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function DesmosForm() {
             </p>
           )}
           {embedPreview && (
-            <div className="rounded-xl overflow-hidden border border-[#12213D]/10 aspect-video">
+            <div className="rounded-xl overflow-hidden border border-ink/10 aspect-video">
               <iframe
                 src={embedPreview}
                 title="Video ko'rinishi"
@@ -196,8 +196,8 @@ export default function DesmosForm() {
           )}
         </div>
 
-        <div className="flex items-start gap-2.5 bg-[#087fd1]/5 border border-[#087fd1]/15 rounded-xl p-4 text-sm text-[#12213D]/70">
-          <LuInfo size={17} className="shrink-0 mt-0.5 text-[#087fd1]" />
+        <div className="flex items-start gap-2.5 bg-accent/5 border border-accent/15 rounded-xl p-4 text-sm text-ink/70">
+          <LuInfo size={17} className="shrink-0 mt-0.5 text-accent" />
           <p>
             Video va matnli tushuntirishni birga ishlatishingiz mumkin — masalan video yuqorida,
             qadam-baqadam yozma ko'rsatma pastda. Matnni qalin/kursiv/tagiga chizib formatlashingiz
@@ -206,7 +206,7 @@ export default function DesmosForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[#12213D]/50 mb-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-ink/50 mb-1.5">
             Matnli tushuntirish (ixtiyoriy)
           </label>
           <RichTextEditor
@@ -226,7 +226,7 @@ export default function DesmosForm() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-[#087fd1] text-white font-semibold py-3.5 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
+          className="w-full bg-accent text-white font-semibold py-3.5 rounded-full hover:bg-accent-press disabled:opacity-60"
         >
           {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Darslikni yaratish"}
         </button>

@@ -3,7 +3,7 @@ import { LuTriangleAlert } from "react-icons/lu";
 export default function ExitTestModal({ onCancel, onConfirm, confirming }) {
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center">
+      <div className="bg-surface rounded-2xl max-w-sm w-full p-6 text-center">
         <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
           <LuTriangleAlert size={22} />
         </div>

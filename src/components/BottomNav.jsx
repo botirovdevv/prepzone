@@ -15,12 +15,12 @@ function BottomNav({
   finishLabel = "Modulni yakunlash",
 }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 z-30">
+    <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-gray-300 z-30">
       <div className="flex h-1.5">
         {Array.from({ length: total }).map((_, i) => {
           let color = "bg-gray-300";
           if (marked[i]) color = "bg-yellow-400";
-          else if (answers[i]) color = "bg-[#375DFB]";
+          else if (answers[i]) color = "bg-accent";
           if (i === currentIndex) color = "bg-gray-900";
           return <div key={i} className={`flex-1 ${color}`} />;
         })}
@@ -60,7 +60,7 @@ function BottomNav({
           ) : (
             <button
               onClick={onFinishModule}
-              className="flex items-center gap-1 bg-[#375DFB] text-white rounded-full px-5 py-2 text-sm font-semibold hover:bg-[#2b4bd9]"
+              className="flex items-center gap-1 bg-accent text-white rounded-full px-5 py-2 text-sm font-semibold hover:bg-accent"
             >
               {finishLabel}
             </button>

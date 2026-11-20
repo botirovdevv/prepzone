@@ -213,7 +213,7 @@ export const t2RwModule2Easy = buildModule([
       "fresh bread was baking in the oven, and Marco smelled it.",
       "the oven was baking fresh bread that Marco smelled.",
     ], answer: 0,
-    explanation: "Oshxonaga kirgan — Marco. U vergildan keyin darhol kelishi kerak (dangling modifier).",
+    explanation: "Oshxonaga kirgan — Marco. U verguldan keyin darhol kelishi kerak (dangling modifier).",
   }],
 
   // ---------------- Expression of Ideas ----------------
@@ -464,7 +464,7 @@ export const t2RwModule2Hard = buildModule([
     domain: SEC, skill: "Boundaries", difficulty: "M",
     passage: "Some species of bamboo can grow nearly a meter in a single ______ a rate that places them among the fastest-growing plants on Earth.",
     prompt: STEM.conventions,
-    choices: ["day,", "day;", "day. A", "day"], answer: 0,
+    choices: ["day,", "day;", "day, this is", "day"], answer: 0,
     explanation: "\"a rate that ...\" — to'liq gap emas, oldingi fikrga izoh; vergul bilan qo'shiladi.",
   }],
   ["t2-rw2h-18", {
@@ -498,7 +498,7 @@ export const t2RwModule2Hard = buildModule([
       "a sold-out performance marked the theater's reopening.",
       "the city celebrated as the theater reopened.",
     ], answer: 0,
-    explanation: "Qayta tiklangan — teatr. U vergildan keyin darhol kelishi kerak.",
+    explanation: "Qayta tiklangan — teatr. U verguldan keyin darhol kelishi kerak.",
   }],
 
   // ---------------- Expression of Ideas ----------------

@@ -147,7 +147,7 @@ export default function History() {
 
           <Card className="overflow-hidden">
             <CardHeader title="Barcha urinishlar" subtitle={`${totalCount ?? attempts.length} ta natija`} />
-            <div className="mt-4 divide-y divide-[#12213D]/[0.06] border-t border-[#12213D]/[0.06]">
+            <div className="mt-4 divide-y divide-ink/[0.06] border-t border-ink/[0.06]">
               {attempts.map((a) => {
                 const date = resultDate(a);
                 const isBest = attempts.length > 1 && a.total === bestScore;
@@ -165,12 +165,12 @@ export default function History() {
                         ? { results: a.results, total: a.total, sessionTitle: a.sessionTitle, terminated: a.terminated }
                         : undefined
                     }
-                    className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                    className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
                   >
                     <IconTile icon={isSession ? LuGlobe : LuCalendar} tone="ink" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-[15px] font-semibold text-[#12213D]">{label}</p>
+                        <p className="truncate text-[15px] font-semibold text-ink">{label}</p>
                         {isBest && (
                           <Badge tone="amber" icon={LuTrophy}>
                             Rekord
@@ -178,7 +178,7 @@ export default function History() {
                         )}
                         {a.terminated && <Badge tone="red">To'xtatilgan</Badge>}
                       </div>
-                      <p className="mt-0.5 text-xs text-[#12213D]/45">
+                      <p className="mt-0.5 text-xs text-ink/45">
                         {date
                           ? date.toLocaleString("uz-UZ", {
                               day: "2-digit",
@@ -190,19 +190,19 @@ export default function History() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-display text-2xl font-extrabold tabular-nums text-[#12213D]">{a.total}</p>
-                      <p className="text-[11px] font-medium text-[#12213D]/40">/ 1600</p>
+                      <p className="font-display text-2xl font-extrabold tabular-nums text-ink">{a.total}</p>
+                      <p className="text-[11px] font-medium text-ink/40">/ 1600</p>
                     </div>
                     <LuChevronRight
                       size={18}
-                      className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]"
+                      className="text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent"
                     />
                   </Link>
                 );
               })}
             </div>
             {hasMore && (
-              <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
+              <div className="border-t border-ink/[0.06] p-4 text-center">
                 <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>
                   {loadingMore ? "Yuklanmoqda..." : "Ko'proq ko'rsatish"}
                 </Button>

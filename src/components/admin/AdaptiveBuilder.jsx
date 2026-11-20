@@ -100,7 +100,7 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
       type="button"
       onClick={() => setSource(value)}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-        source === value ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+        source === value ? "bg-surface text-ink shadow-sm" : "text-ink/50"
       }`}
     >
       <Icon size={13} /> {label}
@@ -108,10 +108,10 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
   );
 
   return (
-    <div className="space-y-3 rounded-2xl border border-[#087fd1]/20 bg-[#087fd1]/[0.03] p-4">
+    <div className="space-y-3 rounded-2xl border border-accent/20 bg-accent/[0.03] p-4">
       <div>
-        <p className="text-sm font-semibold text-[#12213D]">Adaptiv yig'ish (tavsiya etiladi)</p>
-        <p className="mt-1 text-xs leading-relaxed text-[#12213D]/55">
+        <p className="text-sm font-semibold text-ink">Adaptiv yig'ish (tavsiya etiladi)</p>
+        <p className="mt-1 text-xs leading-relaxed text-ink/55">
           Bo'limning barcha savollarini shu yerga qo'shing (haqiqiy SAT'da {subject === "rw" ? "54" : "44"} ta) va har
           biriga qiyinlik belgilang. Tizim ularni Module 1 ({size}) va Module 2 ning Oson/Qiyin variantlariga ({size}
           tadan) taqsimlaydi, yetmaganini to'ldiradi. Talaba Module 1 natijasiga qarab mos Module 2 ni oladi.
@@ -129,8 +129,8 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-semibold text-[#12213D]/55">Yetishmaganini to'ldirish:</span>
-        <div className="flex gap-1 rounded-xl bg-[#12213D]/[0.05] p-1">
+        <span className="text-xs font-semibold text-ink/55">Yetishmaganini to'ldirish:</span>
+        <div className="flex gap-1 rounded-xl bg-ink/[0.05] p-1">
           {sourceButton("bank", LuDatabase, "Savol bankidan")}
           {sourceButton("ai", LuWandSparkles, "AI bilan yaratish")}
         </div>
@@ -138,14 +138,14 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
           type="button"
           onClick={build}
           disabled={!!busy || pool.length === 0}
-          className="ml-auto flex items-center gap-1.5 rounded-xl bg-[#087fd1] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#066fb8] disabled:opacity-40"
+          className="ml-auto flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white hover:bg-accent-press disabled:opacity-40"
         >
           {busy ? <LuLoaderCircle size={15} className="animate-spin" /> : <LuShuffle size={15} />}
           {busy || "Adaptiv test yig'ish"}
         </button>
       </div>
       {source === "ai" && (
-        <p className="text-[11px] leading-relaxed text-[#12213D]/45">
+        <p className="text-[11px] leading-relaxed text-ink/45">
           AI yaratgan savollar "AI · tekshirish kerak" deb belgilanadi — har birini ochib, javobini tekshirib
           tasdiqlamaguningizcha testni saqlab bo'lmaydi.
         </p>
@@ -156,7 +156,7 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
       {report && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[420px] text-left text-xs">
-            <thead className="text-[#12213D]/45">
+            <thead className="text-ink/45">
               <tr>
                 <th className="py-1.5 pr-3 font-semibold">Modul</th>
                 <th className="px-2 font-semibold">Jami</th>
@@ -166,9 +166,9 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
                 <th className="px-2 font-semibold">AI</th>
               </tr>
             </thead>
-            <tbody className="text-[#12213D]">
+            <tbody className="text-ink">
               {Object.entries(report).map(([m, r]) => (
-                <tr key={m} className="border-t border-[#12213D]/6">
+                <tr key={m} className="border-t border-ink/6">
                   <td className="py-1.5 pr-3 font-semibold">{MODULE_LABELS[m]}</td>
                   <td className={`px-2 tabular-nums ${r.total < r.size ? "text-amber-700" : ""}`}>
                     {r.total}/{r.size}
@@ -183,7 +183,7 @@ export default function AdaptiveBuilder({ subject, domainOptions, promptTemplate
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[11px] text-[#12213D]/45">
+          <p className="mt-2 text-[11px] text-ink/45">
             Modullar pastga yozildi — u yerda savollarni ko'rish, o'chirish yoki qiyinligini o'zgartirish mumkin.
           </p>
         </div>

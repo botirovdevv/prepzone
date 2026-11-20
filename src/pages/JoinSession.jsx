@@ -50,10 +50,10 @@ export default function JoinSession() {
       <div className="mx-auto w-full max-w-md">
         <Card className="p-7 sm:p-9">
           <IconTile icon={LuKeyRound} tone="dark" size="lg" className="mx-auto" />
-          <h1 className="mt-5 text-center font-display text-2xl font-extrabold tracking-[-0.01em] text-[#12213D]">
+          <h1 className="mt-5 text-center font-display text-2xl font-extrabold tracking-[-0.01em] text-ink">
             Kirish kodi bilan test
           </h1>
-          <p className="mt-1.5 text-center text-sm text-[#12213D]/50">
+          <p className="mt-1.5 text-center text-sm text-ink/50">
             O'qituvchingiz yoki tashkilotchi bergan 6 xonali kodni kiriting.
           </p>
 
@@ -81,14 +81,14 @@ export default function JoinSession() {
                   return (
                     <div
                       key={i}
-                      className={`flex h-14 items-center justify-center rounded-xl border-2 font-mono text-2xl font-black text-[#12213D] transition ${
+                      className={`flex h-14 items-center justify-center rounded-xl border-2 font-mono text-2xl font-black text-ink transition ${
                         error
                           ? "border-red-300 bg-red-50/50"
                           : active
-                          ? "border-[#087fd1] ring-4 ring-[#087fd1]/10"
+                          ? "border-accent ring-4 ring-accent/10"
                           : code[i]
-                          ? "border-[#12213D]/20"
-                          : "border-[#12213D]/10 bg-[#F6F7FB]"
+                          ? "border-ink/20"
+                          : "border-ink/10 bg-canvas"
                       }`}
                     >
                       {code[i] || ""}

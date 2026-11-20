@@ -53,8 +53,8 @@ export default function ModuleReview({
                     className={`relative h-11 rounded-md font-bold text-sm flex items-center justify-center transition
                       ${
                         isAnswered
-                          ? "bg-[#375DFB] text-white hover:bg-[#2b4bd9]"
-                          : "bg-white text-[#375DFB] border-2 border-dashed border-gray-400 hover:bg-gray-50"
+                          ? "bg-accent text-white hover:bg-accent"
+                          : "bg-surface text-accent border-2 border-dashed border-gray-400 hover:bg-gray-50"
                       }`}
                   >
                     {i + 1}
@@ -80,7 +80,7 @@ export default function ModuleReview({
       </div>
 
       <div className="h-20" />
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-gray-300 z-30">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="text-sm font-semibold text-gray-800 truncate max-w-[160px]">
             {studentName || "Student"}
@@ -94,7 +94,7 @@ export default function ModuleReview({
             </button>
             <button
               onClick={onSubmit}
-              className="bg-[#375DFB] text-white rounded-full px-6 py-2 text-sm font-semibold hover:bg-[#2b4bd9]"
+              className="bg-accent text-white rounded-full px-6 py-2 text-sm font-semibold hover:bg-accent"
             >
               Next
             </button>

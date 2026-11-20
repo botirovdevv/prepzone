@@ -39,7 +39,7 @@ function TestHeader({
 
   return (
     <div className="w-full sticky top-0 z-30">
-      <div className="flex items-center justify-between bg-[#F3F4F6] border-b border-gray-300 px-6 py-2">
+      <div className="flex items-center justify-between bg-fill border-b border-gray-300 px-6 py-2">
         <div>
           <div className="font-bold text-gray-900 text-sm">
             {sectionLabel}: {title}
@@ -80,7 +80,7 @@ function TestHeader({
           {showCalcButton && (
             <button
               onClick={onToggleCalculator}
-              className="flex flex-col items-center gap-0.5 hover:text-[#375DFB]"
+              className="flex flex-col items-center gap-0.5 hover:text-accent"
             >
               <LuCalculator size={18} />
               Calculator
@@ -88,7 +88,7 @@ function TestHeader({
           )}
           <button
             onClick={() => setShowHighlights(true)}
-            className="flex flex-col items-center gap-0.5 hover:text-[#375DFB]"
+            className="flex flex-col items-center gap-0.5 hover:text-accent"
           >
             <LuHighlighter size={18} />
             Highlights &amp; Notes
@@ -96,12 +96,12 @@ function TestHeader({
           <div className="relative">
             <button
               onClick={() => setShowMore((s) => !s)}
-              className="hover:text-[#375DFB]"
+              className="hover:text-accent"
             >
               <LuEllipsisVertical size={18} />
             </button>
             {showMore && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg text-sm z-10">
+              <div className="absolute right-0 mt-2 w-40 bg-surface border border-gray-200 rounded-lg shadow-lg text-sm z-10">
                 <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
                   Test Directions
                 </button>
@@ -122,7 +122,7 @@ function TestHeader({
         </div>
       </div>
       {practiceMode && (
-        <div className="bg-[#0B2265] text-white text-center text-xs font-semibold py-1.5 tracking-wide">
+        <div className="bg-night text-white text-center text-xs font-semibold py-1.5 tracking-wide">
           THIS IS A PRACTICE TEST
         </div>
       )}

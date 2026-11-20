@@ -46,19 +46,19 @@ export default function DesmosIndex() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="grid divide-y divide-[#12213D]/[0.06]">
+          <div className="grid divide-y divide-ink/[0.06]">
             {tutorials.map((t) => (
               <Link
                 key={t.id}
                 to={`/desmos/${t.id}`}
-                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
               >
                 <IconTile icon={t.videoUrl ? LuPlay : LuFileText} tone="blue" />
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-display text-[16px] font-bold text-[#12213D]">{t.title}</h3>
-                  {t.description && <p className="mt-0.5 truncate text-sm text-[#12213D]/45">{t.description}</p>}
+                  <h3 className="truncate font-display text-[16px] font-bold text-ink">{t.title}</h3>
+                  {t.description && <p className="mt-0.5 truncate text-sm text-ink/45">{t.description}</p>}
                 </div>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/25 transition group-hover:bg-[#087fd1] group-hover:text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink/25 transition group-hover:bg-accent group-hover:text-white">
                   <LuArrowRight size={17} />
                 </span>
               </Link>

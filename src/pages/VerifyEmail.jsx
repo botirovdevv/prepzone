@@ -119,13 +119,13 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-[#F6F7FB]">
-      <div className="w-16 h-16 rounded-full bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center mb-6">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-canvas">
+      <div className="w-16 h-16 rounded-full bg-accent/10 text-accent flex items-center justify-center mb-6">
         <LuMailCheck size={28} />
       </div>
-      <h1 className="text-2xl font-extrabold text-[#12213D] mb-2">Emailingizni tasdiqlang</h1>
-      <p className="text-[#12213D]/55 max-w-md mb-8">
-        <span className="font-semibold text-[#12213D]">{user.email}</span> manziliga 6 xonali kod
+      <h1 className="text-2xl font-extrabold text-ink mb-2">Emailingizni tasdiqlang</h1>
+      <p className="text-ink/55 max-w-md mb-8">
+        <span className="font-semibold text-ink">{user.email}</span> manziliga 6 xonali kod
         yuborildi (10 daqiqa amal qiladi). Kodni pastga kiriting.
       </p>
 
@@ -136,13 +136,13 @@ export default function VerifyEmail() {
           inputMode="numeric"
           autoFocus
           placeholder="000000"
-          className="w-full text-center tracking-[0.5em] text-2xl font-black font-mono rounded-xl border border-[#12213D]/15 py-3.5 outline-none focus:border-[#087fd1]"
+          className="w-full text-center tracking-[0.5em] text-2xl font-black font-mono rounded-xl border border-ink/15 py-3.5 outline-none focus:border-accent"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={verifying || code.length !== 6}
-          className="w-full bg-[#087fd1] text-white font-semibold py-3 rounded-full hover:bg-[#066fb8] disabled:opacity-60"
+          className="w-full bg-accent text-white font-semibold py-3 rounded-full hover:bg-accent-press disabled:opacity-60"
         >
           {verifying ? "Tekshirilmoqda..." : "Tasdiqlash"}
         </button>
@@ -151,7 +151,7 @@ export default function VerifyEmail() {
       <button
         onClick={handleSend}
         disabled={sending || cooldown > 0}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mt-5 disabled:opacity-50"
+        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink mt-5 disabled:opacity-50"
       >
         <LuRefreshCw size={14} className={sending ? "animate-spin" : ""} />
         {cooldown > 0
@@ -165,7 +165,7 @@ export default function VerifyEmail() {
 
       <button
         onClick={() => setShowFix((s) => !s)}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/45 hover:text-[#12213D] mt-3"
+        className="flex items-center gap-1.5 text-sm text-ink/45 hover:text-ink mt-3"
       >
         <LuPencil size={14} /> Email manzilini noto'g'ri kiritdingizmi?
       </button>
@@ -173,10 +173,10 @@ export default function VerifyEmail() {
       {showFix && (
         <form
           onSubmit={handleFixEmail}
-          className="w-full max-w-sm bg-white rounded-2xl border border-[#12213D]/8 p-5 mt-4 text-left space-y-3"
+          className="w-full max-w-sm bg-surface rounded-2xl border border-ink/8 p-5 mt-4 text-left space-y-3"
         >
           <div>
-            <label className="block text-xs font-semibold text-[#12213D]/50 mb-1">
+            <label className="block text-xs font-semibold text-ink/50 mb-1">
               Joriy parolingiz
             </label>
             <input
@@ -184,11 +184,11 @@ export default function VerifyEmail() {
               value={fixPassword}
               onChange={(e) => setFixPassword(e.target.value)}
               required
-              className="w-full rounded-lg border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1]"
+              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#12213D]/50 mb-1">
+            <label className="block text-xs font-semibold text-ink/50 mb-1">
               To'g'ri email manzil
             </label>
             <input
@@ -196,14 +196,14 @@ export default function VerifyEmail() {
               value={fixEmail}
               onChange={(e) => setFixEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-[#12213D]/15 px-3 py-2 text-sm outline-none focus:border-[#087fd1]"
+              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           {fixError && <p className="text-xs text-red-600">{fixError}</p>}
           <button
             type="submit"
             disabled={fixLoading}
-            className="w-full bg-[#12213D] text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-[#1a2f52] disabled:opacity-60"
+            className="w-full bg-ink text-on-ink text-sm font-semibold py-2.5 rounded-lg hover:bg-ink disabled:opacity-60"
           >
             {fixLoading ? "Yangilanmoqda..." : "Emailni yangilash va yangi kod yuborish"}
           </button>
@@ -212,7 +212,7 @@ export default function VerifyEmail() {
 
       <button
         onClick={logout}
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/40 hover:text-[#12213D] mt-8"
+        className="flex items-center gap-1.5 text-sm text-ink/40 hover:text-ink mt-8"
       >
         <LuLogOut size={14} /> Chiqish
       </button>

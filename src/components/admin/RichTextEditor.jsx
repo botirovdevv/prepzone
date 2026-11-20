@@ -45,15 +45,15 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   const handleInput = () => onChange(editorRef.current?.innerHTML || "");
 
   return (
-    <div className="rounded-xl border border-[#12213D]/12 overflow-hidden bg-white transition focus-within:border-[#087fd1] focus-within:ring-4 focus-within:ring-[#087fd1]/10">
-      <div className="flex items-center gap-1 bg-[#12213D]/[0.03] border-b border-[#12213D]/10 px-2 py-1.5">
+    <div className="rounded-xl border border-ink/12 overflow-hidden bg-surface transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/10">
+      <div className="flex items-center gap-1 bg-ink/[0.03] border-b border-ink/10 px-2 py-1.5">
         {TOOLS.map(({ command, label, Icon }) => (
           <button
             key={command}
             type="button"
             title={label}
             onMouseDown={runCommand(command)}
-            className="p-1.5 rounded-lg text-[#12213D]/60 hover:bg-[#12213D]/8 hover:text-[#12213D] transition"
+            className="p-1.5 rounded-lg text-ink/60 hover:bg-ink/8 hover:text-ink transition"
           >
             <Icon size={14} />
           </button>

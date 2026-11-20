@@ -16,6 +16,9 @@ import { mathModule1, mathModule2Easy, mathModule2Hard } from "./mathModules.js"
 import { t2RwModule1 } from "./test2/rwModule1.js";
 import { t2RwModule2Easy, t2RwModule2Hard } from "./test2/rwModule2.js";
 import { t2MathModule1, t2MathModule2Easy, t2MathModule2Hard } from "./test2/mathModules.js";
+import { t3RwModule1 } from "./test3/rwModule1.js";
+import { t3RwModule2Easy, t3RwModule2Hard } from "./test3/rwModule2.js";
+import { t3MathModule1, t3MathModule2Easy, t3MathModule2Hard } from "./test3/mathModules.js";
 
 function buildTest(id, testTitle, rw, math) {
   return {
@@ -59,6 +62,12 @@ export const SAT_TESTS = {
     "SAT Practice Test 2",
     [t2RwModule1, t2RwModule2Easy, t2RwModule2Hard],
     [t2MathModule1, t2MathModule2Easy, t2MathModule2Hard]
+  ),
+  "bluebook-3": buildTest(
+    "bluebook-3",
+    "SAT Practice Test 3",
+    [t3RwModule1, t3RwModule2Easy, t3RwModule2Hard],
+    [t3MathModule1, t3MathModule2Easy, t3MathModule2Hard]
   ),
 };
 

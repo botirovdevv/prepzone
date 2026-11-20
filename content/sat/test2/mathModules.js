@@ -16,11 +16,11 @@ const ladderFigure = svgFigure(
   260,
   `<line x1="60" y1="20" x2="60" y2="230" stroke="#111" stroke-width="3"/>
    <line x1="30" y1="230" x2="270" y2="230" stroke="#111" stroke-width="3"/>
-   <line x1="60" y1="46" x2="160" y2="230" stroke="#111" stroke-width="2"/>
+   <line x1="60" y1="50" x2="135" y2="230" stroke="#111" stroke-width="2"/>
    <polyline points="60,212 78,212 78,230" fill="none" stroke="#111" stroke-width="1.5"/>
-   <text x="118" y="128" font-style="italic">13 ft</text>
-   <text x="110" y="250" text-anchor="middle">5 ft</text>
-   <text x="42" y="140" text-anchor="middle" font-style="italic">h</text>`
+   <text x="108" y="135" font-style="italic">13 ft</text>
+   <text x="97" y="250" text-anchor="middle">5 ft</text>
+   <text x="42" y="145" text-anchor="middle" font-style="italic">h</text>`
 );
 
 export const t2MathModule1 = buildModule([
@@ -109,7 +109,7 @@ export const t2MathModule1 = buildModule([
   }],
   ["t2-m1-14", {
     domain: ALG, skill: "Linear functions", difficulty: "M",
-    prompt: "A line in the <i>xy</i>-plane has a slope of −2 and a <i>y</i>-intercept of (0, 6). What is the <i>x</i>-coordinate of the point where the line crosses the <i>x</i>-axis?",
+    prompt: "A line in the <i>xy</i>-plane has a slope of −2 and a <i>y</i>-intercept at (0, 6). What is the <i>x</i>-coordinate of the point where the line crosses the <i>x</i>-axis?",
     choices: ["−6", "−3", "2", "3"], answer: 3, sortNumeric: true,
     explanation: "y = −2x + 6; y = 0 da x = 3.",
   }],

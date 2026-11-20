@@ -18,7 +18,7 @@ function QuestionNav({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-xl rounded-t-2xl shadow-2xl mb-24 max-h-[65vh] overflow-y-auto"
+        className="bg-surface w-full max-w-xl rounded-t-2xl shadow-2xl mb-24 max-h-[65vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between px-5 pt-4 pb-2.5">
           <h2 className="text-base font-bold text-gray-800">{sectionTitle} Questions</h2>
@@ -54,8 +54,8 @@ function QuestionNav({
                 className={`relative h-10 rounded-md font-bold flex items-center justify-center text-xs transition
                   ${
                     isAnswered
-                      ? "bg-[#375DFB] text-white"
-                      : "bg-white text-gray-800 border-2 border-dashed border-gray-400 hover:bg-gray-50"
+                      ? "bg-accent text-white"
+                      : "bg-surface text-gray-800 border-2 border-dashed border-gray-400 hover:bg-gray-50"
                   }
                   ${isCurrent ? "ring-2 ring-gray-900" : ""}
                 `}
@@ -82,7 +82,7 @@ function QuestionNav({
         <div className="flex justify-center pb-5">
           <button
             onClick={onGoToReview}
-            className="border border-[#375DFB] text-[#375DFB] font-semibold text-sm px-5 py-2 rounded-full hover:bg-blue-50 transition"
+            className="border border-accent text-accent font-semibold text-sm px-5 py-2 rounded-full hover:bg-blue-50 transition"
           >
             Go to Review Page
           </button>

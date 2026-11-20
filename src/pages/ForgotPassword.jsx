@@ -69,7 +69,7 @@ export default function ForgotPassword() {
   };
 
   const footer = (
-    <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
+    <Link to="/login" className="font-semibold text-accent hover:underline">
       Kirish sahifasiga qaytish
     </Link>
   );
@@ -110,7 +110,7 @@ export default function ForgotPassword() {
       title="Yangi parol o'rnating"
       subtitle={
         <>
-          Agar <span className="font-semibold text-[#111827]">{email}</span> ro'yxatdan o'tgan
+          Agar <span className="font-semibold text-ink">{email}</span> ro'yxatdan o'tgan
           bo'lsa, unga 6 xonali kod yuborildi (10 daqiqa amal qiladi).
         </>
       }
@@ -133,7 +133,7 @@ export default function ForgotPassword() {
               type="button"
               onClick={sendCode}
               disabled={cooldown > 0 || loading}
-              className="text-[13px] font-medium text-[#087fd1] hover:underline disabled:text-[#98a2b3] disabled:no-underline"
+              className="text-[13px] font-medium text-accent hover:underline disabled:text-ink-3 disabled:no-underline"
             >
               {cooldown > 0 ? `Qayta yuborish (${cooldown}s)` : "Qayta yuborish"}
             </button>
@@ -165,7 +165,7 @@ export default function ForgotPassword() {
             setStep("email");
             setError("");
           }}
-          className="pz-press w-full rounded-[14px] py-2 text-[14px] font-medium text-[#566176] hover:text-[#111827]"
+          className="pz-press w-full rounded-[14px] py-2 text-[14px] font-medium text-ink-2 hover:text-ink"
         >
           Boshqa email kiritish
         </button>

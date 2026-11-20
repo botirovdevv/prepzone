@@ -15,10 +15,12 @@ import {
   LuTriangleAlert,
   LuKeyRound,
   LuCalendar,
+  LuSunMoon,
 } from "react-icons/lu";
 import { useAuth, CONFIRM_WORD } from "../context/AuthContext";
 import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, inputClass, PageLoader } from "../components/ui";
 import Avatar from "../components/Avatar";
+import ThemeToggle from "../components/ThemeToggle";
 import ConfirmDialog from "../components/ConfirmDialog";
 import PasswordStrength from "../components/PasswordStrength";
 import { checkPassword } from "../utils/passwordPolicy";
@@ -28,6 +30,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 const SECTIONS = [
   { id: "profil", label: "Profil", icon: LuUser },
+  { id: "korinish", label: "Ko'rinish", icon: LuSunMoon },
   { id: "xavfsizlik", label: "Xavfsizlik", icon: LuLockKeyhole },
   { id: "hisoblar", label: "Ulangan hisoblar", icon: LuLink },
   { id: "xavfli-zona", label: "Xavfli zona", icon: LuTriangleAlert },
@@ -63,11 +66,11 @@ export default function AccountSettings() {
         {/* Chap ustun: profil xulosasi va bo'limlar */}
         <aside className="space-y-4 lg:sticky lg:top-6">
           <Card className="hidden p-5 lg:block">
-            <Avatar user={user} name={displayName} className="h-14 w-14 rounded-2xl bg-[#12213D] text-lg" />
-            <p className="mt-3 truncate font-display text-[15px] font-bold text-[#12213D]">{displayName}</p>
-            <p className="mt-0.5 truncate text-[13px] text-[#12213D]/50">{user.email}</p>
+            <Avatar user={user} name={displayName} className="h-14 w-14 rounded-2xl bg-night text-lg" />
+            <p className="mt-3 truncate font-display text-[15px] font-bold text-ink">{displayName}</p>
+            <p className="mt-0.5 truncate text-[13px] text-ink/50">{user.email}</p>
             {user.createdAt && (
-              <p className="mt-3 flex items-center gap-1.5 text-xs text-[#12213D]/40">
+              <p className="mt-3 flex items-center gap-1.5 text-xs text-ink/40">
                 <LuCalendar size={12} /> {formatJoined(user.createdAt)} dan beri
               </p>
             )}
@@ -80,8 +83,8 @@ export default function AccountSettings() {
                 onClick={() => scrollTo(id)}
                 className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold transition lg:py-2.5 ${
                   id === "xavfli-zona"
-                    ? "bg-white text-red-600/80 ring-1 ring-[#12213D]/[0.07] hover:text-red-600 lg:bg-transparent lg:ring-0 lg:hover:bg-red-50"
-                    : "bg-white text-[#12213D]/60 ring-1 ring-[#12213D]/[0.07] hover:text-[#12213D] lg:bg-transparent lg:ring-0 lg:hover:bg-white"
+                    ? "bg-surface text-red-600/80 ring-1 ring-ink/[0.07] hover:text-red-600 lg:bg-transparent lg:ring-0 lg:hover:bg-red-50"
+                    : "bg-surface text-ink/60 ring-1 ring-ink/[0.07] hover:text-ink lg:bg-transparent lg:ring-0 lg:hover:bg-surface"
                 }`}
               >
                 <Icon size={15} /> {label}
@@ -92,12 +95,30 @@ export default function AccountSettings() {
 
         <div className="space-y-6">
           <ProfileSection user={user} displayName={displayName} />
+          <AppearanceSection />
           <SecuritySection user={user} />
           <AccountsSection user={user} />
           <DangerSection user={user} />
         </div>
       </div>
     </Page>
+  );
+}
+
+// ------------------------------------------------------------------
+// Ko'rinish: Yorug' / Qorong'i / Auto (tizim sozlamasiga ergashadi)
+// ------------------------------------------------------------------
+function AppearanceSection() {
+  return (
+    <Card id="korinish" className="scroll-mt-6">
+      <CardHeader
+        title="Ko'rinish"
+        subtitle="Auto rejimida sayt qurilmangizning yorug'/qorong'i sozlamasiga ergashadi."
+      />
+      <div className="px-5 pb-6 pt-4 sm:px-6">
+        <ThemeToggle />
+      </div>
+    </Card>
   );
 }
 
@@ -173,20 +194,20 @@ function ProfileSection({ user, displayName }) {
       <div className="space-y-5 p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative w-fit">
-            <Avatar user={user} name={displayName} className="h-24 w-24 rounded-3xl bg-[#12213D] text-2xl" />
+            <Avatar user={user} name={displayName} className="h-24 w-24 rounded-3xl bg-night text-2xl" />
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={photoBusy}
               aria-label="Rasm yuklash"
-              className="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-[#087fd1] text-white transition hover:bg-[#066fb8] disabled:opacity-60"
+              className="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-accent text-white transition hover:bg-accent-press disabled:opacity-60"
             >
               <LuCamera size={15} />
             </button>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#12213D]">Profil rasmi</p>
-            <p className="mt-0.5 text-[13px] text-[#12213D]/50">JPG, PNG yoki WEBP. Kvadrat shaklda kesiladi.</p>
+            <p className="text-sm font-semibold text-ink">Profil rasmi</p>
+            <p className="mt-0.5 text-[13px] text-ink/50">JPG, PNG yoki WEBP. Kvadrat shaklda kesiladi.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={photoBusy}>
                 <LuCamera size={14} /> {photoBusy ? "Yuklanmoqda..." : user.avatarUrl ? "Almashtirish" : "Rasm yuklash"}
@@ -202,7 +223,7 @@ function ProfileSection({ user, displayName }) {
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
         </div>
 
-        <div className="h-px bg-[#12213D]/[0.06]" />
+        <div className="h-px bg-ink/[0.06]" />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="To'liq ism">
@@ -210,14 +231,14 @@ function ProfileSection({ user, displayName }) {
           </Field>
           <Field label="Email" hint="Email manzilni o'zgartirib bo'lmaydi.">
             <div className="relative">
-              <LuMail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#12213D]/30" />
+              <LuMail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30" />
               <input type="email" value={user.email || ""} disabled className={`${inputClass} cursor-not-allowed pl-10`} />
             </div>
           </Field>
         </div>
         {nameError && <p className="text-sm text-red-600">{nameError}</p>}
       </div>
-      <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+      <div className="flex justify-end border-t border-ink/[0.06] px-5 py-4 sm:px-6">
         <Button type="submit" disabled={nameSaving || name.trim() === (user.displayName || "")}>
           {nameSaved ? (
             <>
@@ -309,7 +330,7 @@ function SecuritySection({ user }) {
               ? "Kamida 10 ta belgi: katta va kichik harf, raqam va maxsus belgi."
               : "Siz Google orqali kirgansiz. Parol o'rnatsangiz, email va parol bilan ham kira olasiz."
           }
-          action={<LuKeyRound size={18} className="text-[#12213D]/30" />}
+          action={<LuKeyRound size={18} className="text-ink/30" />}
         />
         <div className="space-y-4 p-5 sm:p-6">
           {hasPassword && (
@@ -352,7 +373,7 @@ function SecuritySection({ user }) {
           <PasswordStrength check={pwCheck} show={newPassword.length > 0} />
           {pwError && <p className="text-sm text-red-600">{pwError}</p>}
         </div>
-        <div className="flex justify-end border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+        <div className="flex justify-end border-t border-ink/[0.06] px-5 py-4 sm:px-6">
           <Button type="submit" variant="dark" disabled={pwSaving || !pwCheck.valid || newPassword !== confirmPassword}>
             {pwSaved ? (
               <>
@@ -495,7 +516,7 @@ function DangerSection({ user }) {
   const [resetDone, setResetDone] = useState(false);
 
   return (
-    <Card id="xavfli-zona" className="scroll-mt-6 border-red-200">
+    <Card id="xavfli-zona" className="scroll-mt-6 border-danger/25">
       <CardHeader title="Xavfli zona" subtitle="Bu amallarni ortga qaytarib bo'lmaydi." />
       <div className="mt-4">
         <SettingRow
@@ -564,19 +585,19 @@ function DangerSection({ user }) {
 // ------------------------------------------------------------------
 function SettingRow({ icon: Icon, tone = "ink", title, text, action, error }) {
   return (
-    <div className="border-t border-[#12213D]/[0.06] px-5 py-4 sm:px-6">
+    <div className="border-t border-ink/[0.06] px-5 py-4 sm:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <span
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-              tone === "red" ? "bg-red-500/10 text-red-600" : "bg-[#12213D]/[0.05] text-[#12213D]/60"
+              tone === "red" ? "bg-red-500/10 text-red-600" : "bg-ink/[0.05] text-ink/60"
             }`}
           >
             <Icon size={16} />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#12213D]">{title}</p>
-            <p className="mt-0.5 break-words text-[13px] leading-relaxed text-[#12213D]/50">{text}</p>
+            <p className="text-sm font-semibold text-ink">{title}</p>
+            <p className="mt-0.5 break-words text-[13px] leading-relaxed text-ink/50">{text}</p>
           </div>
         </div>
         <div className="shrink-0 pl-12 sm:pl-0">{action}</div>

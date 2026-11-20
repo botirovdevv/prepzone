@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }) {
   }, [collapsed]);
 
   return (
-    <div className="pz-app min-h-screen bg-[#F6F7FB]">
+    <div className="pz-app min-h-screen bg-canvas">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((c) => !c)}

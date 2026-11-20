@@ -1,9 +1,9 @@
 // ------------------------------------------------------------------
 // Dashboard (login'dan keyingi sahifalar) uchun umumiy UI elementlari.
-// Ranglar faqat loyihaning mavjud palitrasidan:
-//   ink     #12213D  — matn, to'q yuzalar
-//   primary #087fd1  — asosiy aksent (hover: #066fb8)
-//   fon     #F6F7FB, oq; holatlar uchun amber / emerald / red.
+// Apple HIG uslubi (skill: apple-web-design). Faqat semantik tokenlar:
+//   ink / ink-2 / on-ink — matn;  accent — interaktiv;  canvas / surface /
+//   fill / line — yuzalar;  success / warning / danger — holatlar.
+// Tokenlar yorug' va qorong'i rejimda o'zi almashadi (styles/tokens.css).
 // ------------------------------------------------------------------
 import { Link } from "react-router-dom";
 
@@ -16,16 +16,16 @@ export function PageHeader({ eyebrow, icon: Icon, title, subtitle, actions, chil
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           {eyebrow && (
-            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#087fd1] mb-3">
+            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-accent mb-2">
               {Icon && <Icon size={14} />}
               {eyebrow}
             </p>
           )}
-          <h1 className="font-display text-[28px] sm:text-[34px] font-extrabold tracking-[-0.02em] text-[#12213D] leading-[1.1]">
+          <h1 className="font-display text-[30px] sm:text-[40px] font-bold tracking-[-0.025em] text-ink leading-[1.08]">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-2.5 max-w-2xl text-[15px] leading-relaxed text-[#12213D]/55">{subtitle}</p>
+            <p className="mt-2.5 max-w-2xl text-[17px] leading-[1.47] text-ink-2">{subtitle}</p>
           )}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
@@ -40,9 +40,8 @@ export function Card({ as: Tag = "div", interactive = false, className, children
   return (
     <Tag
       className={cx(
-        "bg-white rounded-2xl border border-[#12213D]/[0.07] shadow-[0_1px_2px_rgba(18,33,61,0.04)]",
-        interactive &&
-          "transition hover:border-[#12213D]/15 hover:shadow-[0_10px_28px_-12px_rgba(18,33,61,0.22)] hover:-translate-y-0.5",
+        "bg-surface rounded-card border border-ink/[0.06] shadow-card",
+        interactive && "transition duration-300 hover:shadow-lift hover:-translate-y-0.5",
         className
       )}
       {...props}
@@ -56,8 +55,8 @@ export function CardHeader({ title, subtitle, action, className }) {
   return (
     <div className={cx("flex items-start justify-between gap-4 px-5 pt-5 sm:px-6 sm:pt-6", className)}>
       <div className="min-w-0">
-        <h2 className="font-display text-[17px] font-bold text-[#12213D]">{title}</h2>
-        {subtitle && <p className="text-sm text-[#12213D]/50 mt-0.5">{subtitle}</p>}
+        <h2 className="font-display text-[19px] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
+        {subtitle && <p className="text-[14px] text-ink-2 mt-0.5">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -66,22 +65,23 @@ export function CardHeader({ title, subtitle, action, className }) {
 
 // ---------------- Tugma ----------------
 const BUTTON_VARIANTS = {
-  primary: "bg-[#087fd1] text-white hover:bg-[#066fb8] shadow-[0_8px_20px_-10px_rgba(8,127,209,0.7)]",
-  dark: "bg-[#12213D] text-white hover:bg-[#12213D]/90",
-  outline: "bg-white text-[#12213D] border border-[#12213D]/12 hover:border-[#12213D]/25 hover:bg-[#12213D]/[0.02]",
-  ghost: "text-[#12213D]/60 hover:text-[#12213D] hover:bg-[#12213D]/5",
-  danger: "bg-white text-red-600 border border-red-200 hover:bg-red-50",
-  light: "bg-white/10 text-white hover:bg-white/20",
+  primary: "bg-accent text-white hover:bg-accent-press",
+  dark: "bg-ink text-on-ink hover:bg-ink/85",
+  outline: "bg-ink/[0.06] text-ink hover:bg-ink/10",
+  ghost: "text-accent hover:bg-accent/10",
+  danger: "bg-danger/10 text-danger hover:bg-danger/15",
+  light: "bg-white/15 text-white hover:bg-white/25 backdrop-blur",
 };
+// Apple tugmalari — "kapsula" (pill) shaklida.
 const BUTTON_SIZES = {
-  sm: "h-9 px-3.5 text-[13px] gap-1.5 rounded-xl",
-  md: "h-11 px-5 text-sm gap-2 rounded-xl",
-  lg: "h-12 px-6 text-[15px] gap-2 rounded-2xl",
+  sm: "h-8 px-3.5 text-[13px] gap-1.5 rounded-full",
+  md: "h-10 px-5 text-[15px] gap-2 rounded-full",
+  lg: "h-12 px-7 text-[17px] gap-2 rounded-full",
 };
 
 export function Button({ variant = "primary", size = "md", to, className, children, ...props }) {
   const classes = cx(
-    "inline-flex items-center justify-center font-semibold whitespace-nowrap transition disabled:opacity-50 disabled:pointer-events-none",
+    "inline-flex items-center justify-center font-medium tracking-[-0.01em] whitespace-nowrap transition disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/25",
     BUTTON_VARIANTS[variant],
     BUTTON_SIZES[size],
     className
@@ -102,13 +102,13 @@ export function Button({ variant = "primary", size = "md", to, className, childr
 
 // ---------------- Ikonka "plitkasi" ----------------
 const TONES = {
-  blue: "bg-[#087fd1]/10 text-[#087fd1]",
-  ink: "bg-[#12213D]/[0.06] text-[#12213D]/70",
-  amber: "bg-amber-500/10 text-amber-600",
-  emerald: "bg-emerald-500/10 text-emerald-600",
-  red: "bg-red-500/10 text-red-600",
-  solid: "bg-[#087fd1] text-white",
-  dark: "bg-[#12213D] text-white",
+  blue: "bg-accent/10 text-accent",
+  ink: "bg-ink/[0.06] text-ink/70",
+  amber: "bg-warning/10 text-warning",
+  emerald: "bg-success/10 text-success",
+  red: "bg-danger/10 text-danger",
+  solid: "bg-accent text-white",
+  dark: "bg-ink text-on-ink",
 };
 
 export function IconTile({ icon: Icon, tone = "blue", size = "md", className }) {
@@ -127,11 +127,11 @@ export function StatTile({ icon, label, value, hint, tone = "blue" }) {
     <Card className="p-5 flex items-start gap-4">
       {icon && <IconTile icon={icon} tone={tone} />}
       <div className="min-w-0">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[#12213D]/45">{label}</p>
-        <p className="font-display text-[26px] font-extrabold leading-tight text-[#12213D] tabular-nums mt-0.5">
+        <p className="text-[13px] font-medium text-ink-2">{label}</p>
+        <p className="font-display text-[28px] font-bold tracking-[-0.02em] leading-tight text-ink tabular-nums mt-0.5">
           {value ?? "—"}
         </p>
-        {hint && <p className="text-xs text-[#12213D]/45 mt-0.5">{hint}</p>}
+        {hint && <p className="text-[12px] text-ink-2 mt-0.5">{hint}</p>}
       </div>
     </Card>
   );
@@ -139,18 +139,18 @@ export function StatTile({ icon, label, value, hint, tone = "blue" }) {
 
 // ---------------- Belgi (badge) ----------------
 const BADGE_TONES = {
-  blue: "bg-[#087fd1]/10 text-[#087fd1]",
-  ink: "bg-[#12213D]/[0.06] text-[#12213D]/60",
-  amber: "bg-amber-500/10 text-amber-700",
-  emerald: "bg-emerald-500/10 text-emerald-700",
-  red: "bg-red-500/10 text-red-600",
+  blue: "bg-accent/10 text-accent",
+  ink: "bg-ink/[0.06] text-ink/60",
+  amber: "bg-warning/10 text-warning",
+  emerald: "bg-success/10 text-success",
+  red: "bg-danger/10 text-danger",
 };
 
 export function Badge({ tone = "ink", icon: Icon, children, className }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-[3px] text-[12px] font-semibold whitespace-nowrap",
         BADGE_TONES[tone],
         className
       )}
@@ -164,10 +164,10 @@ export function Badge({ tone = "ink", icon: Icon, children, className }) {
 // ---------------- Bo'sh holat ----------------
 export function EmptyState({ icon, title, text, action }) {
   return (
-    <Card className="border-dashed px-6 py-14 text-center">
+    <Card className="px-6 py-14 text-center">
       {icon && <IconTile icon={icon} tone="blue" size="lg" className="mx-auto mb-4" />}
-      <p className="font-display font-bold text-[#12213D]">{title}</p>
-      {text && <p className="text-sm text-[#12213D]/50 mt-1 max-w-sm mx-auto">{text}</p>}
+      <p className="font-display text-[19px] font-semibold tracking-[-0.01em] text-ink">{title}</p>
+      {text && <p className="text-[15px] text-ink-2 mt-1 max-w-sm mx-auto">{text}</p>}
       {action && <div className="mt-6 flex justify-center">{action}</div>}
     </Card>
   );
@@ -175,13 +175,13 @@ export function EmptyState({ icon, title, text, action }) {
 
 // ---------------- Yuklanish holatlari ----------------
 export function Skeleton({ className }) {
-  return <div className={cx("animate-pulse rounded-2xl bg-[#12213D]/[0.05]", className)} />;
+  return <div className={cx("animate-pulse rounded-2xl bg-ink/[0.05]", className)} />;
 }
 
 // iOS uslubidagi faollik indikatori (index.css → .pz-spinner).
 export function Spinner({ size = 28, className }) {
   return (
-    <span aria-hidden="true" className={cx("pz-spinner text-[#12213D]/70", className)} style={{ width: size, height: size }}>
+    <span aria-hidden="true" className={cx("pz-spinner text-ink/70", className)} style={{ width: size, height: size }}>
       {Array.from({ length: 8 }, (_, i) => (
         <span key={i} style={{ "--i": i }} />
       ))}
@@ -200,11 +200,11 @@ export function PageLoader({ fullscreen = false, label = "Yuklanmoqda" }) {
       aria-live="polite"
       className={cx(
         "pz-loader flex flex-col items-center justify-center gap-3",
-        fullscreen ? "fixed inset-0 z-40 bg-[#F6F7FB]" : "min-h-[calc(100dvh-3.5rem)] lg:min-h-[100dvh]"
+        fullscreen ? "fixed inset-0 z-40 bg-canvas" : "min-h-[calc(100dvh-3.5rem)] lg:min-h-[100dvh]"
       )}
     >
       <Spinner />
-      <span className="text-[13px] font-medium tracking-[-0.01em] text-[#12213D]/45">{label}</span>
+      <span className="text-[13px] font-medium tracking-[-0.01em] text-ink/45">{label}</span>
     </div>
   );
 }
@@ -217,14 +217,14 @@ export function Page({ width = "wide", className, children }) {
 
 // ---------------- Forma elementlari ----------------
 export const inputClass =
-  "w-full h-11 rounded-xl border border-[#12213D]/12 bg-white px-3.5 text-[15px] text-[#12213D] placeholder:text-[#12213D]/30 outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10 disabled:bg-[#12213D]/[0.03] disabled:text-[#12213D]/45";
+  "w-full h-11 rounded-xl border border-ink/[0.12] bg-surface px-3.5 text-[16px] text-ink placeholder:text-ink-3 outline-none transition hover:border-ink/25 focus:border-accent focus:ring-4 focus:ring-accent/15 disabled:bg-ink/[0.04] disabled:text-ink/45";
 
 export function Field({ label, hint, children }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
       {children}
-      {hint && <span className="mt-1.5 block text-xs text-[#12213D]/45">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-[12px] text-ink-3">{hint}</span>}
     </label>
   );
 }
@@ -248,23 +248,23 @@ export function ScoreTrend({ scores, height = 150, min = 400, max = 1600 }) {
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label="Ball dinamikasi">
       <defs>
         <linearGradient id="pz-trend-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#087fd1" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#087fd1" stopOpacity="0" />
+          <stop offset="0%" stopColor="rgb(var(--c-accent))" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="rgb(var(--c-accent))" stopOpacity="0" />
         </linearGradient>
       </defs>
       {ticks.map((t) => (
         <g key={t}>
-          <line x1={pad.l} x2={w - pad.r} y1={y(t)} y2={y(t)} stroke="#12213D" strokeOpacity="0.07" strokeDasharray="3 4" />
-          <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#12213D" fillOpacity="0.4">
+          <line x1={pad.l} x2={w - pad.r} y1={y(t)} y2={y(t)} stroke="rgb(var(--c-ink))" strokeOpacity="0.07" strokeDasharray="3 4" />
+          <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="rgb(var(--c-ink))" fillOpacity="0.4">
             {t}
           </text>
         </g>
       ))}
       <path d={area} fill="url(#pz-trend-fill)" />
-      <path d={line} fill="none" stroke="#087fd1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={line} fill="none" stroke="rgb(var(--c-accent))" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {scores.map((s, i) => (
         <g key={i}>
-          <circle cx={x(i)} cy={y(s.value)} r="4.5" fill="#fff" stroke="#087fd1" strokeWidth="2.5">
+          <circle cx={x(i)} cy={y(s.value)} r="4.5" fill="rgb(var(--c-surface))" stroke="rgb(var(--c-accent))" strokeWidth="2.5">
             <title>{`${s.label}: ${s.value}`}</title>
           </circle>
         </g>

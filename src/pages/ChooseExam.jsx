@@ -55,21 +55,21 @@ export default function ChooseExam() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB] px-5 py-10">
+    <div className="min-h-screen bg-canvas px-5 py-10">
       <div className="mx-auto max-w-3xl">
-        <img src={logo} alt="Prepzone" className="h-8 w-auto" />
+        <img src={logo} alt="Prepzone" className="pz-logo h-8 w-auto" />
 
-        <p className="mt-10 text-[12px] font-bold uppercase tracking-[0.16em] text-[#087fd1]">{step}/2-savol</p>
-        <div className="mt-2 h-1.5 w-40 overflow-hidden rounded-full bg-[#12213D]/10">
-          <div className="h-full rounded-full bg-[#087fd1] transition-all" style={{ width: step === 1 ? "50%" : "100%" }} />
+        <p className="mt-10 text-[12px] font-bold uppercase tracking-[0.16em] text-accent">{step}/2-savol</p>
+        <div className="mt-2 h-1.5 w-40 overflow-hidden rounded-full bg-ink/10">
+          <div className="h-full rounded-full bg-accent transition-all" style={{ width: step === 1 ? "50%" : "100%" }} />
         </div>
 
         {step === 1 ? (
           <>
-            <h1 className="mt-5 font-display text-[28px] font-extrabold tracking-[-0.02em] text-[#12213D] sm:text-[36px]">
+            <h1 className="mt-5 font-display text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-[36px]">
               {name ? `${name}, bizni qayerdan topdingiz?` : "Bizni qayerdan topdingiz?"}
             </h1>
-            <p className="mt-2 text-[15px] text-[#12213D]/55">Bu bizga ko'proq o'quvchilarga yetib borishga yordam beradi.</p>
+            <p className="mt-2 text-[15px] text-ink/55">Bu bizga ko'proq o'quvchilarga yetib borishga yordam beradi.</p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {SOURCES.map(({ id, label, icon: Icon }) => {
@@ -79,15 +79,15 @@ export default function ChooseExam() {
                     key={id}
                     type="button"
                     onClick={() => setSource(id)}
-                    className={`flex items-center gap-3 rounded-2xl border bg-white p-5 text-left transition hover:-translate-y-0.5 ${
-                      active ? "border-[#087fd1] ring-4 ring-[#087fd1]/10" : "border-[#12213D]/[0.08]"
+                    className={`flex items-center gap-3 rounded-2xl border bg-surface p-5 text-left transition hover:-translate-y-0.5 ${
+                      active ? "border-accent ring-4 ring-accent/10" : "border-ink/[0.08]"
                     }`}
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087fd1]/10 text-[#087fd1]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
                       <Icon size={18} />
                     </span>
-                    <span className="flex-1 font-display text-[17px] font-bold text-[#12213D]">{label}</span>
-                    {active && <LuCheck size={18} className="text-[#087fd1]" />}
+                    <span className="flex-1 font-display text-[17px] font-bold text-ink">{label}</span>
+                    {active && <LuCheck size={18} className="text-accent" />}
                   </button>
                 );
               })}
@@ -99,7 +99,7 @@ export default function ChooseExam() {
                 onChange={(e) => setSourceOther(e.target.value)}
                 maxLength={60}
                 placeholder="Qayerdan? (ixtiyoriy)"
-                className="mt-3 h-11 w-full rounded-xl border border-[#12213D]/12 bg-white px-3.5 text-[15px] text-[#12213D] outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                className="mt-3 h-11 w-full rounded-xl border border-ink/12 bg-surface px-3.5 text-[15px] text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
               />
             )}
 
@@ -108,7 +108,7 @@ export default function ChooseExam() {
                 type="button"
                 disabled={!source}
                 onClick={() => setStep(2)}
-                className="inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-6 py-3 text-[15px] font-bold text-white transition hover:bg-[#066fb8] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[15px] font-bold text-white transition hover:bg-accent-press disabled:opacity-50"
               >
                 Keyingisi <LuArrowRight size={16} />
               </button>
@@ -116,21 +116,21 @@ export default function ChooseExam() {
           </>
         ) : (
           <>
-            <h1 className="mt-5 font-display text-[28px] font-extrabold tracking-[-0.02em] text-[#12213D] sm:text-[36px]">
+            <h1 className="mt-5 font-display text-[28px] font-extrabold tracking-[-0.02em] text-ink sm:text-[36px]">
               Maqsad SAT ballingiz qancha?
             </h1>
-            <p className="mt-2 text-[15px] text-[#12213D]/55">
+            <p className="mt-2 text-[15px] text-ink/55">
               Bluebook formatidagi adaptiv mock testlar 400–1600 ball oralig'ida baholanadi. Maqsadingizni
               keyin Study Plan'da o'zgartirishingiz mumkin.
             </p>
 
-            <div className="mt-8 max-w-md rounded-3xl border border-[#087fd1] bg-white p-6 ring-4 ring-[#087fd1]/10">
-              <span className="inline-block rounded-lg bg-[#087fd1] px-2.5 py-1 font-display text-[14px] font-black tracking-wide text-white">
+            <div className="mt-8 max-w-md rounded-3xl border border-accent bg-surface p-6 ring-4 ring-accent/10">
+              <span className="inline-block rounded-lg bg-accent px-2.5 py-1 font-display text-[14px] font-black tracking-wide text-white">
                 SAT
               </span>
-              <h2 className="mt-4 font-display text-[20px] font-extrabold text-[#12213D]">Digital SAT</h2>
+              <h2 className="mt-4 font-display text-[20px] font-extrabold text-ink">Digital SAT</h2>
               <label className="mt-5 block">
-                <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">
+                <span className="mb-1.5 block text-[13px] font-semibold text-ink/75">
                   Maqsad ball ({TARGET.min}–{TARGET.max})
                 </span>
                 <input
@@ -141,8 +141,8 @@ export default function ChooseExam() {
                   step={TARGET.step}
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}
-                  className={`h-11 w-full rounded-xl border bg-white px-3.5 text-[16px] font-bold tabular-nums text-[#12213D] outline-none transition focus:ring-4 ${
-                    targetValid ? "border-[#12213D]/12 focus:border-[#087fd1] focus:ring-[#087fd1]/10" : "border-red-400 focus:ring-red-500/10"
+                  className={`h-11 w-full rounded-xl border bg-surface px-3.5 text-[16px] font-bold tabular-nums text-ink outline-none transition focus:ring-4 ${
+                    targetValid ? "border-ink/12 focus:border-accent focus:ring-accent/10" : "border-red-400 focus:ring-red-500/10"
                   }`}
                 />
                 {!targetValid && (
@@ -159,7 +159,7 @@ export default function ChooseExam() {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#12213D]/60 hover:text-[#12213D]"
+                className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink/60 hover:text-ink"
               >
                 <LuArrowLeft size={16} /> Orqaga
               </button>
@@ -167,7 +167,7 @@ export default function ChooseExam() {
                 type="button"
                 disabled={!targetValid || saving}
                 onClick={submit}
-                className="inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-6 py-3 text-[15px] font-bold text-white transition hover:bg-[#066fb8] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[15px] font-bold text-white transition hover:bg-accent-press disabled:opacity-50"
               >
                 {saving ? "Saqlanmoqda..." : "Boshlash"} <LuArrowRight size={16} />
               </button>

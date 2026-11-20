@@ -7,9 +7,9 @@ import { Page, PageHeader, Card, Button, EmptyState, Skeleton } from "../compone
 
 // Podium tartibi: 2-o'rin, 1-o'rin, 3-o'rin (o'rtadagisi eng baland).
 const PODIUM = [
-  { index: 1, height: "h-24", ring: "ring-[#12213D]/15", avatar: "bg-[#12213D]" },
-  { index: 0, height: "h-32", ring: "ring-amber-400", avatar: "bg-[#087fd1]" },
-  { index: 2, height: "h-20", ring: "ring-[#12213D]/10", avatar: "bg-[#12213D]/70" },
+  { index: 1, height: "h-24", ring: "ring-ink/15", avatar: "bg-night" },
+  { index: 0, height: "h-32", ring: "ring-amber-400", avatar: "bg-accent" },
+  { index: 2, height: "h-20", ring: "ring-ink/10", avatar: "bg-night/70" },
 ];
 
 export default function Leaderboard() {
@@ -67,14 +67,14 @@ export default function Leaderboard() {
                       src={r.avatarUrl}
                       className={`h-14 w-14 rounded-2xl text-sm ring-4 ring-offset-2 ${avatar} ${ring}`}
                     />
-                    <p className="mt-3 w-full truncate text-sm font-semibold text-[#12213D]">
+                    <p className="mt-3 w-full truncate text-sm font-semibold text-ink">
                       {r.name}
-                      {isMe && <span className="text-[#087fd1]"> (Siz)</span>}
+                      {isMe && <span className="text-accent"> (Siz)</span>}
                     </p>
-                    <p className="font-display text-xl font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
+                    <p className="font-display text-xl font-extrabold tabular-nums text-ink">{r.bestScore}</p>
                     <div
                       className={`mt-3 flex w-full items-start justify-center rounded-t-2xl pt-3 ${height} ${
-                        index === 0 ? "bg-[#087fd1] text-white" : "bg-[#F6F7FB] text-[#12213D]/50"
+                        index === 0 ? "bg-accent text-white" : "bg-canvas text-ink/50"
                       }`}
                     >
                       <span className="font-display text-2xl font-extrabold">{index + 1}</span>
@@ -87,23 +87,23 @@ export default function Leaderboard() {
 
           {rest.length > 0 && (
             <Card className="overflow-hidden">
-              <div className="grid divide-y divide-[#12213D]/[0.06]">
+              <div className="grid divide-y divide-ink/[0.06]">
                 {rest.map((r, i) => {
                   const isMe = r.uid === user?.uid;
                   return (
                     <div
                       key={r.id}
-                      className={`flex items-center gap-4 px-5 py-3.5 sm:px-6 ${isMe ? "bg-[#087fd1]/[0.06]" : ""}`}
+                      className={`flex items-center gap-4 px-5 py-3.5 sm:px-6 ${isMe ? "bg-accent/[0.06]" : ""}`}
                     >
-                      <span className="w-6 text-center font-display text-sm font-bold tabular-nums text-[#12213D]/35">
+                      <span className="w-6 text-center font-display text-sm font-bold tabular-nums text-ink/35">
                         {i + 4}
                       </span>
-                      <Avatar name={r.name} src={r.avatarUrl} className="h-9 w-9 rounded-xl bg-[#12213D] text-xs" />
-                      <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#12213D]">
+                      <Avatar name={r.name} src={r.avatarUrl} className="h-9 w-9 rounded-xl bg-night text-xs" />
+                      <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">
                         {r.name}
-                        {isMe && <span className="font-semibold text-[#087fd1]"> (Siz)</span>}
+                        {isMe && <span className="font-semibold text-accent"> (Siz)</span>}
                       </p>
-                      <p className="font-display text-lg font-extrabold tabular-nums text-[#12213D]">{r.bestScore}</p>
+                      <p className="font-display text-lg font-extrabold tabular-nums text-ink">{r.bestScore}</p>
                     </div>
                   );
                 })}
@@ -112,7 +112,7 @@ export default function Leaderboard() {
           )}
 
           {user && myRank === -1 && (
-            <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-[#12213D]/45">
+            <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-ink/45">
               <LuMedal size={16} />
               Siz hali TOP-15'da emassiz — yaxshiroq natija ko'rsatib, ro'yxatga kiring!
             </p>

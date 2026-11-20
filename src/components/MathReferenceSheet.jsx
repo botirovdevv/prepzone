@@ -35,9 +35,9 @@ export default function MathReferenceSheet({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl"
+        className="bg-surface w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 sticky top-0 bg-white">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 sticky top-0 bg-surface">
           <h2 className="text-base font-bold text-gray-800">Reference</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
             <LuX size={20} />

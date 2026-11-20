@@ -43,9 +43,9 @@ export default function DesmosTutorial() {
 
   if (missing || !tutorial) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-[#12213D]/50">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-ink/50">
         <p>Bu darslik topilmadi.</p>
-        <Link to="/desmos" className="text-[#087fd1] font-semibold">
+        <Link to="/desmos" className="text-accent font-semibold">
           Barcha darsliklar
         </Link>
       </div>
@@ -59,30 +59,30 @@ export default function DesmosTutorial() {
     <div className="px-5 sm:px-8 py-8 max-w-3xl mx-auto">
       <Link
         to="/desmos"
-        className="flex items-center gap-1.5 text-sm text-[#12213D]/50 hover:text-[#12213D] mb-6"
+        className="flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink mb-6"
       >
         <LuArrowLeft size={16} /> Barcha darsliklar
       </Link>
 
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
           <LuCalculator size={19} />
         </div>
-        <h1 className="font-display text-2xl font-extrabold text-[#12213D]">{tutorial.title}</h1>
+        <h1 className="font-display text-2xl font-extrabold text-ink">{tutorial.title}</h1>
       </div>
       {tutorial.description && (
-        <p className="text-[#12213D]/55 mb-6">{tutorial.description}</p>
+        <p className="text-ink/55 mb-6">{tutorial.description}</p>
       )}
 
       {embedUrl && (
-        <div className="rounded-2xl overflow-hidden border border-[#12213D]/8 aspect-video mb-6 shadow-sm">
+        <div className="rounded-2xl overflow-hidden border border-ink/8 aspect-video mb-6 shadow-sm">
           <iframe src={embedUrl} title={tutorial.title} className="w-full h-full" allowFullScreen />
         </div>
       )}
 
       {safeContent && (
         <div
-          className="bg-white rounded-2xl border border-[#12213D]/7 p-6 text-[15px] leading-relaxed text-[#12213D]/85 [&_strong]:font-bold [&_u]:underline [&_em]:italic"
+          className="bg-surface rounded-2xl border border-ink/7 p-6 text-[15px] leading-relaxed text-ink/85 [&_strong]:font-bold [&_u]:underline [&_em]:italic"
           dangerouslySetInnerHTML={{ __html: safeContent }}
         />
       )}

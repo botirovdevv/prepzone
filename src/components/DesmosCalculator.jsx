@@ -43,7 +43,7 @@ export default function DesmosCalculator({ onClose }) {
 
   return (
     <div
-      className="fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-300 flex flex-col"
+      className="fixed z-50 bg-surface rounded-lg shadow-2xl border border-gray-300 flex flex-col"
       style={{
         left: pos.x,
         top: pos.y,
@@ -54,7 +54,7 @@ export default function DesmosCalculator({ onClose }) {
     >
       <div
         onMouseDown={onDragStart}
-        className="flex items-center justify-between bg-[#0B2265] text-white px-3 py-2 rounded-t-lg cursor-move select-none"
+        className="flex items-center justify-between bg-night text-white px-3 py-2 rounded-t-lg cursor-move select-none"
       >
         <div className="flex items-center gap-2 text-sm font-semibold">
           <LuCalculator size={16} />
@@ -79,7 +79,7 @@ export default function DesmosCalculator({ onClose }) {
       </div>
       <div className={`flex-1 relative ${minimized ? "hidden" : ""}`}>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-          <LuCalculator size={28} className="text-[#0B2265]/40" />
+          <LuCalculator size={28} className="text-ink/40" />
           <p className="text-sm font-semibold text-gray-700">Desmos kalkulyator tez orada qo'shiladi</p>
           <p className="text-xs text-gray-400">Hozircha formula varag'i va qog'oz-qalamdan foydalaning.</p>
         </div>

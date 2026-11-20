@@ -612,7 +612,7 @@ export default function SessionTest() {
 
   return (
     <HighlightsProvider>
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-surface">
       <TestHeader
         sectionLabel={sectionLabel}
         title={section.title}

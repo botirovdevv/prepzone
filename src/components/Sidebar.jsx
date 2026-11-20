@@ -21,6 +21,7 @@ import {
   LuCalculator,
 } from "react-icons/lu";
 import Avatar from "./Avatar";
+import ThemeToggle, { ThemeCycleButton } from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import { useIsAdmin } from "../hooks/useIsAdmin";
 const logo = "/Logo.png";
@@ -30,30 +31,30 @@ const NAV = [
   {
     label: "MAIN",
     items: [
-      { to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-[#0096c7]" },
-      { to: "/study-plan", label: "Study Plan", icon: LuCompass, iconColor: "text-[#7c3aed]" },
+      { to: "/dashboard", label: "Today", icon: LuHouse, iconColor: "text-accent" },
+      { to: "/study-plan", label: "Study Plan", icon: LuCompass, iconColor: "text-purple" },
     ],
   },
   {
     label: "PRACTICE",
     items: [
-      { to: "/sat/select", label: "Practise tests", icon: LuFileText, iconColor: "text-[#94a3b8]" },
-      { to: "/practice", label: "Exam questions", icon: LuZap, iconColor: "text-[#e07a5f]" },
-      { to: "/join", label: "Mock with key", icon: LuKeyRound, iconColor: "text-[#94a3b8]" },
+      { to: "/sat/select", label: "Practise tests", icon: LuFileText, iconColor: "text-ink-3" },
+      { to: "/practice", label: "Exam questions", icon: LuZap, iconColor: "text-orange-500" },
+      { to: "/join", label: "Mock with key", icon: LuKeyRound, iconColor: "text-ink-3" },
     ],
   },
   {
     label: "LEARN",
     items: [
-      { to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-[#2a9d8f]" },
-      { to: "/desmos", label: "Desmos darslari", icon: LuCalculator, iconColor: "text-[#16a34a]" },
+      { to: "/vocabulary", label: "Vocabulary", icon: LuBookOpen, iconColor: "text-success" },
+      { to: "/desmos", label: "Desmos darslari", icon: LuCalculator, iconColor: "text-success" },
     ],
   },
   {
     label: "PROGRESS",
     items: [
-      { to: "/sat/history", label: "Mock Scores", icon: LuTrendingUp, iconColor: "text-[#0096c7]" },
-      { to: "/leaderboard", label: "Leaderboard", icon: LuTrophy, iconColor: "text-[#e76f51]" },
+      { to: "/sat/history", label: "Mock Scores", icon: LuTrendingUp, iconColor: "text-accent" },
+      { to: "/leaderboard", label: "Leaderboard", icon: LuTrophy, iconColor: "text-amber-500" },
     ],
   },
 ];
@@ -61,7 +62,7 @@ const NAV = [
 
 
 const ADMIN_ITEMS = [
-  { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-[#087fd1]", perm: "sessions" },
+  { to: "/admin", label: "Testlar (admin)", icon: LuShieldCheck, end: true, iconColor: "text-accent", perm: "sessions" },
   { to: "/admin/sets", label: "To'plamlar (admin)", icon: LuLibrary, perm: "sets" },
   { to: "/admin/desmos", label: "Desmos (admin)", icon: LuCalculator, perm: "desmos" },
   { to: "/admin/analytics", label: "Analitika (admin)", icon: LuChartColumn, perm: ["analytics", "users"] },
@@ -70,7 +71,7 @@ const ADMIN_ITEMS = [
 
 function NavItem({ item, collapsed, onNavigate }) {
   const Icon = item.icon;
-  const base = `group relative w-full flex items-center gap-3 h-10 rounded-xl text-[14px] font-medium ${
+  const base = `group relative w-full flex items-center gap-3 h-9 rounded-[10px] text-[14px] font-medium tracking-[-0.01em] ${
     collapsed ? "justify-center px-0" : "px-3"
   }`;
 
@@ -78,13 +79,13 @@ function NavItem({ item, collapsed, onNavigate }) {
     return (
       <div
         title={collapsed ? `${item.label} — tez orada` : undefined}
-        className={`${base} text-[#12213D]/30 cursor-not-allowed`}
+        className={`${base} text-ink/30 cursor-not-allowed`}
       >
         <Icon size={18} className="shrink-0" />
         {!collapsed && (
           <>
             <span className="flex-1 truncate">{item.label}</span>
-            <span className="text-[10px] font-bold text-[#12213D]/40 bg-[#12213D]/[0.05] px-1.5 py-0.5 rounded-md">
+            <span className="text-[10px] font-bold text-ink/40 bg-ink/[0.05] px-1.5 py-0.5 rounded-md">
               Soon
             </span>
           </>
@@ -102,14 +103,14 @@ function NavItem({ item, collapsed, onNavigate }) {
       className={({ isActive }) =>
         `${base} transition ${
           isActive
-            ? "bg-[#12213D] text-white shadow-[0_6px_16px_-8px_rgba(18,33,61,0.6)]"
-            : "text-[#12213D]/60 hover:bg-[#12213D]/[0.05] hover:text-[#12213D]"
+            ? "bg-accent/[0.12] text-accent"
+            : "text-ink/75 hover:bg-ink/[0.05] hover:text-ink"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon size={18} className={`shrink-0 ${isActive ? "text-white" : item.iconColor || ""}`} />
+          <Icon size={18} className={`shrink-0 ${isActive ? "text-accent" : item.iconColor || ""}`} />
           {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
         </>
       )}
@@ -144,7 +145,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
           <img
             src={isCollapsed ? LogoMark : logo}
             alt="Prepzone"
-            className="h-full w-auto object-contain"
+            className="pz-logo h-full w-auto object-contain"
           />
         </NavLink>
       </div>
@@ -154,13 +155,13 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         {navGroups.map((group) => (
           <div key={group.label}>
             {isCollapsed ? (
-              <div className="mx-auto mb-2 h-px w-6 bg-[#12213D]/10" />
+              <div className="mx-auto mb-2 h-px w-6 bg-ink/10" />
             ) : (
-              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#12213D]/35">
-                {group.label}
+              <p className="mb-1 px-3 text-[12px] font-semibold text-ink/40">
+                {group.label.charAt(0) + group.label.slice(1).toLowerCase()}
               </p>
             )}
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {group.items.map((item) => (
                 <NavItem key={item.label} item={item} collapsed={isCollapsed} onNavigate={onCloseMobile} />
               ))}
@@ -171,10 +172,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         {isAdmin && adminItems.length > 0 && (
           <div>
             {isCollapsed ? (
-              <div className="mx-auto mb-2 h-px w-6 bg-[#12213D]/10" />
+              <div className="mx-auto mb-2 h-px w-6 bg-ink/10" />
             ) : (
-              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#12213D]/35">
-                ADMIN
+              <p className="mb-1 px-3 text-[12px] font-semibold text-ink/40">
+                Admin
               </p>
             )}
             <div className="space-y-1">
@@ -187,17 +188,20 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
       </nav>
 
       {/* Foydalanuvchi */}
-      <div className="shrink-0 p-3">
+      <div className="shrink-0 space-y-2 p-3">
+        <div className={`flex ${isCollapsed ? "justify-center" : "px-1"}`}>
+          {isCollapsed ? <ThemeCycleButton className="h-8 w-8 rounded-lg" /> : <ThemeToggle compact className="!w-full" />}
+        </div>
         <div
-          className={`flex items-center gap-2.5 rounded-2xl bg-[#F6F7FB] p-2 ${
+          className={`flex items-center gap-2.5 rounded-2xl bg-ink/[0.04] p-2 ${
             isCollapsed ? "flex-col" : ""
           }`}
         >
-          <Avatar user={user} name={displayName} className="h-9 w-9 rounded-xl bg-[#12213D] text-[12px]" />
+          <Avatar user={user} name={displayName} className="h-9 w-9 rounded-xl bg-night text-[12px]" />
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-[#12213D]">{displayName}</p>
-              <p className="truncate text-[11px] text-[#12213D]/45">{user?.email}</p>
+              <p className="truncate text-[13px] font-semibold text-ink">{displayName}</p>
+              <p className="truncate text-[11px] text-ink-2">{user?.email}</p>
             </div>
           )}
           <div className={`flex ${isCollapsed ? "flex-col" : ""} gap-0.5`}>
@@ -207,7 +211,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
               title="Sozlamalar"
               className={({ isActive }) =>
                 `flex h-8 w-8 items-center justify-center rounded-lg transition ${
-                  isActive ? "bg-white text-[#087fd1] shadow-sm" : "text-[#12213D]/50 hover:bg-white hover:text-[#12213D]"
+                  isActive ? "bg-surface text-accent shadow-sm" : "text-ink/50 hover:bg-surface hover:text-ink"
                 }`
               }
             >
@@ -216,7 +220,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
             <button
               onClick={handleLogout}
               title="Chiqish"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#12213D]/50 transition hover:bg-white hover:text-red-600"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 transition hover:bg-surface hover:text-danger"
             >
               <LuLogOut size={16} />
             </button>
@@ -230,7 +234,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
     <>
       {/* Desktop: sahifadan ajralib turuvchi "suzuvchi" panel */}
       <aside
-        className={`fixed bottom-3 left-3 top-3 z-40 hidden rounded-[22px] border border-[#12213D]/[0.07] bg-white shadow-[0_1px_2px_rgba(18,33,61,0.04),0_12px_32px_-16px_rgba(18,33,61,0.18)] transition-[width] duration-300 ease-in-out-strong lg:flex ${
+        className={`pz-material-surface fixed bottom-3 left-3 top-3 z-40 hidden rounded-[22px] border border-ink/[0.06] shadow-lift transition-[width] duration-300 ease-in-out-strong lg:flex ${
           collapsed ? "w-[72px]" : "w-[248px]"
         }`}
       >
@@ -239,33 +243,33 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
         <button
           onClick={onToggleCollapse}
           title={collapsed ? "Sidebarni yoyish" : "Sidebarni yig'ish"}
-          className="absolute -right-3 top-[76px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#12213D]/12 bg-white text-[#12213D]/50 shadow-sm transition hover:border-[#087fd1]/40 hover:text-[#087fd1]"
+          className="absolute -right-3 top-[76px] z-50 flex h-6 w-6 items-center justify-center rounded-full border border-ink/12 bg-surface text-ink/50 shadow-sm transition hover:border-accent/40 hover:text-accent"
         >
           {collapsed ? <LuChevronsRight size={13} /> : <LuChevronsLeft size={13} />}
         </button>
       </aside>
 
       {/* Mobil: yuqori panel */}
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-[#12213D]/[0.07] bg-white/85 px-4 backdrop-blur lg:hidden">
+      <header className="pz-material fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-ink/[0.08] px-4 lg:hidden">
         <button
           onClick={onOpenMobile}
           aria-label="Menyuni ochish"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-[#12213D] hover:bg-[#12213D]/5"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-ink hover:bg-ink/5"
         >
           <LuMenu size={19} />
         </button>
-        <img src={logo} alt="Prepzone" className="h-6 w-auto object-contain" />
+        <img src={logo} alt="Prepzone" className="pz-logo h-6 w-auto object-contain" />
       </header>
 
       {/* Mobil drawer */}
       {drawerMounted && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
-            className={`absolute inset-0 bg-[#12213D]/40 ${mobileOpen ? "pz-overlay-in" : "pz-overlay-out"}`}
+            className={`absolute inset-0 bg-black/40 ${mobileOpen ? "pz-overlay-in" : "pz-overlay-out"}`}
             onClick={onCloseMobile}
           />
           <aside
-            className={`relative h-full w-[280px] max-w-[82%] bg-white shadow-xl ${
+            className={`relative h-full w-[280px] max-w-[82%] bg-elevated shadow-xl ${
               mobileOpen ? "pz-drawer-in" : "pz-drawer-out"
             }`}
             onAnimationEnd={() => !mobileOpen && setDrawerMounted(false)}
@@ -273,7 +277,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onOpe
             <button
               onClick={onCloseMobile}
               aria-label="Menyuni yopish"
-              className="absolute right-3 top-3.5 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-[#12213D]/60 hover:bg-[#12213D]/5"
+              className="absolute right-3 top-3.5 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-ink/60 hover:bg-ink/5"
             >
               <LuX size={18} />
             </button>

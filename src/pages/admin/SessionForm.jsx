@@ -206,24 +206,24 @@ export default function SessionForm() {
       onClick={() => setAccessType(value)}
       className={`rounded-xl border-2 px-4 py-3.5 text-left transition ${
         accessType === value
-          ? "border-[#087fd1] bg-[#087fd1]/[0.04]"
-          : "border-[#12213D]/10 hover:border-[#12213D]/25"
+          ? "border-accent bg-accent/[0.04]"
+          : "border-ink/10 hover:border-ink/25"
       }`}
     >
-      <p className="text-sm font-semibold text-[#12213D]">{title}</p>
-      <p className="mt-0.5 text-xs text-[#12213D]/50">{text}</p>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      <p className="mt-0.5 text-xs text-ink/50">{text}</p>
     </button>
   );
 
   const durationInput = (value, onChange) => (
-    <label className="flex items-center gap-2 text-sm text-[#12213D]/50">
+    <label className="flex items-center gap-2 text-sm text-ink/50">
       Davomiyligi
       <input
         type="number"
         min={1}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-20 rounded-lg border border-[#12213D]/12 px-2.5 text-sm text-[#12213D] outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+        className="h-9 w-20 rounded-lg border border-ink/12 px-2.5 text-sm text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
       />
       daqiqa
     </label>
@@ -233,7 +233,7 @@ export default function SessionForm() {
     <Page width="narrow">
       <button
         onClick={goBack}
-        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-ink/50 transition hover:text-ink"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
@@ -259,7 +259,7 @@ export default function SessionForm() {
             </Field>
 
             <div>
-              <span className="mb-1.5 block text-[13px] font-semibold text-[#12213D]/75">Kirish turi</span>
+              <span className="mb-1.5 block text-[13px] font-semibold text-ink/75">Kirish turi</span>
               <div className="grid gap-2 sm:grid-cols-2">
                 {accessOption("code", "Kod bilan, vaqti belgilangan", "6 xonali kod va belgilangan sana/vaqtda ochiladi")}
                 {accessOption("open", "Doimiy ochiq", "Har doim ochiq, \"Testlar\" bo'limida hammaga ko'rinadi")}
@@ -279,8 +279,8 @@ export default function SessionForm() {
           </div>
         </Card>
 
-        <div className="flex items-start gap-3 rounded-2xl border border-[#087fd1]/15 bg-[#087fd1]/[0.04] p-4 text-sm leading-relaxed text-[#12213D]/70">
-          <LuInfo size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
+        <div className="flex items-start gap-3 rounded-2xl border border-accent/15 bg-accent/[0.04] p-4 text-sm leading-relaxed text-ink/70">
+          <LuInfo size={18} className="mt-0.5 shrink-0 text-accent" />
           <p>
             Har bir bo'lim uchun <strong>Module 1</strong> savollarini qo'shing (bu — barcha
             talabalar oladigan aralash qiyinlikdagi bazaviy modul). Agar shu bo'lim uchun{" "}
@@ -405,8 +405,8 @@ export default function SessionForm() {
         )}
 
         {/* Saqlash paneli — pastda yopishib turadi */}
-        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-[#12213D]/[0.07] bg-white/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
-          <p className="text-sm text-[#12213D]/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-ink/[0.07] bg-surface/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
+          <p className="text-sm text-ink/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
           <Button type="submit" disabled={saving}>
             {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "Testni yaratish"}
           </Button>

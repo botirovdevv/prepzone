@@ -28,10 +28,10 @@ const WEEKDAYS_SHORT = ["Yak", "Du", "Se", "Chor", "Pay", "Ju", "Sha"];
 const MINUTE_OPTIONS = [30, 60, 90, 120];
 
 const TASK_META = {
-  mock: { icon: LuNotebookPen, tone: "text-[#087fd1] bg-[#087fd1]/10" },
+  mock: { icon: LuNotebookPen, tone: "text-accent bg-accent/10" },
   review: { icon: LuHistory, tone: "text-amber-600 bg-amber-500/10" },
   practice: { icon: LuTarget, tone: "text-emerald-600 bg-emerald-500/10" },
-  vocab: { icon: LuBookOpen, tone: "text-[#2a9d8f] bg-[#2a9d8f]/10" },
+  vocab: { icon: LuBookOpen, tone: "text-success bg-success/10" },
   exam: { icon: LuTrophy, tone: "text-red-600 bg-red-500/10" },
 };
 
@@ -62,8 +62,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
   return (
     <Card className="p-5 sm:p-7">
-      <h2 className="font-display text-[19px] font-bold text-[#12213D]">Rejangizni sozlang</h2>
-      <p className="mt-1 text-sm text-[#12213D]/50">
+      <h2 className="font-display text-[19px] font-bold text-ink">Rejangizni sozlang</h2>
+      <p className="mt-1 text-sm text-ink/50">
         Imtihon sanasi va maqsadingizga qarab har kunlik vazifalar tuziladi.
       </p>
 
@@ -85,13 +85,13 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
             step={10}
             value={form.targetScore}
             onChange={(e) => set({ targetScore: Number(e.target.value) })}
-            className="mt-3 w-full accent-[#087fd1]"
+            className="mt-3 w-full accent-accent"
           />
         </Field>
       </div>
 
       <div className="mt-6">
-        <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">Kuniga qancha vaqt ajrata olasiz?</p>
+        <p className="mb-2 text-[13px] font-semibold text-ink/75">Kuniga qancha vaqt ajrata olasiz?</p>
         <div className="flex flex-wrap gap-2">
           {MINUTE_OPTIONS.map((m) => (
             <button
@@ -100,8 +100,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
               onClick={() => set({ dailyMinutes: m })}
               className={`h-10 rounded-xl border px-4 text-sm font-semibold transition ${
                 form.dailyMinutes === m
-                  ? "border-[#087fd1] bg-[#087fd1] text-white"
-                  : "border-[#12213D]/12 text-[#12213D]/70 hover:border-[#12213D]/25"
+                  ? "border-accent bg-accent text-white"
+                  : "border-ink/12 text-ink/70 hover:border-ink/25"
               }`}
             >
               {formatMinutes(m)}
@@ -112,7 +112,7 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">Dam olish kunlari</p>
+          <p className="mb-2 text-[13px] font-semibold text-ink/75">Dam olish kunlari</p>
           <div className="flex flex-wrap gap-1.5">
             {WEEKDAYS_SHORT.map((w, d) => (
               <button
@@ -121,8 +121,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
                 onClick={() => toggleRest(d)}
                 className={`h-9 min-w-[44px] rounded-lg px-2 text-[13px] font-semibold transition ${
                   form.restDays.includes(d)
-                    ? "bg-[#12213D] text-white"
-                    : "bg-[#12213D]/[0.05] text-[#12213D]/60 hover:bg-[#12213D]/10"
+                    ? "bg-ink text-on-ink"
+                    : "bg-ink/[0.05] text-ink/60 hover:bg-ink/10"
                 }`}
               >
                 {w}
@@ -169,7 +169,7 @@ function TaskRow({ task, done, onToggle }) {
         type="button"
         onClick={onToggle}
         aria-label={done ? "Bajarilmagan deb belgilash" : "Bajarildi deb belgilash"}
-        className={`shrink-0 transition ${done ? "text-emerald-500" : "text-[#12213D]/20 hover:text-[#12213D]/40"}`}
+        className={`shrink-0 transition ${done ? "text-emerald-500" : "text-ink/20 hover:text-ink/40"}`}
       >
         {done ? <LuCircleCheck size={24} /> : <LuCircle size={24} />}
       </button>
@@ -177,10 +177,10 @@ function TaskRow({ task, done, onToggle }) {
         <Icon size={17} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm font-semibold ${done ? "text-[#12213D]/40 line-through" : "text-[#12213D]"}`}>
+        <p className={`truncate text-sm font-semibold ${done ? "text-ink/40 line-through" : "text-ink"}`}>
           {task.title}
         </p>
-        <p className="truncate text-xs text-[#12213D]/45">
+        <p className="truncate text-xs text-ink/45">
           {task.minutes ? `${formatMinutes(task.minutes)} · ` : ""}
           {task.detail}
         </p>
@@ -319,14 +319,14 @@ export default function StudyPlan() {
           hint={settings.examDate.split("-").reverse().join(".")}
         />
         <Card className="p-5">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[#12213D]/45">Joriy → Maqsad</p>
-          <p className="mt-0.5 font-display text-[26px] font-extrabold leading-tight tabular-nums text-[#12213D]">
-            {analysis.current ?? "—"} <span className="text-[#12213D]/30">→</span> {settings.targetScore}
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-ink/45">Joriy → Maqsad</p>
+          <p className="mt-0.5 font-display text-[26px] font-extrabold leading-tight tabular-nums text-ink">
+            {analysis.current ?? "—"} <span className="text-ink/30">→</span> {settings.targetScore}
           </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
-            <div className="h-full rounded-full bg-[#087fd1]" style={{ width: `${progressPct}%` }} />
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
+            <div className="h-full rounded-full bg-accent" style={{ width: `${progressPct}%` }} />
           </div>
-          <p className="mt-1.5 text-xs text-[#12213D]/45">
+          <p className="mt-1.5 text-xs text-ink/45">
             {gap == null ? "Diagnostik mock test yeching" : gap > 0 ? `Yana ${gap} ball kerak` : "Maqsadga yetdingiz! 🎉"}
           </p>
         </Card>
@@ -349,13 +349,13 @@ export default function StudyPlan() {
               today.tasks.length > 0 && todayDone === today.tasks.length ? <Badge tone="emerald">Barchasi bajarildi</Badge> : null
             }
           />
-          <div className="mt-3 divide-y divide-[#12213D]/[0.06]">
+          <div className="mt-3 divide-y divide-ink/[0.06]">
             {today.rest ? (
-              <div className="flex items-center gap-3 px-6 pb-6 text-sm text-[#12213D]/55">
+              <div className="flex items-center gap-3 px-6 pb-6 text-sm text-ink/55">
                 <LuCoffee size={18} /> Bugun dam olish kuni. Yaxshi hordiq chiqaring!
               </div>
             ) : today.afterExam ? (
-              <p className="px-6 pb-6 text-sm text-[#12213D]/55">
+              <p className="px-6 pb-6 text-sm text-ink/55">
                 Imtihon sanasi o'tib ketdi. Yangi sana kiritish uchun "Sozlamalar"ni bosing.
               </p>
             ) : (
@@ -377,7 +377,7 @@ export default function StudyPlan() {
           <CardHeader title="Mavzular bo'yicha" subtitle="Oxirgi 3 ta mock test asosida" />
           <div className="px-5 pb-6 pt-4 sm:px-6">
             {!analysis.hasData || analysis.domains.length === 0 ? (
-              <div className="text-sm text-[#12213D]/55">
+              <div className="text-sm text-ink/55">
                 <p>Zaif mavzularni aniqlash uchun avval bitta to'liq mock test yeching.</p>
                 <Button to="/sat/select" size="sm" className="mt-4">
                   Diagnostik test <LuArrowRight size={14} />
@@ -391,14 +391,14 @@ export default function StudyPlan() {
                   return (
                     <div key={d.id}>
                       <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
-                        <span className={`truncate font-semibold ${weak ? "text-red-600" : "text-[#12213D]"}`}>
+                        <span className={`truncate font-semibold ${weak ? "text-red-600" : "text-ink"}`}>
                           {d.label}
                         </span>
-                        <span className="shrink-0 tabular-nums text-[#12213D]/50">{pct}%</span>
+                        <span className="shrink-0 tabular-nums text-ink/50">{pct}%</span>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
                         <div
-                          className={`h-full rounded-full ${weak ? "bg-red-500" : pct >= 85 ? "bg-emerald-500" : "bg-[#087fd1]"}`}
+                          className={`h-full rounded-full ${weak ? "bg-red-500" : pct >= 85 ? "bg-emerald-500" : "bg-accent"}`}
                           style={{ width: `${Math.max(pct, 2)}%` }}
                         />
                       </div>
@@ -421,16 +421,16 @@ export default function StudyPlan() {
               <div
                 key={day.key}
                 className={`rounded-xl border p-3 ${
-                  i === 0 ? "border-[#087fd1]/40 bg-[#087fd1]/[0.04]" : "border-[#12213D]/[0.07]"
+                  i === 0 ? "border-accent/40 bg-accent/[0.04]" : "border-ink/[0.07]"
                 }`}
               >
-                <p className="text-[12px] font-bold text-[#12213D]">
+                <p className="text-[12px] font-bold text-ink">
                   {WEEKDAYS_SHORT[day.weekday]}{" "}
-                  <span className="font-medium text-[#12213D]/40">{day.key.slice(8)}.{day.key.slice(5, 7)}</span>
+                  <span className="font-medium text-ink/40">{day.key.slice(8)}.{day.key.slice(5, 7)}</span>
                 </p>
                 <div className="mt-2 space-y-1.5">
-                  {day.rest && <p className="text-[12px] text-[#12213D]/40">Dam olish</p>}
-                  {day.afterExam && <p className="text-[12px] text-[#12213D]/30">—</p>}
+                  {day.rest && <p className="text-[12px] text-ink/40">Dam olish</p>}
+                  {day.afterExam && <p className="text-[12px] text-ink/30">—</p>}
                   {day.tasks.map((t) => {
                     const Icon = TASK_META[t.type].icon;
                     const isDone = dayDone.includes(t.id);
@@ -439,7 +439,7 @@ export default function StudyPlan() {
                         key={t.id}
                         title={t.title}
                         className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-semibold ${
-                          isDone ? "text-[#12213D]/35 line-through" : TASK_META[t.type].tone
+                          isDone ? "text-ink/35 line-through" : TASK_META[t.type].tone
                         }`}
                       >
                         <Icon size={12} className="shrink-0" />
@@ -455,9 +455,9 @@ export default function StudyPlan() {
       </Card>
 
       {analysis.latestResultPath && (
-        <p className="mt-6 text-center text-xs text-[#12213D]/40">
+        <p className="mt-6 text-center text-xs text-ink/40">
           Reja har bir yangi mock natijangizdan keyin avtomatik yangilanadi ·{" "}
-          <Link to={analysis.latestResultPath} className="font-semibold text-[#087fd1] hover:underline">
+          <Link to={analysis.latestResultPath} className="font-semibold text-accent hover:underline">
             Oxirgi natija
           </Link>
         </p>

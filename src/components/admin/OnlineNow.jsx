@@ -65,31 +65,31 @@ export default function OnlineNow() {
               : "Yuklanmoqda..."
         }
         action={
-          <p className="font-display text-[32px] font-extrabold leading-none tabular-nums text-[#12213D]">
+          <p className="font-display text-[32px] font-extrabold leading-none tabular-nums text-ink">
             {data ? data.total : "—"}
           </p>
         }
       />
       <div className="px-5 pb-5 pt-4 sm:px-6">
         {data && data.users.length === 0 ? (
-          <p className="flex items-center gap-2 py-3 text-sm text-[#12213D]/45">
+          <p className="flex items-center gap-2 py-3 text-sm text-ink/45">
             <LuUsers size={16} /> Hozir login qilgan user yo'q.
           </p>
         ) : (
-          <ul className="divide-y divide-[#12213D]/[0.06]">
+          <ul className="divide-y divide-ink/[0.06]">
             {(data?.users || []).map((u) => (
               <li key={u.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5 text-[13px]">
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 font-semibold text-[#12213D]">
+                  <p className="flex items-center gap-2 font-semibold text-ink">
                     <span className="truncate">{u.displayName || u.email.split("@")[0]}</span>
                     {u.isAdmin && <Badge tone="blue">Admin</Badge>}
                   </p>
-                  <p className="truncate text-[12px] text-[#12213D]/45">{u.email}</p>
+                  <p className="truncate text-[12px] text-ink/45">{u.email}</p>
                 </div>
-                <span className="rounded-lg bg-[#087fd1]/[0.07] px-2 py-1 text-[12px] font-semibold text-[#087fd1]">
+                <span className="rounded-lg bg-accent/[0.07] px-2 py-1 text-[12px] font-semibold text-accent">
                   {routeLabel(u.page)}
                 </span>
-                <span className="w-24 text-right text-[12px] tabular-nums text-[#12213D]/50" title="Saytda qancha vaqtdan beri">
+                <span className="w-24 text-right text-[12px] tabular-nums text-ink/50" title="Saytda qancha vaqtdan beri">
                   {duration(u.since, now)}
                   {u.tabs > 1 ? ` · ${u.tabs} tab` : ""}
                 </span>

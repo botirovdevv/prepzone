@@ -79,18 +79,18 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-[#12213D]/45 leading-relaxed">
+      <p className="text-xs text-ink/45 leading-relaxed">
         College Board'ning rasmiy savollar bankidan tayyor savollarni to'g'ridan-to'g'ri shu
         bo'limga import qiling — qo'lda yozishning hojati yo'q.
       </p>
 
       {domainOptions && (
         <div>
-          <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">Mavzu</label>
+          <label className="block text-xs font-semibold text-ink/55 mb-1.5">Mavzu</label>
           <select
             value={domainId}
             onChange={(e) => handleDomainChange(e.target.value)}
-            className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10 bg-white"
+            className="w-full rounded-xl border border-ink/12 px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10 bg-surface"
           >
             {domainOptions.map((d) => (
               <option key={d.id} value={d.id}>
@@ -102,7 +102,7 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
       )}
 
       <div>
-        <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">Qiyinlik darajasi</label>
+        <label className="block text-xs font-semibold text-ink/55 mb-1.5">Qiyinlik darajasi</label>
         <div className="flex gap-2">
           {DIFFICULTIES.map((d) => (
             <button
@@ -114,8 +114,8 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
                 difficulties.includes(d.id)
-                  ? "bg-[#087fd1] text-white border-[#087fd1]"
-                  : "bg-white text-[#12213D]/50 border-[#12213D]/15"
+                  ? "bg-accent text-white border-accent"
+                  : "bg-surface text-ink/50 border-ink/15"
               }`}
             >
               {d.label}
@@ -126,27 +126,27 @@ export default function QuestionBankImporter({ subject, domainOptions, existingQ
 
       <div className="flex items-end gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">Nechta savol</label>
+          <label className="block text-xs font-semibold text-ink/55 mb-1.5">Nechta savol</label>
           <input
             type="number"
             min={1}
             max={100}
             value={count}
             onChange={(e) => setCount(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
-            className="w-24 rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+            className="w-24 rounded-xl border border-ink/12 px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
           />
         </div>
         <button
           type="button"
           onClick={handleImport}
           disabled={loading || !domainId}
-          className="flex items-center gap-1.5 bg-[#087fd1] text-white text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-[#066fb8] disabled:opacity-40"
+          className="flex items-center gap-1.5 bg-accent text-white text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-accent-press disabled:opacity-40"
         >
           {loading ? <LuLoaderCircle size={15} className="animate-spin" /> : <LuDatabase size={15} />}
           {loading ? "Import qilinmoqda..." : "Import qilish"}
         </button>
         {available !== null && (
-          <span className="text-xs text-[#12213D]/40 pb-2">{available} ta mavjud</span>
+          <span className="text-xs text-ink/40 pb-2">{available} ta mavjud</span>
         )}
       </div>
 

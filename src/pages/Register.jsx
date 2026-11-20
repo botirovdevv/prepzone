@@ -19,11 +19,11 @@ function passwordScore(pw) {
 }
 
 const STRENGTH = [
-  { label: "Juda qisqa", color: "#e5484d" },
-  { label: "Zaif", color: "#e5484d" },
-  { label: "O'rtacha", color: "#f5a524" },
-  { label: "Yaxshi", color: "#30a46c" },
-  { label: "Kuchli", color: "#30a46c" },
+  { label: "Juda qisqa", color: "rgb(var(--c-danger))" },
+  { label: "Zaif", color: "rgb(var(--c-danger))" },
+  { label: "O'rtacha", color: "rgb(var(--c-warning))" },
+  { label: "Yaxshi", color: "rgb(var(--c-success))" },
+  { label: "Kuchli", color: "rgb(var(--c-success))" },
 ];
 
 function StrengthMeter({ password }) {
@@ -36,7 +36,7 @@ function StrengthMeter({ password }) {
           <span
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-200"
-            style={{ background: i <= score ? color : "rgba(0,0,0,0.08)" }}
+            style={{ background: i <= score ? color : "rgb(var(--c-ink) / 0.1)" }}
           />
         ))}
       </div>
@@ -97,7 +97,7 @@ export default function Register() {
       footer={
         <>
           Hisobingiz bormi?{" "}
-          <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
+          <Link to="/login" className="font-semibold text-accent hover:underline">
             Kirish
           </Link>
         </>
@@ -165,7 +165,7 @@ export default function Register() {
           Ro'yxatdan o'tish
         </PrimaryButton>
 
-        <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
+        <p className="text-center text-[13px] leading-[1.5] text-ink-3">
           Emailingizga 6 xonali tasdiqlash kodi yuboramiz.
         </p>
       </form>

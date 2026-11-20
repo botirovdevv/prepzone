@@ -52,7 +52,7 @@ function ReviewQuestion({ item, showPassage }) {
   const { q, number, answer, correct } = item;
   const correctText = q.type === "spr" ? (q.answers || []).join(" yoki ") : q.correctAnswer;
   return (
-    <details className="group border border-gray-200 rounded-lg bg-white">
+    <details className="group border border-gray-200 rounded-lg bg-surface">
       <summary className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none text-sm list-none">
         <span
           className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
@@ -226,7 +226,7 @@ export default function Results() {
                     : "Module 1 natijasiga ko'ra oson Module 2'ga yo'naltirildingiz — bu holatda bo'lim bali taxminan 600 atrofida cheklanadi."
                 }
                 action={
-                  <span className="font-display text-3xl font-extrabold tabular-nums text-[#087fd1]">{r.scaledScore}</span>
+                  <span className="font-display text-3xl font-extrabold tabular-nums text-accent">{r.scaledScore}</span>
                 }
               />
               <div className="space-y-6 p-5 sm:p-6">
@@ -234,19 +234,19 @@ export default function Results() {
 
                 {domains.length > 0 && (
                   <div>
-                    <p className="mb-3 text-sm font-semibold text-[#12213D]">Mavzular bo'yicha</p>
+                    <p className="mb-3 text-sm font-semibold text-ink">Mavzular bo'yicha</p>
                     <div className="space-y-3">
                       {domains.map(([domainId, s]) => {
                         const pct = Math.round((s.correct / s.total) * 100);
                         return (
                           <div key={domainId} className="text-sm">
-                            <div className="mb-1.5 flex justify-between text-[#12213D]/70">
+                            <div className="mb-1.5 flex justify-between text-ink/70">
                               <span>{DOMAIN_LABELS[domainId] || domainId}</span>
-                              <span className="font-semibold tabular-nums text-[#12213D]">
+                              <span className="font-semibold tabular-nums text-ink">
                                 {s.correct}/{s.total}
                               </span>
                             </div>
-                            <div className="h-2 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
+                            <div className="h-2 overflow-hidden rounded-full bg-ink/[0.06]">
                               <div
                                 className={`h-full rounded-full ${
                                   pct >= 80 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400"
@@ -262,19 +262,19 @@ export default function Results() {
                 )}
 
                 {!keys && (
-                  <p className="rounded-xl bg-[#F6F7FB] px-4 py-3 text-sm text-[#12213D]/55">
+                  <p className="rounded-xl bg-canvas px-4 py-3 text-sm text-ink/55">
                     {keysError
                       ? "Savollarni ko'rib chiqish uchun ma'lumotni yuklab bo'lmadi. Sahifani yangilab ko'ring."
                       : "Savollar va to'g'ri javoblar yuklanmoqda..."}
                   </p>
                 )}
                 {reviewModules.map((m) => (
-                  <details key={m.stage} className="group/review rounded-xl border border-[#12213D]/[0.07]">
-                    <summary className="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-sm font-semibold text-[#12213D]">
+                  <details key={m.stage} className="group/review rounded-xl border border-ink/[0.07]">
+                    <summary className="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
                       {m.label} savollarini ko'rib chiqish
-                      <LuChevronDown size={16} className="text-[#12213D]/40 transition group-open/review:rotate-180" />
+                      <LuChevronDown size={16} className="text-ink/40 transition group-open/review:rotate-180" />
                     </summary>
-                    <div className="space-y-2 border-t border-[#12213D]/[0.06] p-3">
+                    <div className="space-y-2 border-t border-ink/[0.06] p-3">
                       {m.items.map((item) => (
                         <ReviewQuestion key={item.q.id} item={item} showPassage={g.type === "rw"} />
                       ))}
@@ -287,7 +287,7 @@ export default function Results() {
         })}
       </div>
 
-      <p className="mt-8 text-center text-xs leading-relaxed text-[#12213D]/40">
+      <p className="mt-8 text-center text-xs leading-relaxed text-ink/40">
         Bal real Digital SAT kabi IRT (Item Response Theory) usulida hisoblanadi: qiyinroq savollarga
         to'g'ri javob ko'proq bal beradi. College Board rasmiy savol parametrlarini e'lon qilmagani
         uchun bal taxminiy va real imtihon natijasidan farq qilishi mumkin.

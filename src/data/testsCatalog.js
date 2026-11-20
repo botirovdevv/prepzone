@@ -15,6 +15,11 @@ export const testsCatalog = [
     title: "SAT Practice Test 2",
     description: "Bluebook formati · adaptiv · 98 savol · 2 soat 14 daqiqa",
   },
+  {
+    id: "bluebook-3",
+    title: "SAT Practice Test 3",
+    description: "Bluebook formati · adaptiv · 98 savol · 2 soat 14 daqiqa",
+  },
 ];
 
 // Faqat nom kerak bo'lgan joylar uchun (Dashboard, History) — og'ir test

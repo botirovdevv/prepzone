@@ -34,11 +34,11 @@ function formatDateTime(ts) {
 }
 
 const STATUS_META = {
-  active: { text: "Test yechmoqda", color: "text-[#087fd1] bg-[#087fd1]/10", icon: LuLoaderCircle },
+  active: { text: "Test yechmoqda", color: "text-accent bg-accent/10", icon: LuLoaderCircle },
   finished: { text: "Yakunladi", color: "text-emerald-600 bg-emerald-500/10", icon: LuCircleCheck },
   terminated: { text: "Chetlatildi", color: "text-red-600 bg-red-500/10", icon: LuCircleX },
   paused: { text: "Pauzada (chiqib ketgan)", color: "text-amber-600 bg-amber-500/10", icon: LuPause },
-  not_started: { text: "Hali kirmagan", color: "text-[#12213D]/50 bg-[#12213D]/[0.06]", icon: LuLoaderCircle },
+  not_started: { text: "Hali kirmagan", color: "text-ink/50 bg-ink/[0.06]", icon: LuLoaderCircle },
 };
 
 const EVENT_LABEL = {
@@ -179,7 +179,7 @@ export default function SessionMonitor() {
     <Page>
       <button
         onClick={() => navigate("/admin")}
-        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-ink/50 transition hover:text-ink"
       >
         <LuArrowLeft size={16} /> Barcha testlar
       </button>
@@ -210,8 +210,8 @@ export default function SessionMonitor() {
       )}
 
       {/* Kirish kodi */}
-      <section className="relative mb-6 overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white sm:p-7">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-[#087fd1]/25 blur-2xl" />
+      <section className="relative mb-6 overflow-hidden rounded-2xl bg-night p-6 text-white sm:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-accent/25 blur-2xl" />
         <div className="relative flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/50">
@@ -242,9 +242,9 @@ export default function SessionMonitor() {
         <Card className="lg:col-span-3">
           <CardHeader title="Ishtirokchilar" subtitle={`${participants.length} ta talaba`} />
           {participants.length === 0 ? (
-            <p className="px-6 pb-6 pt-3 text-sm text-[#12213D]/45">Hali hech kim kirmadi.</p>
+            <p className="px-6 pb-6 pt-3 text-sm text-ink/45">Hali hech kim kirmadi.</p>
           ) : (
-            <div className="mt-4 divide-y divide-[#12213D]/[0.06] border-t border-[#12213D]/[0.06]">
+            <div className="mt-4 divide-y divide-ink/[0.06] border-t border-ink/[0.06]">
               {participants.map((p) => {
                 const meta = STATUS_META[p.status] || STATUS_META.not_started;
                 const Icon = meta.icon;
@@ -254,8 +254,8 @@ export default function SessionMonitor() {
                       <Icon size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#12213D]">{p.name || p.email}</p>
-                      <p className="text-xs text-[#12213D]/45">
+                      <p className="truncate text-sm font-semibold text-ink">{p.name || p.email}</p>
+                      <p className="text-xs text-ink/45">
                         {meta.text}
                         {typeof p.totalScore === "number" ? ` · ${p.totalScore} ball` : ""}
                       </p>
@@ -276,15 +276,15 @@ export default function SessionMonitor() {
         <Card className="lg:col-span-2">
           <CardHeader title="Xavfsizlik hodisalari" subtitle="Oxirgi 50 ta, jonli" />
           {events.length === 0 ? (
-            <p className="px-6 pb-6 pt-3 text-sm text-[#12213D]/45">Hozircha hech qanday hodisa yo'q.</p>
+            <p className="px-6 pb-6 pt-3 text-sm text-ink/45">Hozircha hech qanday hodisa yo'q.</p>
           ) : (
-            <div className="mt-4 max-h-[520px] divide-y divide-[#12213D]/[0.06] overflow-y-auto border-t border-[#12213D]/[0.06]">
+            <div className="mt-4 max-h-[520px] divide-y divide-ink/[0.06] overflow-y-auto border-t border-ink/[0.06]">
               {events.map((e) => (
                 <div key={e.id} className="flex gap-3 px-5 py-3 text-sm sm:px-6">
                   <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />
                   <div className="min-w-0">
-                    <p className="font-semibold text-[#12213D]">{EVENT_LABEL[e.type] || e.type}</p>
-                    <p className="mt-0.5 truncate text-xs text-[#12213D]/45">
+                    <p className="font-semibold text-ink">{EVENT_LABEL[e.type] || e.type}</p>
+                    <p className="mt-0.5 truncate text-xs text-ink/45">
                       {e.name} · {formatDateTime(e.at)}
                     </p>
                   </div>

@@ -36,21 +36,21 @@ function Flashcard({ word, flipped, onFlip }) {
         {/* Old tomon */}
         <Card className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center [backface-visibility:hidden]">
           <Badge tone="blue">{word.pos}</Badge>
-          <p className="mt-4 font-display text-[34px] font-extrabold tracking-[-0.02em] text-[#12213D] sm:text-[42px]">
+          <p className="mt-4 font-display text-[34px] font-extrabold tracking-[-0.02em] text-ink sm:text-[42px]">
             {word.word}
           </p>
-          <p className="mt-6 text-[13px] text-[#12213D]/40">Tap or press Space to reveal</p>
+          <p className="mt-6 text-[13px] text-ink/40">Tap or press Space to reveal</p>
         </Card>
 
         {/* Orqa tomon */}
         <Card className="absolute inset-0 flex flex-col justify-center px-6 text-left [backface-visibility:hidden] [transform:rotateY(180deg)] sm:px-10">
           <div className="flex items-center gap-2">
-            <p className="font-display text-[22px] font-extrabold text-[#12213D]">{word.word}</p>
+            <p className="font-display text-[22px] font-extrabold text-ink">{word.word}</p>
             <Badge tone="blue">{word.pos}</Badge>
           </div>
-          <p className="mt-3 text-[16px] leading-relaxed text-[#12213D]/85">{word.definition}</p>
-          <p className="mt-2 text-[14px] font-semibold text-[#087fd1]">🇺🇿 {word.uz}</p>
-          <p className="mt-5 border-l-2 border-[#087fd1]/30 pl-3 text-[14px] italic leading-relaxed text-[#12213D]/60">
+          <p className="mt-3 text-[16px] leading-relaxed text-ink/85">{word.definition}</p>
+          <p className="mt-2 text-[14px] font-semibold text-accent">🇺🇿 {word.uz}</p>
+          <p className="mt-5 border-l-2 border-accent/30 pl-3 text-[14px] italic leading-relaxed text-ink/60">
             {word.example}
           </p>
         </Card>
@@ -101,11 +101,11 @@ function StudySession({ title, words, onGrade, onExit }) {
   if (done) {
     return (
       <Card className="px-6 py-12 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#087fd1]/10 text-[#087fd1]">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
           <LuTrophy size={26} />
         </span>
-        <p className="mt-4 font-display text-[24px] font-extrabold text-[#12213D]">Session complete</p>
-        <p className="mt-1 text-sm text-[#12213D]/55">
+        <p className="mt-4 font-display text-[24px] font-extrabold text-ink">Session complete</p>
+        <p className="mt-1 text-sm text-ink/55">
           You knew <b className="text-emerald-600">{knownCount}</b> of {queue.length} words.
         </p>
         {missed.length > 0 && (
@@ -132,13 +132,13 @@ function StudySession({ title, words, onGrade, onExit }) {
         <Button variant="ghost" size="sm" onClick={onExit}>
           <LuArrowLeft size={15} /> Back
         </Button>
-        <p className="truncate text-sm font-semibold text-[#12213D]/60">{title}</p>
-        <p className="text-sm font-bold tabular-nums text-[#12213D]">
+        <p className="truncate text-sm font-semibold text-ink/60">{title}</p>
+        <p className="text-sm font-bold tabular-nums text-ink">
           {index + 1} / {queue.length}
         </p>
       </div>
-      <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
-        <div className="h-full rounded-full bg-[#087fd1] transition-[width] duration-300" style={{ width: `${percent}%` }} />
+      <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
+        <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
       </div>
 
       <Flashcard word={current} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
@@ -151,7 +151,7 @@ function StudySession({ title, words, onGrade, onExit }) {
           <LuCheck size={17} /> I know it
         </Button>
       </div>
-      <p className="mt-4 hidden text-center text-xs text-[#12213D]/40 sm:block">
+      <p className="mt-4 hidden text-center text-xs text-ink/40 sm:block">
         Space — flip · ← still learning · → I know it
       </p>
     </div>
@@ -250,20 +250,20 @@ export default function Vocabulary() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="truncate font-display text-[16px] font-bold text-[#12213D]">{set.title}</h3>
-                  <p className="mt-0.5 text-[13px] text-[#12213D]/45">
+                  <h3 className="truncate font-display text-[16px] font-bold text-ink">{set.title}</h3>
+                  <p className="mt-0.5 text-[13px] text-ink/45">
                     {set.words.length} words · {seen} studied
                   </p>
                 </div>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/25 transition group-hover:bg-[#087fd1] group-hover:text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink/25 transition group-hover:bg-accent group-hover:text-white">
                   <LuArrowRight size={17} />
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-3">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/[0.06]">
                   <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="text-[12px] font-bold tabular-nums text-[#12213D]/55">
+                <span className="text-[12px] font-bold tabular-nums text-ink/55">
                   {learned}/{set.words.length}
                 </span>
               </div>

@@ -136,7 +136,7 @@ function QuestionPanel({
                 const v = e.target.value.replace(/\s/g, "");
                 if (isValidSprInput(v)) onSelectAnswer(v || null);
               }}
-              className="w-44 border-2 border-gray-400 rounded-md px-3 py-2.5 text-lg font-semibold tracking-wide focus:outline-none focus:border-[#375DFB]"
+              className="w-44 border-2 border-gray-400 rounded-md px-3 py-2.5 text-lg font-semibold tracking-wide focus:outline-none focus:border-accent"
             />
             <div className="mt-4 text-sm text-gray-600">
               Answer Preview:{" "}
@@ -169,7 +169,7 @@ function QuestionPanel({
                       showFeedback
                         ? feedbackClass || "border-gray-200 opacity-60"
                         : isSelected
-                        ? "border-[#375DFB] bg-blue-50 ring-1 ring-[#375DFB]"
+                        ? "border-accent bg-blue-50 ring-1 ring-accent"
                         : "border-gray-300 hover:bg-gray-50"
                     }
                     ${isCrossed ? "opacity-50" : ""}
@@ -183,7 +183,7 @@ function QuestionPanel({
                           : showFeedback && isSelected
                           ? "bg-red-500 text-white border-red-500"
                           : isSelected
-                          ? "bg-[#375DFB] text-white border-[#375DFB]"
+                          ? "bg-accent text-white border-accent"
                           : "border-gray-400 text-gray-700"
                       }`}
                   >
