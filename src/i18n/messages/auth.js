@@ -3,6 +3,10 @@ export default {
   uz: {
     auth: {
       tabs: { login: "Kirish", register: "Ro'yxatdan o'tish", registerShort: "Ro'yxat" },
+      seo: {
+        login: "Kirish — Prepzone",
+        register: "Ro'yxatdan o'tish — bepul SAT mock testlar | Prepzone",
+      },
       homeLabel: "Prepzone — bosh sahifa",
       home: "Bosh sahifa",
       account: "Hisob",
@@ -121,6 +125,10 @@ export default {
   en: {
     auth: {
       tabs: { login: "Log in", register: "Sign up", registerShort: "Sign up" },
+      seo: {
+        login: "Log in — Prepzone",
+        register: "Sign up — free SAT mock tests | Prepzone",
+      },
       homeLabel: "Prepzone — home page",
       home: "Home",
       account: "Account",

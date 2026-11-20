@@ -11,6 +11,15 @@
 		reverse_proxy api:4000
 	}
 
+	# Bosh sahifa — build vaqtida tayyorlangan HTML (SEO: scripts/prerender.mjs).
+	@home path /
+	handle @home {
+		root * /srv
+		header Cache-Control "no-cache"
+		rewrite * /home.html
+		file_server
+	}
+
 	# Qolgan hamma narsa — React ilova (SPA: noma'lum yo'llar index.html'ga)
 	handle {
 		root * /srv

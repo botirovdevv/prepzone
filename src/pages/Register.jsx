@@ -1,3 +1,4 @@
+import { usePageMeta } from "../hooks/usePageMeta";
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -54,6 +55,7 @@ function StrengthMeter({ password }) {
 export default function Register() {
   const { user, loading: authLoading, register } = useAuth();
   const { t } = useI18n();
+  usePageMeta({ title: t("auth.seo.register"), path: "/register" });
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState("");

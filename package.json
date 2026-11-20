@@ -8,7 +8,7 @@
     "predev": "npm run content",
     "dev": "vite",
     "prebuild": "npm run content",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

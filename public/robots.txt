@@ -1,0 +1,25 @@
+# Prepzone — https://prep-zone.uz
+User-agent: *
+Allow: /
+# Kirishdan keyingi shaxsiy sahifalar va API indekslanmaydi.
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /account
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /sat/
+Disallow: /session/
+Disallow: /study-room
+Disallow: /study-plan
+Disallow: /practice
+Disallow: /vocabulary
+Disallow: /mistakes
+Disallow: /daily
+Disallow: /leaderboard
+Disallow: /join
+Disallow: /more
+Disallow: /desmos
+Disallow: /qr
+Disallow: /verify-email
+
+Sitemap: https://prep-zone.uz/sitemap.xml

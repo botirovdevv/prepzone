@@ -28,8 +28,9 @@ const AuthedApp = lazy(loadAuthedApp);
 // qilgan holatda ortga (Home'ga) qaytib kira olmasligi shu orqali ta'minlanadi.
 function RootRoute() {
   const { user, loading } = useAuth();
-  if (loading) return <PageLoader fullscreen />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  // Tekshiruv paytida ham bosh sahifa ko'rinadi: build vaqtida tayyorlangan HTML
+  // (SEO) bilan bir xil bo'lgani uchun "miltillash" bo'lmaydi.
+  if (user && !loading) return <Navigate to="/dashboard" replace />;
   return <Home />;
 }
 

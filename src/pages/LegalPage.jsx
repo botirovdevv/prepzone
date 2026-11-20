@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { usePageMeta } from "../hooks/usePageMeta";
 import { Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { LanguageSwitch, useI18n } from "../i18n";
@@ -18,13 +18,7 @@ export default function LegalPage({ page }) {
   const sections = tr(`legal.${page}.sections`) || [];
   const isContact = page === "contact";
 
-  useEffect(() => {
-    const previous = document.title;
-    document.title = `${title} — Prepzone`;
-    return () => {
-      document.title = previous;
-    };
-  }, [title]);
+  usePageMeta({ title: `${title} — Prepzone`, path: `/${page}` });
 
   return (
     <AuthLayout

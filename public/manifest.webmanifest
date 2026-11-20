@@ -1,6 +1,7 @@
 {
   "name": "Prepzone — Digital SAT mock testlar",
   "short_name": "Prepzone",
+  "description": "Bepul Digital SAT mock testlar, xatolar daftari va ball predictor — o'zbek tilida.",
   "lang": "uz",
   "start_url": "/dashboard",
   "display": "standalone",

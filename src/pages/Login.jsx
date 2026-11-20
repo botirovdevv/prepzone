@@ -1,3 +1,4 @@
+import { usePageMeta } from "../hooks/usePageMeta";
 import { lazy, Suspense, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { LuMail, LuQrCode } from "react-icons/lu";
@@ -24,6 +25,7 @@ const TABS = [
 export default function Login() {
   const { user, loading: authLoading, login } = useAuth();
   const { t } = useI18n();
+  usePageMeta({ title: t("auth.seo.login"), path: "/login" });
   const navigate = useNavigate();
   const location = useLocation();
   const from = safeFrom(location.state?.from);
