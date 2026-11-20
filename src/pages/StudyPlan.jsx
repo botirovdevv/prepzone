@@ -194,7 +194,7 @@ function ScoreRing({ current, target }) {
 }
 
 // ---------------- Hero ----------------
-function Hero({ settings, analysis, streakCount, status, ai, generating, onGenerate }) {
+function Hero({ settings, analysis, streakCount, status, ai, generating, onGenerate, aiEnabled = true }) {
   const { t } = useI18n();
   const left = daysUntil(settings.examDate);
   const gap = analysis.current != null ? settings.targetScore - analysis.current : null;
@@ -241,21 +241,23 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
                 ? t("studyPlan.aiStale")
                 : ai.summary || t("studyPlan.aiFallbackSummary")}
         </p>
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={generating}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-5 text-[15px] font-medium text-white transition hover:bg-accent-press disabled:opacity-60"
-        >
-          {generating ? (
-            <LuRefreshCw size={16} className="animate-spin" />
-          ) : status === "none" ? (
-            <LuSparkles size={16} />
-          ) : (
-            <LuRefreshCw size={16} />
-          )}
-          {generating ? t("studyPlan.building") : status === "none" ? t("studyPlan.buildAi") : t("studyPlan.rebuild")}
-        </button>
+        {aiEnabled && (
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={generating}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-5 text-[15px] font-medium text-white transition hover:bg-accent-press disabled:opacity-60"
+          >
+            {generating ? (
+              <LuRefreshCw size={16} className="animate-spin" />
+            ) : status === "none" ? (
+              <LuSparkles size={16} />
+            ) : (
+              <LuRefreshCw size={16} />
+            )}
+            {generating ? t("studyPlan.building") : status === "none" ? t("studyPlan.buildAi") : t("studyPlan.rebuild")}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -661,6 +663,7 @@ export default function StudyPlan() {
         ai={plan.ai}
         generating={generating}
         onGenerate={generateAi}
+        aiEnabled={user?.aiEnabled !== false}
       />
 
       <div className="mt-6">

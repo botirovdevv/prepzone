@@ -37,7 +37,6 @@ const pages = {
   SetForm: () => import("./pages/admin/SetForm"),
   Analytics: () => import("./pages/admin/Analytics"),
   ChooseExam: () => import("./pages/ChooseExam"),
-  DesmosIndex: () => import("./pages/DesmosIndex"),
   DesmosDashboard: () => import("./pages/admin/DesmosDashboard"),
   DesmosForm: () => import("./pages/admin/DesmosForm"),
   Mistakes: () => import("./pages/Mistakes"),
@@ -67,7 +66,6 @@ const SetsDashboard = lazy(pages.SetsDashboard);
 const SetForm = lazy(pages.SetForm);
 const Analytics = lazy(pages.Analytics);
 const ChooseExam = lazy(pages.ChooseExam);
-const DesmosIndex = lazy(pages.DesmosIndex);
 const DesmosDashboard = lazy(pages.DesmosDashboard);
 const DesmosForm = lazy(pages.DesmosForm);
 const Mistakes = lazy(pages.Mistakes);
@@ -366,18 +364,10 @@ export default function AuthedApp() {
             </AdminDashboardRoute>
           }
         />
-        {/* Desmos darsliklari */}
-        <Route
-          path="desmos"
-          element={
-            <DashboardRoute>
-              <DesmosIndex />
-            </DashboardRoute>
-          }
-        />
-        {/* Desmos bo'limi hali yopiq (sidebar'da "Tez orada") — darslik
-            havolalari ro'yxat sahifasidagi ogohlantirishga olib boradi. */}
-        <Route path="desmos/:id" element={<Navigate to="/desmos" replace />} />
+        {/* Desmos darsliklari hali userlarga ochilmagan (admin muharriri
+            ishlaydi). Eski havolalar bosh sahifaga yo'naltiriladi. */}
+        <Route path="desmos" element={<Navigate to="/dashboard" replace />} />
+        <Route path="desmos/:id" element={<Navigate to="/dashboard" replace />} />
         <Route
           path="admin/desmos"
           element={

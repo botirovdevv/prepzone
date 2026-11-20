@@ -478,9 +478,9 @@ function Footer({ onNavigate }) {
     {
       title: t("home.footer.exams"),
       links: [
-        { label: examA, section: "features" },
-        { label: examB, section: "features" },
-        { label: examC, section: "features" },
+        { label: examA, route: "/sat/select" },
+        { label: examB, route: "/practice" },
+        { label: examC, route: "/join" },
       ],
     },
     {

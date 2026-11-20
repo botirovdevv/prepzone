@@ -2,6 +2,7 @@ export default {
   uz: {
     studyRoom: {
       eyebrow: "O'rganish · Beta",
+      headerLabel: "Study Room · Beta",
       subtitle: "Do'stingiz bilan birga dars qiling: video, ovoz, ekran ulashish va ikkalangiz yozadigan umumiy doska.",
       betaNote:
         "Beta: bitta dars 40 daqiqa davom etadi va 2 kishilik. Ba'zi mobil internetlarda video ulanmasligi mumkin — bunday holda Wi-Fi'dan foydalaning.",
@@ -96,6 +97,7 @@ export default {
   en: {
     studyRoom: {
       eyebrow: "Learn · Beta",
+      headerLabel: "Study Room · Beta",
       subtitle: "Study together with a friend: video, voice, screen sharing and a shared whiteboard you both can write on.",
       betaNote:
         "Beta: each session lasts 40 minutes and is for 2 people. Video may not connect on some mobile networks — use Wi-Fi in that case.",

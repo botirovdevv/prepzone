@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LuSparkles, LuLoader, LuLightbulb, LuTriangleAlert } from "react-icons/lu";
 import { api } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 
 // ------------------------------------------------------------------
@@ -17,6 +18,7 @@ const pickQuestion = (q) => ({
 
 export default function AiExplain({ question, userAnswer, className = "" }) {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
   const [state, setState] = useState({ status: "idle" });
 
   const ask = async () => {
@@ -28,6 +30,8 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
       setState({ status: "error", message: err.message });
     }
   };
+
+  if (user && user.aiEnabled === false) return null;
 
   if (state.status === "done") {
     const d = state.data;

@@ -79,7 +79,7 @@ const EN = {
   "AI reja tuza olmadi. Qayta urinib ko'ring.": "The AI couldn't build a plan. Please try again.",
   "AI tekin limiti tugadi. Birozdan keyin qayta urinib ko'ring.": "The AI's free limit has been reached. Please try again later.",
   "AI serverlari hozir band. Bir necha daqiqadan keyin qayta urinib ko'ring.": "The AI servers are busy. Please try again in a few minutes.",
-  "AI sozlanmagan: serverda GEMINI_API_KEY yo'q.": "AI features aren't available right now.",
+  "AI hozircha mavjud emas.": "AI features aren't available right now.",
   "AI javobini o'qib bo'lmadi. Qayta urinib ko'ring.": "Couldn't read the AI response. Please try again.",
   "Rasm formati noto'g'ri.": "Unsupported image format.",
   "Rasm hajmi juda katta.": "The image is too large.",

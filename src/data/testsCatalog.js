@@ -7,7 +7,7 @@
 export const testsCatalog = [
   {
     id: "bluebook-3",
-    title: "SAT Practice Mock 3",
+    title: "SAT Practice Test 3",
     description: "March 2026 formatiga yaqin · adaptiv",
     questions: 98,
     minutes: 134,

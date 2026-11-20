@@ -42,7 +42,7 @@ function buildTest(id, testTitle, rw, math) {
 export const SAT_TESTS = {
   "bluebook-3": buildTest(
     "bluebook-3",
-    "SAT Practice Mock 3",
+    "SAT Practice Test 3",
     [t3RwModule1, t3RwModule2Easy, t3RwModule2Hard],
     [t3MathModule1, t3MathModule2Easy, t3MathModule2Hard]
   ),

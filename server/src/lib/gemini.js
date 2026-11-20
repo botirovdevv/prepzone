@@ -130,7 +130,7 @@ export async function generateJson(
   schema,
   { temperature = 0.2, timeoutMs = 100_000, maxModels = Infinity, fast = false } = {}
 ) {
-  if (!aiEnabled()) throw new HttpError(503, "ai/disabled", "AI sozlanmagan: serverda GEMINI_API_KEY yo'q.");
+  if (!aiEnabled()) throw new HttpError(503, "ai/disabled", "AI hozircha mavjud emas.");
 
   const body = (thinking) =>
     JSON.stringify({
@@ -154,7 +154,7 @@ export async function generateJson(
       throw new HttpError(
         429,
         "ai/daily-limit",
-        `Bugungi tekin AI limiti tugadi (~${hours} soatdan keyin tiklanadi). Doimiy ishlashi uchun Google AI Studio'da to'lovni yoqing.`
+        `Bugungi AI limiti tugadi (~${hours} soatdan keyin tiklanadi).`
       );
     }
     throw new HttpError(429, "ai/rate-limited", "AI tekin limiti tugadi. Birozdan keyin qayta urinib ko'ring.");

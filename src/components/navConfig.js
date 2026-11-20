@@ -42,8 +42,8 @@ export const NAV = [
     label: "learn",
     items: [
       { to: "/vocabulary", label: "vocabulary", icon: LuBookOpen, tone: "green" },
-      // Desmos hali ulanmagan — "Tez orada" bilan o'chiq turadi.
-      { to: "/desmos", label: "desmos", icon: LuCalculator, tone: "green", soon: true },
+      // Desmos darsliklari tayyor bo'lgach shu yerga qaytariladi:
+      // { to: "/desmos", label: "desmos", icon: LuCalculator, tone: "green" },
       { to: "/study-room", label: "studyRoom", icon: LuVideo, tone: "purple", badge: "beta" },
     ],
   },

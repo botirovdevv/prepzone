@@ -4,6 +4,7 @@
 // qaytadi (frontendda src/utils/dates.js orqali o'qiladi).
 // ------------------------------------------------------------------
 import { effectivePerms } from "./permissions.js";
+import { config } from "../config.js";
 
 // Profil rasmi manzili. `v` — rasm almashganda brauzer keshini yangilash uchun.
 export function avatarUrl(userId, updatedAt) {
@@ -25,6 +26,8 @@ export function publicUser(u) {
     onboarding: u.onboarding || null,
     studyPlan: u.study_plan || null,
     createdAt: u.created_at,
+    // AI tugmalari faqat serverda AI sozlangan bo'lsa ko'rsatiladi.
+    aiEnabled: Boolean(config.geminiApiKey),
   };
 }
 
