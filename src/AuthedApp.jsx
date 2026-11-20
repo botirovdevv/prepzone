@@ -38,6 +38,7 @@ const pages = {
   Analytics: () => import("./pages/admin/Analytics"),
   ChooseExam: () => import("./pages/ChooseExam"),
   DesmosDashboard: () => import("./pages/admin/DesmosDashboard"),
+  BuiltinTestStats: () => import("./pages/admin/BuiltinTestStats"),
   DesmosForm: () => import("./pages/admin/DesmosForm"),
   Mistakes: () => import("./pages/Mistakes"),
   Daily: () => import("./pages/Daily"),
@@ -67,6 +68,7 @@ const SetForm = lazy(pages.SetForm);
 const Analytics = lazy(pages.Analytics);
 const ChooseExam = lazy(pages.ChooseExam);
 const DesmosDashboard = lazy(pages.DesmosDashboard);
+const BuiltinTestStats = lazy(pages.BuiltinTestStats);
 const DesmosForm = lazy(pages.DesmosForm);
 const Mistakes = lazy(pages.Mistakes);
 const Daily = lazy(pages.Daily);
@@ -109,6 +111,7 @@ const ADMIN_PAGES = [
   "Analytics",
   "DesmosDashboard",
   "DesmosForm",
+  "BuiltinTestStats",
 ];
 const PREFETCH = Object.entries(pages)
   .filter(([name]) => !ADMIN_PAGES.includes(name))
@@ -305,6 +308,14 @@ export default function AuthedApp() {
           element={
             <AdminDashboardRoute perm="sessions">
               <AdminDashboard />
+            </AdminDashboardRoute>
+          }
+        />
+        <Route
+          path="admin/tests/:id"
+          element={
+            <AdminDashboardRoute perm="sessions">
+              <BuiltinTestStats />
             </AdminDashboardRoute>
           }
         />

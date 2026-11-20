@@ -241,7 +241,13 @@ export default function Results() {
         terminated={terminated}
         sections={satTest.groups
           .filter((g) => results[g.id])
-          .map((g) => ({ id: g.id, title: g.title, score: results[g.id].scaledScore }))}
+          .map((g) => ({
+            id: g.id,
+            title: g.title,
+            score: results[g.id].scaledScore,
+            low: results[g.id].scoreLow,
+            high: results[g.id].scoreHigh,
+          }))}
       />
 
       <div className="space-y-6">

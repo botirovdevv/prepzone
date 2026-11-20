@@ -75,7 +75,13 @@ export default function SessionResults() {
       <ScoreSummary
         total={computedTotal}
         terminated={terminated}
-        sections={groupResults.map(({ meta, r }) => ({ id: meta.id, title: meta.title, score: r.scaledScore }))}
+        sections={groupResults.map(({ meta, r }) => ({
+          id: meta.id,
+          title: meta.title,
+          score: r.scaledScore,
+          low: r.scoreLow,
+          high: r.scoreHigh,
+        }))}
       />
 
       <div className="space-y-6">

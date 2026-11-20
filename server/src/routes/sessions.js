@@ -460,10 +460,18 @@ router.post("/:id/finish", async (req, res) => {
   const terminated = !!body.terminated || s.status === "closed" || participant.data?.status === "terminated";
   const reason = body.terminationReason || (s.status === "closed" ? "closed_by_admin" : "unknown");
   const { keyed: sections } = await getContent(s);
-  const { results, total, complete } = scoreAttempt(sections, body.attempts, { terminated });
+  const { results, total, complete, totalLow, totalHigh } = scoreAttempt(sections, body.attempts, { terminated });
   const termFields = terminated ? { terminated: true, terminationReason: String(reason).slice(0, 40) } : {};
   const title = s.meta?.title || "";
-  const data = { results, name: studentName(req.user), email: req.user.email, sessionTitle: title, ...termFields };
+  const data = {
+    results,
+    totalLow,
+    totalHigh,
+    name: studentName(req.user),
+    email: req.user.email,
+    sessionTitle: title,
+    ...termFields,
+  };
 
   const p = await tx(async (client) => {
     if (body.attemptId) {
@@ -511,10 +519,17 @@ router.post("/:id/finish", async (req, res) => {
   if (p?.duplicate) {
     const prev = await one("SELECT * FROM results WHERE attempt_id = $1", [body.attemptId]);
     const doc = resultDoc(prev);
-    return res.json({ results: doc.results, total: doc.total, sections: sectionsMeta, alreadySubmitted: true });
+    return res.json({
+      results: doc.results,
+      total: doc.total,
+      totalLow: doc.totalLow,
+      totalHigh: doc.totalHigh,
+      sections: sectionsMeta,
+      alreadySubmitted: true,
+    });
   }
   if (p) emitToAdmins(s.id, "participant:update", participantDoc(p));
-  res.status(201).json({ results, total, sections: sectionsMeta });
+  res.status(201).json({ results, total, totalLow, totalHigh, sections: sectionsMeta });
 });
 
 router.get("/:id/results/me", async (req, res) => {

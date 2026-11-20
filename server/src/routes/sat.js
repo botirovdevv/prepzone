@@ -61,11 +61,19 @@ router.post("/finish", async (req, res) => {
   if (existing) {
     if (existing.user_id !== req.user.id) throw new HttpError(409, "already-exists", "attemptId band.");
     const doc = resultDoc(existing);
-    return res.json({ resultId: doc.id, results: doc.results, total: doc.total, complete: doc.complete, leaderboardUpdated: false });
+    return res.json({
+      resultId: doc.id,
+      results: doc.results,
+      total: doc.total,
+      totalLow: doc.totalLow,
+      totalHigh: doc.totalHigh,
+      complete: doc.complete,
+      leaderboardUpdated: false,
+    });
   }
 
   const terminated = !!body.terminated;
-  const { results, total, complete } = scoreAttempt(data.sections, body.attempts, { terminated });
+  const { results, total, complete, totalLow, totalHigh } = scoreAttempt(data.sections, body.attempts, { terminated });
   if (!Object.keys(results).length) throw new HttpError(400, "invalid-argument", "Javoblar yo'q.");
 
   const out = await tx(async (client) => {
@@ -92,6 +100,8 @@ router.post("/finish", async (req, res) => {
         body.attemptId,
         {
           results,
+          totalLow,
+          totalHigh,
           email: req.user.email,
           ...(terminated
             ? { terminated: true, terminationReason: String(body.terminationReason || "unknown").slice(0, 40) }
@@ -105,7 +115,15 @@ router.post("/finish", async (req, res) => {
     return { row: rows[0], leaderboardUpdated };
   });
 
-  res.status(201).json({ resultId: out.row.id, results, total, complete, leaderboardUpdated: out.leaderboardUpdated });
+  res.status(201).json({
+    resultId: out.row.id,
+    results,
+    total,
+    totalLow,
+    totalHigh,
+    complete,
+    leaderboardUpdated: out.leaderboardUpdated,
+  });
 });
 
 // Natija sahifasida savollarni ko'rib chiqish uchun to'g'ri javoblar —

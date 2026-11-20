@@ -37,6 +37,9 @@ export default {
       irtNote:
         "Bal real Digital SAT kabi IRT (Item Response Theory) usulida hisoblanadi: qiyinroq savollarga to'g'ri javob ko'proq bal beradi. College Board rasmiy savol parametrlarini e'lon qilmagani uchun bal taxminiy va real imtihon natijasidan farq qilishi mumkin.",
       summary: {
+        range: "Ehtimoliy oraliq: {low}–{high}",
+        rangeNote: "Mock test real imtihon emas — haqiqiy ballingiz shu oraliqda bo'lishi ehtimoli yuqori.",
+        sectionRange: "Oraliq: {low}–{high}",
         eyebrow: "Umumiy natija",
         scale: "400–1600 shkala bo'yicha",
         terminatedTitle: "Test xavfsizlik qoidasi buzilgani uchun avtomatik yakunlandi.",
@@ -81,6 +84,9 @@ export default {
       irtNote:
         "Scores are calculated with IRT (Item Response Theory), like the real Digital SAT: correct answers to harder questions earn more points. Because College Board doesn't publish its official question parameters, the score is an estimate and may differ from a real exam result.",
       summary: {
+        range: "Likely range: {low}–{high}",
+        rangeNote: "A mock test isn't the real exam — your actual score is most likely within this range.",
+        sectionRange: "Range: {low}–{high}",
         eyebrow: "Overall result",
         scale: "on the 400–1600 scale",
         terminatedTitle: "The test ended automatically because a security rule was broken.",

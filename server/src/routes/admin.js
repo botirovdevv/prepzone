@@ -9,6 +9,9 @@ import { dayKey } from "../lib/limits.js";
 import { ADMIN_PERMS, effectivePerms } from "../lib/permissions.js";
 import { requireOwner, requirePerm } from "../middleware/auth.js";
 import { onlineSnapshot } from "../lib/presence.js";
+import { SAT_TESTS } from "../../../content/sat/index.js";
+import { cleanAnswers, getStaticSections, module2For } from "../lib/satScoring.js";
+import { isAnswerCorrect } from "../../../src/utils/irtScoring.js";
 
 // ------------------------------------------------------------------
 // Faqat admin (index.js'da requireAdmin bilan ulanadi): sayt analitikasi,
@@ -220,6 +223,192 @@ router.put("/users/:id/admin", requireOwner, async (req, res) => {
   // Socket'dagi admin xonalari (session-admin:*) ulanishda beriladi — qayta ulansin.
   disconnectUser(user.id);
   res.json({ user: await findUserItem(user.id) });
+});
+
+// ------------------------------------------------------------------
+// Tayyor (statik, content/sat) testlar: ro'yxat va test bo'yicha tahlil.
+// Admin sessiyalari /api/sessions orqali; bu yerda faqat repo'dagi testlar.
+// ------------------------------------------------------------------
+
+const questionCount = (test) =>
+  test.groups.reduce((n, g) => n + g.module1.questions.length + g.module2Hard.questions.length, 0);
+
+router.get("/builtin-tests", requirePerm("sessions"), async (_req, res) => {
+  const ids = Object.keys(SAT_TESTS);
+  const { rows } = await query(
+    `SELECT test_id,
+            count(*)::int AS attempts,
+            count(DISTINCT user_id)::int AS users,
+            count(*) FILTER (WHERE complete)::int AS complete,
+            round(avg(total) FILTER (WHERE complete))::int AS avg_total,
+            max(total) FILTER (WHERE complete) AS best_total,
+            max(created_at) AS last_at
+     FROM results WHERE test_id = ANY($1) GROUP BY test_id`,
+    [ids]
+  );
+  const byId = Object.fromEntries(rows.map((r) => [r.test_id, r]));
+  res.json(
+    ids.map((id) => {
+      const r = byId[id] || {};
+      return {
+        id,
+        title: SAT_TESTS[id].testTitle,
+        questions: questionCount(SAT_TESTS[id]),
+        attempts: r.attempts || 0,
+        users: r.users || 0,
+        complete: r.complete || 0,
+        avgTotal: r.avg_total ?? null,
+        bestTotal: r.best_total ?? null,
+        lastAt: r.last_at || null,
+      };
+    })
+  );
+});
+
+const plain = (html) =>
+  String(html || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z#0-9]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 90);
+
+// Belgilangan qiyinlik real natijaga mos kelmasa — savol belgilanadi
+// (kamida MIN_N urinishda). Kelajakda IRT parametrlarini kalibrlash uchun.
+const MIN_N = 10;
+function difficultyFlag(label, p, n) {
+  if (n < MIN_N || p == null) return null;
+  const l = String(label || "").toUpperCase()[0];
+  if (l === "H" && p >= 0.85) return "easier";
+  if (l === "E" && p <= 0.35) return "harder";
+  if (l === "M" && (p >= 0.92 || p <= 0.15)) return p >= 0.92 ? "easier" : "harder";
+  return null;
+}
+
+router.get("/builtin-tests/:id", requirePerm("sessions"), async (req, res) => {
+  const test = SAT_TESTS[req.params.id];
+  const data = getStaticSections(req.params.id);
+  if (!test || !data) throw notFound("Test topilmadi.");
+
+  const { rows } = await query(
+    `SELECT r.id, r.user_id, r.total, r.complete, r.created_at, r.data,
+            u.display_name, u.email
+     FROM results r JOIN users u ON u.id = r.user_id
+     WHERE r.test_id = $1 ORDER BY r.created_at DESC LIMIT 2000`,
+    [req.params.id]
+  );
+
+  // Savollar tahlili: har modul/savol uchun to'g'ri yechganlar ulushi.
+  const stats = {};
+  const bucket = (key, questions) =>
+    (stats[key] ||= questions.map((q) => ({ id: q.id, n: 0, correct: 0 })));
+  const routes = {};
+  for (const r of rows) {
+    for (const section of data.sections) {
+      const sr = r.data?.results?.[section.id];
+      if (!sr || !Array.isArray(sr.module1Answers)) continue;
+      const m1 = cleanAnswers(sr.module1Answers, section.module1.length);
+      const b1 = bucket(`${section.id}:module1`, section.module1);
+      section.module1.forEach((q, i) => {
+        b1[i].n += 1;
+        if (isAnswerCorrect(q, m1[i])) b1[i].correct += 1;
+      });
+      if (sr.route === "hard" || sr.route === "easy") {
+        const rt = (routes[section.id] ||= { hard: 0, easy: 0 });
+        rt[sr.route] += 1;
+      }
+      if (Array.isArray(sr.module2Answers) && (sr.route === "hard" || sr.route === "easy")) {
+        const m2q = module2For(section, sr.route);
+        const m2 = cleanAnswers(sr.module2Answers, m2q.length);
+        const key = sr.route === "hard" ? "module2Hard" : "module2Easy";
+        const b2 = bucket(`${section.id}:${key}`, m2q);
+        m2q.forEach((q, i) => {
+          b2[i].n += 1;
+          if (isAnswerCorrect(q, m2[i])) b2[i].correct += 1;
+        });
+      }
+    }
+  }
+
+  const modules = [];
+  for (const group of test.groups) {
+    for (const key of ["module1", "module2Easy", "module2Hard"]) {
+      const questions = group[key].questions;
+      const b = stats[`${group.id}:${key}`] || [];
+      modules.push({
+        sectionId: group.id,
+        sectionTitle: group.title,
+        module: key,
+        questions: questions.map((q, i) => {
+          const n = b[i]?.n || 0;
+          const p = n ? b[i].correct / n : null;
+          return {
+            index: i + 1,
+            id: q.id,
+            type: q.type,
+            domain: q.domain || "",
+            skill: q.skill || "",
+            difficulty: q.difficulty || "",
+            preview: plain(q.prompt || q.passage),
+            n,
+            pCorrect: p,
+            flag: difficultyFlag(q.difficulty, p, n),
+          };
+        }),
+      });
+    }
+  }
+
+  const complete = rows.filter((r) => r.complete);
+  const avg = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+  const sectionAvg = (id) =>
+    avg(complete.map((r) => r.data?.results?.[id]?.scaledScore).filter((v) => typeof v === "number"));
+  const distribution = [];
+  for (let lo = 400; lo < 1600; lo += 100) {
+    distribution.push({
+      from: lo,
+      to: lo + 99,
+      count: complete.filter((r) => r.total >= lo && (lo === 1500 ? r.total <= 1600 : r.total < lo + 100)).length,
+    });
+  }
+
+  res.json({
+    id: req.params.id,
+    title: test.testTitle,
+    questions: questionCount(test),
+    summary: {
+      attempts: rows.length,
+      users: new Set(rows.map((r) => r.user_id)).size,
+      complete: complete.length,
+      avgTotal: avg(complete.map((r) => r.total)),
+      bestTotal: complete.length ? Math.max(...complete.map((r) => r.total)) : null,
+      sections: test.groups.map((g) => ({
+        id: g.id,
+        title: g.title,
+        avg: sectionAvg(g.id),
+        hardShare: routes[g.id] ? routes[g.id].hard / (routes[g.id].hard + routes[g.id].easy) : null,
+      })),
+    },
+    distribution,
+    attempts: rows.slice(0, 200).map((r) => ({
+      id: r.id,
+      name: r.display_name || r.email.split("@")[0],
+      email: r.email,
+      total: r.total,
+      totalLow: r.data?.totalLow ?? null,
+      totalHigh: r.data?.totalHigh ?? null,
+      sections: Object.fromEntries(
+        test.groups.map((g) => {
+          const sr = r.data?.results?.[g.id];
+          return [g.id, sr ? { score: sr.scaledScore, route: sr.route || null } : null];
+        })
+      ),
+      complete: r.complete,
+      terminated: Boolean(r.data?.terminated),
+      createdAt: r.created_at,
+    })),
+    modules,
+  });
 });
 
 // Admin savol banki: server/question-bank/<file>.json (to'g'ri javoblar bilan,

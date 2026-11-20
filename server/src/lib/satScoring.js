@@ -14,6 +14,7 @@ import {
   decideRouteIrt,
   hasRawCurve,
   isAnswerCorrect,
+  rawScoreRange,
   rawToScaled,
   scoreSection,
 } from "../../../src/utils/irtScoring.js";
@@ -72,7 +73,7 @@ export const hasModule2 = (s) => nonEmpty(s.module2Mixed) || nonEmpty(s.module2E
 export function routeFor(section, module1Answers) {
   if (!hasModule2(section) || nonEmpty(section.module2Mixed)) return null;
   const answers = cleanAnswers(module1Answers, section.module1.length);
-  return decideRouteIrt(section.module1, answers);
+  return decideRouteIrt(section.module1, answers, section.id);
 }
 
 // Tanlangan yo'nalishdagi to'plam bo'sh bo'lsa — mavjud yagona to'plam.
@@ -105,8 +106,12 @@ export function scoreSectionAttempt(section, attempt) {
   const reachedM2 = multi && Array.isArray(attempt?.module2Answers);
   const m2Answers = reachedM2 ? cleanAnswers(attempt.module2Answers, m2Questions.length) : null;
 
-  const responses = buildResponses(section.module1, m1Answers);
-  if (reachedM2) responses.push(...buildResponses(m2Questions, m2Answers));
+  // Module 2'ga yetib kelmagan bo'lsa — uning savollari javobsiz (noto'g'ri)
+  // hisoblanadi, Bluebook'dagi kabi: faqat Module 1 bilan yuqori ball chiqmaydi.
+  const stage = route === "hard" || route === "easy" ? route : "mixed";
+  const responses = buildResponses(section.module1, m1Answers, "m1");
+  const m2Effective = reachedM2 ? m2Answers : Array(m2Questions.length).fill(null);
+  responses.push(...buildResponses(m2Questions, m2Effective, stage));
 
   const domains = {};
   addDomainStats(domains, section.module1, m1Answers);
@@ -117,16 +122,22 @@ export function scoreSectionAttempt(section, attempt) {
   const adaptive = multi && route != null;
   const totalQuestions = section.module1.length + m2Questions.length;
   const totalCorrect = responses.reduce((n, r) => n + (r.correct ? 1 : 0), 0);
-  const scaledScore =
+  const scored =
     !adaptive && hasRawCurve(section.id)
-      ? rawToScaled(section.id, totalCorrect, totalQuestions)
-      : scoreSection(responses);
+      ? {
+          scaledScore: rawToScaled(section.id, totalCorrect, totalQuestions),
+          ...rawScoreRange(section.id, totalCorrect, totalQuestions),
+        }
+      : scoreSection(responses, section.id, route);
+  const { scaledScore, scoreLow, scoreHigh } = scored;
 
   const result = {
     module1Correct: countCorrect(section.module1, m1Answers),
     module1Total: section.module1.length,
     module1Answers: m1Answers,
     scaledScore,
+    scoreLow,
+    scoreHigh,
     rawCorrect: totalCorrect,
     rawTotal: totalQuestions,
     domains,
@@ -154,11 +165,18 @@ export function scoreAttempt(sections, attempts, { terminated = false } = {}) {
     results[section.id] = r;
   }
   const total = Object.values(results).reduce((s, r) => s + r.scaledScore, 0);
+  // Umumiy oraliq: bo'limlar xatoliklari mustaqil — kvadratlar yig'indisining ildizi.
+  const spread = (key) =>
+    Math.sqrt(Object.values(results).reduce((s, r) => s + (r.scaledScore - r[key]) ** 2, 0));
+  const n = Object.keys(results).length;
+  const clampTotal = (x) => Math.min(800 * n, Math.max(200 * n, Math.round(x / 10) * 10));
+  const totalLow = clampTotal(total - spread("scoreLow"));
+  const totalHigh = clampTotal(total + spread("scoreHigh"));
   const complete =
     !terminated &&
     sections.length > 0 &&
     sections.every((s) => results[s.id] && !results[s.id].incomplete);
-  return { results, total, complete };
+  return { results, total, complete, totalLow, totalHigh };
 }
 
 // Natija sahifasida ko'rib chiqish uchun kalitlar: { [questionId]: {...} }.

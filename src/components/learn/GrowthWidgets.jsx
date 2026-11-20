@@ -52,10 +52,18 @@ export function StreakDaily() {
   );
 }
 
+// Ikkala bo'lim (RW + Math) bor natija — 400–1600 shkaladagi to'liq SAT.
+// Bitta bo'limli sessiya natijasi (masalan faqat RW, 600) bashoratni buzmasin.
+const isFullSat = (a) => {
+  const r = a.results;
+  if (!r || typeof r !== "object") return a.total >= 400;
+  return Boolean(r.rw && r.math);
+};
+
 // Oxirgi to'liq natijalardan bashorat: og'irlikli o'rtacha + trend.
 export function predictScore(attempts) {
   const scores = (attempts || [])
-    .filter((a) => a.complete !== false && !a.terminated && a.total >= 400)
+    .filter((a) => a.complete !== false && !a.terminated && a.total >= 400 && isFullSat(a))
     .slice(0, 5)
     .map((a) => a.total);
   if (!scores.length) return null;

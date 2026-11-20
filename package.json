@@ -10,6 +10,7 @@
     "prebuild": "npm run content",
     "build": "vite build && node scripts/prerender.mjs",
     "lint": "oxlint",
+    "score:check": "node scripts/score-check.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
