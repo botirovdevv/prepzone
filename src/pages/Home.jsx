@@ -18,7 +18,6 @@ import {
   LuTarget,
   LuTrophy,
   LuX,
-  LuSparkles,
   LuNotebookPen,
   LuGauge,
   LuFlame,
@@ -65,7 +64,10 @@ function useReveal(rootRef) {
 const formatDay = (key) => key.split("-").reverse().join(".");
 
 // ---------------- Global nav (apple.com uslubi) ----------------
-// 48px balandlikdagi shaffof "shisha" panel; telefonda — ochiladigan ro'yxat.
+// Ixcham: logo, 3 ta havola, "Kirish" va "Boshlash". Mavzu va til — footer'da
+// (telefonda — menyu ichida).
+const NAV_BAR_LINKS = ["tests", "features", "faq"];
+
 function Navbar({ onLogin, onRegister }) {
   const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,23 +88,21 @@ function Navbar({ onLogin, onRegister }) {
           <img src={logo} alt="Prepzone" className="pz-logo h-full w-auto object-contain" />
         </button>
 
-        <nav className="hidden items-center gap-7 text-[13px] text-ink/80 lg:flex">
-          {NAV_LINKS.map((id) => (
+        <nav className="hidden items-center gap-8 text-[13px] text-ink/80 md:flex">
+          {NAV_BAR_LINKS.map((id) => (
             <button key={id} onClick={() => go(id)} className="transition-colors hover:text-ink">
               {t(`home.nav.${id}`)}
             </button>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <ThemeCycleButton className="h-8 w-8 rounded-full" />
-          <LanguageSwitch className="hidden sm:inline-flex" />
-          <button onClick={onLogin} className="hidden px-2 text-[13px] text-ink/80 transition-colors hover:text-ink sm:block">
+        <div className="flex items-center gap-3">
+          <button onClick={onLogin} className="hidden text-[13px] text-ink/80 transition-colors hover:text-ink md:block">
             {t("home.login")}
           </button>
           <button
             onClick={onRegister}
-            className="hidden h-8 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-accent-press sm:inline-flex"
+            className="inline-flex h-7 items-center rounded-full bg-accent px-3.5 text-[12px] font-medium text-white transition-colors hover:bg-accent-press"
           >
             {t("home.start")}
           </button>
@@ -110,7 +110,7 @@ function Navbar({ onLogin, onRegister }) {
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={menuOpen ? t("home.closeMenu") : t("home.openMenu")}
             aria-expanded={menuOpen}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink transition-colors hover:bg-ink/[0.06] lg:hidden"
+            className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink transition-colors hover:bg-ink/[0.06] md:hidden"
           >
             {menuOpen ? <LuX size={18} /> : <LuMenu size={18} />}
           </button>
@@ -119,33 +119,27 @@ function Navbar({ onLogin, onRegister }) {
 
       {/* Telefon menyusi */}
       {menuOpen && (
-        <div className="home-menu-in border-t border-ink/[0.08] px-5 pb-6 pt-2 lg:hidden">
-          <div className="mx-auto max-w-[1024px]">
-            {NAV_LINKS.map((id) => (
-              <button
-                key={id}
-                onClick={() => go(id)}
-                className="flex w-full items-center justify-between border-b border-ink/[0.08] py-3.5 text-left text-[17px] font-semibold text-ink"
-              >
-                {t(`home.nav.${id}`)}
-                <LuChevronRight size={18} className="text-ink-3" />
-              </button>
-            ))}
-            <div className="mt-5 flex items-center gap-3">
-              <button
-                onClick={onRegister}
-                className="h-11 flex-1 rounded-full bg-accent text-[15px] font-medium text-white transition-colors hover:bg-accent-press"
-              >
-                {t("home.register")}
-              </button>
-              <button
-                onClick={onLogin}
-                className="h-11 flex-1 rounded-full bg-fill text-[15px] font-medium text-ink transition-colors hover:bg-ink/10"
-              >
-                {t("home.login")}
-              </button>
-            </div>
-            <LanguageSwitch className="mt-4 sm:hidden" />
+        <div className="home-menu-in border-t border-ink/[0.08] px-5 pb-6 pt-2 md:hidden">
+          {NAV_LINKS.map((id) => (
+            <button
+              key={id}
+              onClick={() => go(id)}
+              className="flex w-full items-center justify-between border-b border-ink/[0.08] py-3.5 text-left text-[17px] font-semibold text-ink"
+            >
+              {t(`home.nav.${id}`)}
+              <LuChevronRight size={18} className="text-ink-3" />
+            </button>
+          ))}
+          <button
+            onClick={onLogin}
+            className="flex w-full items-center justify-between border-b border-ink/[0.08] py-3.5 text-left text-[17px] font-semibold text-ink"
+          >
+            {t("home.login")}
+            <LuChevronRight size={18} className="text-ink-3" />
+          </button>
+          <div className="mt-5 flex items-center justify-between">
+            <LanguageSwitch />
+            <ThemeCycleButton className="h-9 w-9 rounded-full bg-fill" />
           </div>
         </div>
       )}
@@ -174,7 +168,6 @@ function SectionHead({ eyebrow, title, muted, text, center = false, className = 
 
 // ---------------- Nega PrepZone: 4 ta asosiy farq ----------------
 const GROWTH_STYLE = [
-  { icon: LuSparkles, cls: "bg-purple" },
   { icon: LuNotebookPen, cls: "bg-danger" },
   { icon: LuGauge, cls: "bg-accent" },
   { icon: LuFlame, cls: "bg-warning" },
@@ -186,7 +179,7 @@ function GrowthSection() {
     <section className="bg-surface">
       <div className="mx-auto max-w-[1024px] px-5 py-24 lg:py-32">
         <SectionHead eyebrow={t("home.growthEyebrow")} title={t("home.growthTitle")} text={t("home.growthText")} />
-        <div className="mt-14 grid gap-4 md:grid-cols-2">
+        <div className="mt-14 grid gap-4 md:grid-cols-3">
           {(tr("home.growth") || []).map((g, i) => {
             const { icon: Icon, cls } = GROWTH_STYLE[i];
             return (
@@ -204,7 +197,7 @@ function GrowthSection() {
             );
           })}
         </div>
-        <div className="mt-16 grid grid-cols-2 gap-8 lg:grid-cols-4">
+        <div className="mt-16 grid grid-cols-3 gap-6 sm:gap-8">
           {(tr("home.stats") || []).map((s) => (
             <div key={s.label} className="home-reveal">
               <p className="font-display text-[48px] font-bold leading-none tracking-[-0.025em] text-ink">{s.value}</p>
@@ -686,7 +679,7 @@ function Footer({ onNavigate }) {
                       ) : (
                         <button
                           onClick={() => (link.route ? onNavigate(link.route) : scrollToSection(link.section))}
-                          className="text-[12px] text-ink-2 transition-colors hover:text-ink hover:underline"
+                          className="text-left text-[12px] text-ink-2 transition-colors hover:text-ink hover:underline"
                         >
                           {link.label}
                         </button>
@@ -701,6 +694,10 @@ function Footer({ onNavigate }) {
 
         <div className="flex flex-col items-start justify-between gap-3 border-t border-ink/[0.08] py-5 sm:flex-row sm:items-center">
           <p className="text-[12px] text-ink-3">© {new Date().getFullYear()} Prepzone. {t("home.footer.rights")}</p>
+          <div className="flex items-center gap-2 sm:ml-auto sm:mr-6">
+            <LanguageSwitch />
+            <ThemeCycleButton className="h-8 w-8 rounded-full bg-fill" />
+          </div>
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="group inline-flex items-center gap-2 text-[12px] text-ink-2 transition-colors hover:text-ink"
