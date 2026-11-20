@@ -22,10 +22,10 @@ export default function TestCountdown() {
       <div className="flex items-start gap-4">
         <IconTile icon={LuCalendarClock} tone="blue" />
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-ink/45">
+          <p className="text-[12px] font-semibold text-ink/45">
             SAT test day · {dateLabel}
           </p>
-          <p className="mt-0.5 font-display text-[24px] font-extrabold leading-tight text-ink">
+          <p className="mt-0.5 font-display text-[24px] font-bold leading-tight text-ink">
             {left == null ? (
               "—"
             ) : left === 0 ? (
@@ -46,8 +46,8 @@ export default function TestCountdown() {
         <div className="flex items-center gap-3 rounded-xl bg-accent/[0.07] px-4 py-2.5">
           <LuTarget size={18} className="text-accent" />
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-ink/45">{t("dashboard.countdown.goal")}</p>
-            <p className="font-display text-[20px] font-extrabold tabular-nums text-ink">{targetLabel}</p>
+            <p className="text-[11px] font-bold text-ink/45">{t("dashboard.countdown.goal")}</p>
+            <p className="font-display text-[20px] font-bold tabular-nums text-ink">{targetLabel}</p>
           </div>
         </div>
       ) : (

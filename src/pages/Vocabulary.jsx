@@ -38,7 +38,7 @@ function Flashcard({ word, flipped, onFlip }) {
         {/* Old tomon */}
         <Card className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center [backface-visibility:hidden]">
           <Badge tone="blue">{word.pos}</Badge>
-          <p className="mt-4 font-display text-[34px] font-extrabold tracking-[-0.02em] text-ink sm:text-[42px]">
+          <p className="mt-4 font-display text-[34px] font-bold tracking-[-0.02em] text-ink sm:text-[42px]">
             {word.word}
           </p>
           <p className="mt-6 text-[13px] text-ink/40">{t("vocab.reveal")}</p>
@@ -47,7 +47,7 @@ function Flashcard({ word, flipped, onFlip }) {
         {/* Orqa tomon */}
         <Card className="absolute inset-0 flex flex-col justify-center px-6 text-left [backface-visibility:hidden] [transform:rotateY(180deg)] sm:px-10">
           <div className="flex items-center gap-2">
-            <p className="font-display text-[22px] font-extrabold text-ink">{word.word}</p>
+            <p className="font-display text-[22px] font-bold text-ink">{word.word}</p>
             <Badge tone="blue">{word.pos}</Badge>
           </div>
           <p className="mt-3 text-[16px] leading-relaxed text-ink/85">{word.definition}</p>
@@ -107,7 +107,7 @@ function StudySession({ title, words, onGrade, onExit }) {
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
           <LuTrophy size={26} />
         </span>
-        <p className="mt-4 font-display text-[24px] font-extrabold text-ink">{t("vocab.complete")}</p>
+        <p className="mt-4 font-display text-[24px] font-bold text-ink">{t("vocab.complete")}</p>
         <p className="mt-1 text-sm text-ink/55">{t("vocab.knew", { known: knownCount, total: queue.length })}</p>
         {missed.length > 0 && (
           <div className="mx-auto mt-6 flex max-w-md flex-wrap justify-center gap-1.5">

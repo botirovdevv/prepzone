@@ -6,7 +6,7 @@ export default {
       subtitle: "Profil, xavfsizlik va hisobingizga oid barcha sozlamalar shu yerda.",
       sections: {
         profil: "Profil",
-        korinish: "Ko'rinish",
+        korinish: "Ko'rinish va til",
         xavfsizlik: "Xavfsizlik",
         seanslar: "Faol seanslar",
         hisoblar: "Ulangan hisoblar",
@@ -14,9 +14,12 @@ export default {
       },
       since: "{date} dan beri",
       appearance: {
-        title: "Ko'rinish",
+        title: "Ko'rinish va til",
         subtitle: "Auto rejimida sayt qurilmangizning yorug'/qorong'i sozlamasiga ergashadi.",
+        theme: "Mavzu",
+        language: "Til",
       },
+      signOut: { title: "Hisobdan chiqish", busy: "Chiqilmoqda…" },
       theme: {
         label: "Ko'rinish",
         light: "Yorug'",
@@ -127,7 +130,7 @@ export default {
       subtitle: "Your profile, security and all account settings in one place.",
       sections: {
         profil: "Profile",
-        korinish: "Appearance",
+        korinish: "Appearance & language",
         xavfsizlik: "Security",
         seanslar: "Active sessions",
         hisoblar: "Linked accounts",
@@ -135,9 +138,12 @@ export default {
       },
       since: "Since {date}",
       appearance: {
-        title: "Appearance",
+        title: "Appearance & language",
         subtitle: "In Auto mode the site follows your device's light/dark setting.",
+        theme: "Theme",
+        language: "Language",
       },
+      signOut: { title: "Sign out", busy: "Signing out…" },
       theme: {
         label: "Appearance",
         light: "Light",

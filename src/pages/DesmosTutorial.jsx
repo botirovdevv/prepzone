@@ -68,7 +68,7 @@ export default function DesmosTutorial() {
         <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
           <LuCalculator size={19} />
         </div>
-        <h1 className="font-display text-2xl font-extrabold text-ink">{tutorial.title}</h1>
+        <h1 className="font-display text-2xl font-bold text-ink">{tutorial.title}</h1>
       </div>
       {tutorial.description && (
         <p className="text-ink/55 mb-6">{tutorial.description}</p>

@@ -42,6 +42,7 @@ const pages = {
   DesmosForm: () => import("./pages/admin/DesmosForm"),
   Mistakes: () => import("./pages/Mistakes"),
   Daily: () => import("./pages/Daily"),
+  More: () => import("./pages/More"),
 };
 const Dashboard = lazy(pages.Dashboard);
 const SATTest = lazy(pages.SATTest);
@@ -71,6 +72,7 @@ const DesmosDashboard = lazy(pages.DesmosDashboard);
 const DesmosForm = lazy(pages.DesmosForm);
 const Mistakes = lazy(pages.Mistakes);
 const Daily = lazy(pages.Daily);
+const More = lazy(pages.More);
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
 // Imtihonning o'zi (SATTest/SessionTest) fullscreen/xavfsizlik rejimida
@@ -243,6 +245,14 @@ export default function AuthedApp() {
           element={
             <DashboardRoute>
               <Leaderboard />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="more"
+          element={
+            <DashboardRoute>
+              <More />
             </DashboardRoute>
           }
         />

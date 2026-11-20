@@ -6,7 +6,6 @@ import {
   LuLockKeyhole,
   LuCheck,
   LuMail,
-  LuSettings,
   LuCamera,
   LuTrash2,
   LuLink,
@@ -16,15 +15,31 @@ import {
   LuTablet,
   LuRotateCcw,
   LuTriangleAlert,
-  LuKeyRound,
   LuCalendar,
   LuSunMoon,
+  LuSun,
+  LuMoon,
+  LuLanguages,
+  LuLogOut,
 } from "react-icons/lu";
 import { useAuth } from "../context/AuthContext";
-import { LanguageSwitch, formatDate, translate, useI18n } from "../i18n";
-import { Page, PageHeader, Card, CardHeader, Button, Field, Badge, Skeleton, inputClass, PageLoader } from "../components/ui";
+import { formatDate, translate, useI18n } from "../i18n";
+import { useTheme } from "../context/ThemeContext";
+import {
+  Page,
+  PageHeader,
+  Button,
+  Field,
+  Badge,
+  Skeleton,
+  inputClass,
+  PageLoader,
+  ListGroup,
+  ListRow,
+  SectionTitle,
+  SegmentedControl,
+} from "../components/ui";
 import Avatar from "../components/Avatar";
-import ThemeToggle from "../components/ThemeToggle";
 import ConfirmDialog from "../components/ConfirmDialog";
 import PasswordStrength from "../components/PasswordStrength";
 import { checkPassword } from "../utils/passwordPolicy";
@@ -61,50 +76,33 @@ export default function AccountSettings() {
 
   return (
     <Page>
-      <PageHeader
-        eyebrow={t("account.eyebrow")}
-        icon={LuSettings}
-        title={t("account.title")}
-        subtitle={t("account.subtitle")}
-      />
+      <PageHeader title={t("account.title")} subtitle={t("account.subtitle")} />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[240px_1fr]">
-        {/* Chap ustun: profil xulosasi va bo'limlar */}
-        <aside className="space-y-4 lg:sticky lg:top-6">
-          <Card className="hidden p-5 lg:block">
-            <Avatar user={user} name={displayName} className="h-14 w-14 rounded-2xl bg-night text-lg" />
-            <p className="mt-3 truncate font-display text-[15px] font-bold text-ink">{displayName}</p>
-            <p className="mt-0.5 truncate text-[13px] text-ink/50">{user.email}</p>
-            {user.createdAt && (
-              <p className="mt-3 flex items-center gap-1.5 text-xs text-ink/40">
-                <LuCalendar size={12} /> {t("account.since", { date: formatJoined(user.createdAt) })}
-              </p>
-            )}
-          </Card>
-          <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-0.5 lg:px-0">
-            {SECTIONS.map(({ id, icon: Icon }) => (
-              <button
-                type="button"
-                key={id}
-                onClick={() => scrollTo(id)}
-                className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold transition lg:py-2.5 ${
-                  id === "xavfli-zona"
-                    ? "bg-surface text-red-600/80 ring-1 ring-ink/[0.07] hover:text-red-600 lg:bg-transparent lg:ring-0 lg:hover:bg-red-50"
-                    : "bg-surface text-ink/60 ring-1 ring-ink/[0.07] hover:text-ink lg:bg-transparent lg:ring-0 lg:hover:bg-surface"
-                }`}
-              >
-                <Icon size={15} /> {t(`account.sections.${id}`)}
-              </button>
-            ))}
-          </nav>
-        </aside>
+      <div className="grid items-start gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:gap-12">
+        {/* Kompyuter: bo'limlar ro'yxati (sticky). Telefonda — oddiy uzun sahifa. */}
+        <nav aria-label={t("account.title")} className="sticky top-6 hidden space-y-0.5 lg:block">
+          {SECTIONS.map(({ id, icon: Icon }) => (
+            <button
+              type="button"
+              key={id}
+              onClick={() => scrollTo(id)}
+              className={`flex h-9 w-full items-center gap-3 rounded-[10px] px-2.5 text-left text-[15px] transition-colors hover:bg-ink/[0.05] ${
+                id === "xavfli-zona" ? "text-danger" : "text-ink"
+              }`}
+            >
+              <Icon size={17} className={id === "xavfli-zona" ? "text-danger" : "text-ink-2"} />
+              {t(`account.sections.${id}`)}
+            </button>
+          ))}
+        </nav>
 
-        <div className="space-y-6">
+        <div className="mx-auto w-full max-w-2xl space-y-10 lg:mx-0">
           <ProfileSection user={user} displayName={displayName} />
           <AppearanceSection />
           <SecuritySection user={user} />
           <SessionsSection user={user} />
           <AccountsSection user={user} />
+          <SignOutSection />
           <DangerSection user={user} />
         </div>
       </div>
@@ -112,18 +110,98 @@ export default function AccountSettings() {
   );
 }
 
+// Bo'lim: kichik sarlavha + guruhlangan karta (+ ixtiyoriy izoh pastda).
+function Section({ id, title, footer, children, className }) {
+  return (
+    <section id={id} className="scroll-mt-24 lg:scroll-mt-6">
+      <SectionTitle>{title}</SectionTitle>
+      <ListGroup className={className}>{children}</ListGroup>
+      {footer && <p className="mt-2 px-4 text-[13px] leading-[18px] text-ink-2">{footer}</p>}
+    </section>
+  );
+}
+
+// Chiqish — sidebar'dan shu yerga ko'chdi.
+function SignOutSection() {
+  const { logout } = useAuth();
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  return (
+    <section>
+      <ListGroup>
+        <ListRow
+          icon={LuLogOut}
+          iconTone="gray"
+          title={busy ? t("account.signOut.busy") : t("account.signOut.title")}
+          destructive
+          chevron={false}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await logout();
+              navigate("/");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+      </ListGroup>
+    </section>
+  );
+}
+
 // ------------------------------------------------------------------
 // Ko'rinish: Yorug' / Qorong'i / Auto (tizim sozlamasiga ergashadi)
 // ------------------------------------------------------------------
 function AppearanceSection() {
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
+  const { theme, setTheme } = useTheme();
+  const themeOptions = [
+    { value: "light", label: t("account.theme.light"), icon: LuSun },
+    { value: "dark", label: t("account.theme.dark"), icon: LuMoon },
+    { value: "system", label: t("account.theme.system"), icon: LuMonitor },
+  ];
+  const langOptions = [
+    { value: "uz", label: "O'zbekcha" },
+    { value: "en", label: "English" },
+  ];
   return (
-    <Card id="korinish" className="scroll-mt-6">
-      <CardHeader title={t("account.appearance.title")} subtitle={t("account.appearance.subtitle")} />
-      <div className="px-5 pb-6 pt-4 sm:px-6">
-        <ThemeToggle />
-      </div>
-    </Card>
+    <Section id="korinish" title={t("account.sections.korinish")} footer={t("account.appearance.subtitle")}>
+      <PreferenceRow icon={LuSunMoon} tone="blue" title={t("account.appearance.theme")}>
+        <SegmentedControl
+          label={t("account.appearance.theme")}
+          options={themeOptions}
+          value={theme}
+          onChange={setTheme}
+          className="w-full sm:w-auto"
+        />
+      </PreferenceRow>
+      <PreferenceRow icon={LuLanguages} tone="purple" title={t("account.appearance.language")}>
+        <SegmentedControl
+          label={t("account.appearance.language")}
+          options={langOptions}
+          value={lang}
+          onChange={setLang}
+          className="w-full sm:w-auto"
+        />
+      </PreferenceRow>
+    </Section>
+  );
+}
+
+// Sozlama qatori: chapda ikonka + nom, o'ngda boshqaruv (telefonda pastga tushadi).
+function PreferenceRow({ icon: Icon, tone, title, children }) {
+  return (
+    <div className="flex flex-col gap-3 border-b border-ink/[0.08] px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+      <span className="flex items-center gap-3">
+        <span className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] text-white ${tone === "purple" ? "bg-purple" : "bg-accent"}`}>
+          <Icon size={17} />
+        </span>
+        <span className="text-[16px] text-ink">{title}</span>
+      </span>
+      {children}
+    </div>
   );
 }
 
@@ -195,25 +273,31 @@ function ProfileSection({ user, displayName }) {
   };
 
   return (
-    <Card as="form" id="profil" onSubmit={handleNameSubmit} className="scroll-mt-6">
-      <CardHeader title={t("account.profile.title")} subtitle={t("account.profile.subtitle")} />
+    <section id="profil" className="scroll-mt-24 lg:scroll-mt-6">
+    <SectionTitle>{t("account.profile.title")}</SectionTitle>
+    <ListGroup as="form" onSubmit={handleNameSubmit}>
       <div className="space-y-5 p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative w-fit">
-            <Avatar user={user} name={displayName} className="h-24 w-24 rounded-3xl bg-night text-2xl" />
+            <Avatar user={user} name={displayName} className="h-20 w-20 rounded-full bg-ink-3 text-2xl" />
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={photoBusy}
               aria-label={t("account.profile.uploadPhoto")}
-              className="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-accent text-white transition hover:bg-accent-press disabled:opacity-60"
+              className="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-surface bg-accent text-white transition hover:bg-accent-press disabled:opacity-60"
             >
               <LuCamera size={15} />
             </button>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-ink">{t("account.profile.photo")}</p>
-            <p className="mt-0.5 text-[13px] text-ink/50">{t("account.profile.photoHint")}</p>
+            <p className="text-[16px] font-semibold text-ink">{t("account.profile.photo")}</p>
+            <p className="mt-0.5 text-[13px] text-ink-2">{t("account.profile.photoHint")}</p>
+            {user.createdAt && (
+              <p className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-3">
+                <LuCalendar size={13} /> {t("account.since", { date: formatJoined(user.createdAt) })}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={photoBusy}>
                 <LuCamera size={14} /> {photoBusy ? t("account.profile.uploading") : user.avatarUrl ? t("account.profile.replace") : t("account.profile.uploadPhoto")}
@@ -229,7 +313,7 @@ function ProfileSection({ user, displayName }) {
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
         </div>
 
-        <div className="h-px bg-ink/[0.06]" />
+        <div className="h-px bg-ink/[0.08]" />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t("account.profile.fullName")}>
@@ -244,17 +328,8 @@ function ProfileSection({ user, displayName }) {
         </div>
         {nameError && <p className="text-sm text-red-600">{nameError}</p>}
 
-        <div className="h-px bg-ink/[0.06]" />
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-ink">{t("account.profile.language")}</p>
-            <p className="mt-0.5 text-[13px] text-ink/50">{t("account.profile.languageHint")}</p>
-          </div>
-          <LanguageSwitch />
-        </div>
       </div>
-      <div className="flex justify-end border-t border-ink/[0.06] px-5 py-4 sm:px-6">
+      <div className="flex justify-end border-t border-ink/[0.08] px-5 py-4 sm:px-6">
         <Button type="submit" disabled={nameSaving || name.trim() === (user.displayName || "")}>
           {nameSaved ? (
             <>
@@ -267,7 +342,8 @@ function ProfileSection({ user, displayName }) {
           )}
         </Button>
       </div>
-    </Card>
+    </ListGroup>
+    </section>
   );
 }
 
@@ -320,13 +396,12 @@ function SecuritySection({ user }) {
   };
 
   return (
-    <Card id="xavfsizlik" className="scroll-mt-6">
+    <Section
+      id="xavfsizlik"
+      title={hasPassword ? t("account.security.change") : t("account.security.set")}
+      footer={hasPassword ? t("account.security.changeHint") : t("account.security.setHint")}
+    >
       <form onSubmit={handlePasswordSubmit}>
-        <CardHeader
-          title={hasPassword ? t("account.security.change") : t("account.security.set")}
-          subtitle={hasPassword ? t("account.security.changeHint") : t("account.security.setHint")}
-          action={<LuKeyRound size={18} className="text-ink/30" />}
-        />
         <div className="space-y-4 p-5 sm:p-6">
           {hasPassword && (
             <Field label={t("account.security.current")}>
@@ -368,8 +443,8 @@ function SecuritySection({ user }) {
           <PasswordStrength check={pwCheck} show={newPassword.length > 0} />
           {pwError && <p className="text-sm text-red-600">{pwError}</p>}
         </div>
-        <div className="flex justify-end border-t border-ink/[0.06] px-5 py-4 sm:px-6">
-          <Button type="submit" variant="dark" disabled={pwSaving || !pwCheck.valid || newPassword !== confirmPassword}>
+        <div className="flex justify-end border-t border-ink/[0.08] px-5 py-4 sm:px-6">
+          <Button type="submit" disabled={pwSaving || !pwCheck.valid || newPassword !== confirmPassword}>
             {pwSaved ? (
               <>
                 <LuCheck size={16} /> {t("account.profile.saved")}
@@ -384,7 +459,7 @@ function SecuritySection({ user }) {
           </Button>
         </div>
       </form>
-    </Card>
+    </Section>
   );
 }
 
@@ -450,21 +525,10 @@ function SessionsSection({ user }) {
   const others = sessions ? sessions.filter((s) => !s.current).length : 0;
 
   return (
-    <Card id="seanslar" className="scroll-mt-6">
-      <CardHeader
-        title={t("account.sessions.title")}
-        subtitle={t("account.sessions.subtitle")}
-        action={
-          others > 0 && (
-            <Button type="button" size="sm" variant="outline" onClick={handleEndAll} disabled={ending !== null}>
-              {ending === "all" ? t("account.sessions.endingAll") : t("account.sessions.endAll")}
-            </Button>
-          )
-        }
-      />
-      <div className="mt-4">
+    <Section id="seanslar" title={t("account.sessions.title")} footer={t("account.sessions.subtitle")}>
+      <div>
         {sessions === null && !error && (
-          <div className="space-y-2 border-t border-ink/[0.06] px-5 py-4 sm:px-6">
+          <div className="space-y-2 px-4 py-4">
             <Skeleton className="h-12" />
             <Skeleton className="h-12" />
           </div>
@@ -505,13 +569,19 @@ function SessionsSection({ user }) {
           );
         })}
         {sessions && others === 0 && (
-          <p className="border-t border-ink/[0.06] px-5 py-4 text-[13px] text-ink/45 sm:px-6">
-            {t("account.sessions.none")}
-          </p>
+          <p className="px-4 py-3.5 text-[15px] text-ink-2">{t("account.sessions.none")}</p>
         )}
-        {error && <p className="border-t border-ink/[0.06] px-5 py-4 text-sm text-red-600 sm:px-6">{error}</p>}
+        {others > 0 && (
+          <ListRow
+            title={ending === "all" ? t("account.sessions.endingAll") : t("account.sessions.endAll")}
+            destructive
+            chevron={false}
+            onClick={ending !== null ? undefined : handleEndAll}
+          />
+        )}
+        {error && <p className="px-4 py-3.5 text-[15px] text-danger">{error}</p>}
       </div>
-    </Card>
+    </Section>
   );
 }
 
@@ -523,9 +593,8 @@ function AccountsSection({ user }) {
   const [error, setError] = useState("");
 
   return (
-    <Card id="hisoblar" className="scroll-mt-6">
-      <CardHeader title={t("account.accounts.title")} subtitle={t("account.accounts.subtitle")} />
-      <div className="mt-4">
+    <Section id="hisoblar" title={t("account.accounts.title")} footer={t("account.accounts.subtitle")}>
+      <div>
         <SettingRow
           icon={GoogleIcon}
           title="Google"
@@ -560,7 +629,7 @@ function AccountsSection({ user }) {
           }
         />
       </div>
-    </Card>
+    </Section>
   );
 }
 
@@ -623,9 +692,8 @@ function DangerSection({ user }) {
   const [resetDone, setResetDone] = useState(false);
 
   return (
-    <Card id="xavfli-zona" className="scroll-mt-6 border-danger/25">
-      <CardHeader title={t("account.danger.title")} subtitle={t("account.danger.subtitle")} />
-      <div className="mt-4">
+    <Section id="xavfli-zona" title={t("account.danger.title")} footer={t("account.danger.subtitle")}>
+      <div>
         <SettingRow
           icon={LuRotateCcw}
           tone="red"
@@ -683,7 +751,7 @@ function DangerSection({ user }) {
           navigate("/", { replace: true });
         }}
       />
-    </Card>
+    </Section>
   );
 }
 
@@ -692,24 +760,24 @@ function DangerSection({ user }) {
 // ------------------------------------------------------------------
 function SettingRow({ icon: Icon, tone = "ink", title, text, action, error }) {
   return (
-    <div className="border-t border-ink/[0.06] px-5 py-4 sm:px-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-              tone === "red" ? "bg-red-500/10 text-red-600" : "bg-ink/[0.05] text-ink/60"
-            }`}
-          >
-            <Icon size={16} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-ink">{title}</p>
-            <p className="mt-0.5 break-words text-[13px] leading-relaxed text-ink/50">{text}</p>
+    <div className="group/srow flex gap-3 pl-4">
+      <span
+        className={`mt-3 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] ${
+          tone === "red" ? "bg-danger text-white" : "bg-fill text-ink-2"
+        }`}
+      >
+        <Icon size={16} />
+      </span>
+      <div className="min-w-0 flex-1 border-b border-ink/[0.08] py-3 pr-4 group-last/srow:border-b-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <div className="text-[16px] leading-[21px] text-ink">{title}</div>
+            <p className="mt-0.5 break-words text-[13px] leading-[18px] text-ink-2">{text}</p>
           </div>
+          {action && <div className="shrink-0">{action}</div>}
         </div>
-        <div className="shrink-0 pl-12 sm:pl-0">{action}</div>
+        {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
       </div>
-      {error && <p className="mt-2 pl-12 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

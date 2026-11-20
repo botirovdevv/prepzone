@@ -88,7 +88,7 @@ export default function StudyRoomLobby() {
             }}
             placeholder={t("studyRoom.codePlaceholder")}
             autoCapitalize="characters"
-            className={`${inputClass} mt-4 font-mono tracking-[0.2em] uppercase`}
+            className={`${inputClass} mt-4 font-mono `}
           />
           <Button type="submit" variant="dark" className="mt-3" disabled={!enabled || !code.trim()}>
             <LuLogIn size={16} /> {t("studyRoom.join")}

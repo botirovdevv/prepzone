@@ -69,7 +69,16 @@ h6 {
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
 }
+/* Pastki tab bar (iPhone) — kontent ustida suzuvchi "shisha" qatlam. */
+:root { --tabbar-h: calc(64px + env(safe-area-inset-bottom)); }
+.pz-tabbar {
+  background: rgb(var(--c-surface) / 0.72);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  box-shadow: 0 0 0 0.5px rgb(var(--c-ink) / 0.10), 0 10px 30px -10px rgb(0 0 0 / 0.18);
+}
 @media (prefers-reduced-transparency: reduce) {
+  .pz-tabbar { background: rgb(var(--c-surface)); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .pz-material { background: rgb(var(--c-canvas)); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .pz-material-surface { background: rgb(var(--c-surface)); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }

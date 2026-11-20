@@ -49,7 +49,7 @@ export default function AuthNavbar() {
           {activeIndex >= 0 && (
             <span
               aria-hidden="true"
-              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.04)] dark:bg-elevated"
+              className="pz-segment-pill absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.04)] dark:bg-ink/25"
               style={{ transform: `translateX(${activeIndex * 100}%)` }}
             />
           )}

@@ -32,7 +32,14 @@ const purpleScale = Object.fromEntries(SHADES.map((s) => [s, v(`p-purple-${s}`)]
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["selector", '[data-theme="dark"]'],
+  // dark: — qo'lda tanlangan Qorong'i rejim YOKI Auto rejimida tizim qorong'i bo'lsa.
+  darkMode: [
+    "variant",
+    [
+      '&:is([data-theme="dark"] *)',
+      '@media (prefers-color-scheme: dark) { &:not([data-theme="light"] *) }',
+    ],
+  ],
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,TS,TSX,Jsx,JSX}",

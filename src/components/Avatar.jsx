@@ -12,7 +12,7 @@ function initials(nameOrEmail) {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-export default function Avatar({ user, name, src, className = "h-9 w-9 rounded-xl bg-night text-xs" }) {
+export default function Avatar({ user, name, src, className = "h-9 w-9 rounded-xl bg-ink-3 text-xs" }) {
   const label = name ?? (user?.displayName || user?.email || "");
   const path = src ?? user?.avatarUrl;
   const url = path ? `${API_URL}${path}` : null;

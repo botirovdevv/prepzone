@@ -27,7 +27,7 @@ export function StreakDaily() {
           <LuFlame size={28} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[26px] font-extrabold leading-none text-ink tabular-nums">
+          <p className="font-display text-[26px] font-bold leading-none text-ink tabular-nums">
             {s.current} <span className="text-[14px] font-semibold text-ink/50">{t("streak.days")}</span>
           </p>
           <p className="mt-1 text-[12px] text-ink/50">
@@ -97,8 +97,8 @@ export function Predictor({ attempts, target }) {
         <p className="mt-5 text-sm text-ink/55">{t("predictor.noData")}</p>
       ) : (
         <div>
-          <p className="mt-4 text-[12px] font-semibold uppercase tracking-wide text-ink/45">{t("predictor.range")}</p>
-          <p className="font-display text-[34px] font-extrabold leading-tight tabular-nums text-ink">
+          <p className="mt-4 text-[12px] font-semibold text-ink/45">{t("predictor.range")}</p>
+          <p className="font-display text-[34px] font-bold leading-tight tabular-nums text-ink">
             {p.low}–{p.high}
           </p>
           <p className="flex items-center gap-1.5 text-[13px] text-ink/55">

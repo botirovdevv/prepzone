@@ -15,7 +15,7 @@ export default function QuizCard({ question: q, selected, onSelect, reveal = fal
     <div className="rounded-2xl border border-ink/[0.08] bg-surface p-5 sm:p-6">
       <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-ink/45">
         {number != null && (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-night text-[11px] text-white">{number}</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-fill text-[12px] font-semibold text-ink-2">{number}</span>
         )}
         {q.skill && <span className="truncate">{q.skill}</span>}
       </div>

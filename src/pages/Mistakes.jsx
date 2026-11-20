@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { isAnswerCorrect } from "../utils/irtScoring";
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
-import { Page, PageHeader, Card, Button, EmptyState, PageLoader, StatTile, Badge } from "../components/ui";
+import { Page, PageHeader, Card, Button, EmptyState, PageLoader, StatTile, Badge, SegmentedControl } from "../components/ui";
 import QuizCard from "../components/learn/QuizCard";
 import AiExplain from "../components/learn/AiExplain";
 import { useI18n, formatDate } from "../i18n";
@@ -147,23 +147,16 @@ export default function Mistakes() {
         />
       ) : (
         <>
-          <div className="mb-4 flex gap-2">
-            {[
-              ["all", t("mistakes.all")],
-              ["rw", t("mistakes.filterRw")],
-              ["math", t("mistakes.filterMath")],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setFilter(id)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  filter === id ? "bg-night text-white" : "bg-surface text-ink/60 border border-ink/10"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            className="mb-4"
+            options={[
+              { value: "all", label: t("mistakes.all") },
+              { value: "rw", label: t("mistakes.filterRw") },
+              { value: "math", label: t("mistakes.filterMath") },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
           <div className="space-y-2">
             {visible.map((m) => (
               <Card key={m.key} className="flex items-center gap-4 p-4">

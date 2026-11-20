@@ -47,13 +47,13 @@ export default function Daily() {
 
       {done && (
         <Card className="mb-6 overflow-hidden">
-          <div className="flex items-center gap-4 bg-night p-6 text-white">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500">
+          <div className="flex items-center gap-4 border-b border-ink/[0.08] p-6">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-warning text-white">
               <LuFlame size={28} />
             </span>
             <div>
-              <p className="text-lg font-bold">{t("daily.done")}</p>
-              <p className="text-white/70">
+              <p className="font-display text-[20px] font-semibold leading-[25px] text-ink">{t("daily.done")}</p>
+              <p className="mt-0.5 text-[15px] text-ink-2">
                 {result
                   ? t("daily.result", { correct: result.correct, xp: result.xp })
                   : t("daily.result", { correct: data.done.correct, xp: data.done.correct * 10 + 20 })}
@@ -61,7 +61,7 @@ export default function Daily() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 p-5 text-sm text-ink/60">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 text-[15px] text-ink-2">
             <span>{t("daily.comeBack")} {t("daily.mistakesNote")}</span>
             <Button variant="outline" size="sm" to="/mistakes">
               {t("daily.toMistakes")}

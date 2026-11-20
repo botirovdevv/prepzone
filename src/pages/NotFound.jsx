@@ -9,7 +9,7 @@ export default function NotFound() {
       <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10 text-accent">
         <LuSearchX size={28} />
       </div>
-      <p className="font-display text-5xl font-black text-ink">404</p>
+      <p className="font-display text-5xl font-bold text-ink">404</p>
       <h1 className="mt-2 font-display text-xl font-bold text-ink">{t("notFound.title")}</h1>
       <p className="mt-2 max-w-sm text-sm text-ink/60">{t("notFound.text")}</p>
       <Link

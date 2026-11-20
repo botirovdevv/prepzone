@@ -21,7 +21,7 @@ import {
   LuClock,
   LuCpu,
 } from "react-icons/lu";
-import { Page, PageHeader, Card, CardHeader, Badge, Button, Field, PageLoader, Skeleton, inputClass } from "../components/ui";
+import { Page, PageHeader, Card, CardHeader, Badge, Button, Field, PageLoader, Skeleton, inputClass, SegmentedControl } from "../components/ui";
 import { dayKey } from "../utils/date";
 import { loadVocabProgress, isDue } from "../utils/vocabProgress";
 import {
@@ -103,38 +103,30 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
       </div>
 
       <div className="mt-6">
-        <p className="mb-2 text-[13px] font-semibold text-ink/75">{t("studyPlan.dailyTime")}</p>
-        <div className="flex flex-wrap gap-2">
-          {MINUTE_OPTIONS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => set({ dailyMinutes: m })}
-              className={`h-10 rounded-xl border px-4 text-sm font-semibold transition ${
-                form.dailyMinutes === m
-                  ? "border-accent bg-accent text-white"
-                  : "border-ink/12 text-ink/70 hover:border-ink/25"
-              }`}
-            >
-              {formatMinutes(m)}
-            </button>
-          ))}
-        </div>
+        <p className="mb-2 text-[13px] font-medium text-ink-2">{t("studyPlan.dailyTime")}</p>
+        <SegmentedControl
+          label={t("studyPlan.dailyTime")}
+          options={MINUTE_OPTIONS.map((m) => ({ value: m, label: formatMinutes(m) }))}
+          value={form.dailyMinutes}
+          onChange={(m) => set({ dailyMinutes: m })}
+          className="w-full sm:w-auto"
+        />
       </div>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-[13px] font-semibold text-ink/75">{t("studyPlan.restDays")}</p>
+          <p className="mb-2 text-[13px] font-medium text-ink-2">{t("studyPlan.restDays")}</p>
           <div className="flex flex-wrap gap-1.5">
             {tr("studyPlan.weekdaysShort").map((w, d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => toggleRest(d)}
-                className={`h-9 min-w-[44px] rounded-lg px-2 text-[13px] font-semibold transition ${
+                aria-pressed={form.restDays.includes(d)}
+                className={`h-9 min-w-[44px] rounded-full px-3 text-[13px] font-medium transition ${
                   form.restDays.includes(d)
-                    ? "bg-ink text-on-ink"
-                    : "bg-ink/[0.05] text-ink/60 hover:bg-ink/10"
+                    ? "bg-accent/[0.12] text-accent"
+                    : "bg-fill text-ink-2 hover:text-ink"
                 }`}
               >
                 {w}
@@ -179,7 +171,7 @@ function ScoreRing({ current, target }) {
   return (
     <div className="relative h-[112px] w-[112px] shrink-0">
       <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-white/10" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-ink/[0.08]" />
         <circle
           cx="50"
           cy="50"
@@ -190,12 +182,12 @@ function ScoreRing({ current, target }) {
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          className="text-[#4fb3ff] transition-[stroke-dashoffset] duration-700"
+          className="text-accent transition-[stroke-dashoffset] duration-700"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-[24px] font-extrabold leading-none tabular-nums">{current ?? "—"}</span>
-        <span className="mt-1 text-[11px] font-semibold text-white/50">/ {target}</span>
+        <span className="font-display text-[24px] font-bold leading-none tabular-nums">{current ?? "—"}</span>
+        <span className="mt-1 text-[11px] font-semibold text-ink-2">/ {target}</span>
       </div>
     </div>
   );
@@ -207,40 +199,40 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
   const left = daysUntil(settings.examDate);
   const gap = analysis.current != null ? settings.targetScore - analysis.current : null;
   return (
-    <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#163056] to-[#0b5fa0] text-white shadow-[0_18px_40px_-20px_rgba(18,33,61,0.6)]">
+    <div className="overflow-hidden rounded-card border border-ink/[0.06] bg-surface text-ink shadow-card">
       <div className="grid gap-6 p-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-8">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/50">{t("studyPlan.untilExam")}</p>
-          <p className="mt-1 font-display text-[44px] font-extrabold leading-none tabular-nums">
+          <p className="text-[13px] font-medium text-ink-2">{t("studyPlan.untilExam")}</p>
+          <p className="mt-1 font-display text-[44px] font-bold leading-none tabular-nums">
             {left > 0 ? left : left === 0 ? t("studyPlan.today") : "—"}
-            {left > 0 && <span className="ml-2 text-[20px] font-bold text-white/60">{t("studyPlan.days")}</span>}
+            {left > 0 && <span className="ml-2 text-[20px] font-semibold text-ink-2">{t("studyPlan.days")}</span>}
           </p>
-          <p className="mt-2 text-sm text-white/55">{settings.examDate.split("-").reverse().join(".")}</p>
+          <p className="mt-2 text-[13px] text-ink-2">{settings.examDate.split("-").reverse().join(".")}</p>
         </div>
 
         <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
           <ScoreRing current={analysis.current} target={settings.targetScore} />
-          <p className="text-[13px] font-semibold text-white/70 sm:text-center">
+          <p className="text-[13px] font-medium text-ink-2 sm:text-center">
             {gap == null ? t("studyPlan.takeDiagnostic") : gap > 0 ? t("studyPlan.toGoal", { n: gap }) : t("studyPlan.reached")}
           </p>
         </div>
 
         <div className="flex items-center gap-3 sm:justify-end">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning">
             <LuFlame size={24} />
           </span>
           <div>
-            <p className="font-display text-[28px] font-extrabold leading-none tabular-nums">{streakCount}</p>
-            <p className="mt-1 text-[12px] font-semibold text-white/50">{t("studyPlan.streak")}</p>
+            <p className="font-display text-[28px] font-bold leading-none tabular-nums">{streakCount}</p>
+            <p className="mt-1 text-[13px] font-medium text-ink-2">{t("studyPlan.streak")}</p>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-white/10 bg-white/[0.04] px-6 py-5 sm:flex-row sm:items-center sm:px-8">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4fb3ff]/15 text-[#4fb3ff]">
+      <div className="flex flex-col gap-4 border-t border-ink/[0.08] bg-surface-2 px-6 py-5 sm:flex-row sm:items-center sm:px-8">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
           <LuSparkles size={19} />
         </span>
-        <p className="min-w-0 flex-1 text-[14px] leading-relaxed text-white/80">
+        <p className="min-w-0 flex-1 text-[15px] leading-[22px] text-ink">
           {generating
             ? t("studyPlan.aiGenerating")
             : status === "none"
@@ -253,7 +245,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
           type="button"
           onClick={onGenerate}
           disabled={generating}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-ink transition hover:bg-white/90 disabled:opacity-60"
+          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-accent px-5 text-[15px] font-medium text-white transition hover:bg-accent-press disabled:opacity-60"
         >
           {generating ? (
             <LuRefreshCw size={16} className="animate-spin" />
@@ -287,18 +279,18 @@ function DayStrip({ week, done, selected, onSelect }) {
               onClick={() => onSelect(day.key)}
               className={`flex w-[76px] snap-start flex-col items-center rounded-2xl border px-2 py-3 transition sm:w-auto ${
                 active
-                  ? "border-accent bg-accent text-white shadow-[0_10px_24px_-12px_rgba(8,127,209,0.8)]"
+                  ? "border-accent bg-accent text-white"
                   : isExam
-                    ? "border-red-200 bg-red-50 text-red-700 hover:border-red-300"
+                    ? "border-danger/20 bg-danger/[0.06] text-danger hover:border-danger/30"
                     : day.rest || day.afterExam
                       ? "border-ink/[0.06] bg-ink/[0.02] text-ink/40 hover:border-ink/15"
                       : "border-ink/[0.07] bg-surface text-ink hover:border-ink/20"
               }`}
             >
-              <span className={`text-[11px] font-bold uppercase ${active ? "text-white/70" : "opacity-60"}`}>
+              <span className={`text-[12px] font-semibold ${active ? "text-white/80" : "opacity-60"}`}>
                 {i === 0 ? t("studyPlan.today") : tr("studyPlan.weekdaysShort")[day.weekday]}
               </span>
-              <span className="mt-0.5 font-display text-[20px] font-extrabold tabular-nums">{day.key.slice(8)}</span>
+              <span className="mt-0.5 font-display text-[20px] font-bold tabular-nums">{day.key.slice(8)}</span>
               <span className="mt-1.5 flex h-3 items-center gap-1">
                 {isExam ? (
                   <LuTrophy size={12} />
@@ -351,7 +343,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-ink/40">{t(`studyPlan.taskLabels.${task.type}`)}</span>
+          <span className="text-[11px] font-bold text-ink/40">{t(`studyPlan.taskLabels.${task.type}`)}</span>
           {task.minutes > 0 && (
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink/40">
               <LuClock size={11} /> {formatMinutes(task.minutes)}

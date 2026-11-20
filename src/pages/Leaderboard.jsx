@@ -3,14 +3,14 @@ import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { LuTrophy, LuCrown, LuMedal } from "react-icons/lu";
 import Avatar from "../components/Avatar";
-import { Page, PageHeader, Card, Button, EmptyState, ErrorState, Skeleton } from "../components/ui";
+import { Page, PageHeader, Card, Button, EmptyState, ErrorState, Skeleton, SegmentedControl } from "../components/ui";
 import { useI18n } from "../i18n";
 
 // Podium tartibi: 2-o'rin, 1-o'rin, 3-o'rin (o'rtadagisi eng baland).
 const PODIUM = [
-  { index: 1, height: "h-24", ring: "ring-ink/15", avatar: "bg-night" },
+  { index: 1, height: "h-24", ring: "ring-ink/15", avatar: "bg-ink-3" },
   { index: 0, height: "h-32", ring: "ring-amber-400", avatar: "bg-accent" },
-  { index: 2, height: "h-20", ring: "ring-ink/10", avatar: "bg-night/70" },
+  { index: 2, height: "h-20", ring: "ring-ink/10", avatar: "bg-ink-3/70" },
 ];
 
 export default function Leaderboard() {
@@ -53,20 +53,15 @@ export default function Leaderboard() {
         subtitle={tab === "xp" ? t("streak.xpBoardSub") : t("leaderboard.subtitle")}
       />
 
-      <div className="mb-5 inline-flex rounded-full bg-ink/[0.05] p-1 text-sm font-semibold">
-        {[
-          ["score", t("streak.tabScore")],
-          ["xp", t("streak.tabXp")],
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`rounded-full px-4 py-2 transition ${tab === id ? "bg-surface text-ink shadow-sm" : "text-ink/55"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        className="mb-6"
+        options={[
+          { value: "score", label: t("streak.tabScore") },
+          { value: "xp", label: t("streak.tabXp") },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
 
       {loading ? (
         <div className="space-y-3">
@@ -104,13 +99,13 @@ export default function Leaderboard() {
                       {r.name}
                       {isMe && <span className="text-accent">{t("leaderboard.you")}</span>}
                     </p>
-                    <p className="font-display text-xl font-extrabold tabular-nums text-ink">{r.bestScore}</p>
+                    <p className="font-display text-xl font-bold tabular-nums text-ink">{r.bestScore}</p>
                     <div
                       className={`mt-3 flex w-full items-start justify-center rounded-t-2xl pt-3 ${height} ${
                         index === 0 ? "bg-accent text-white" : "bg-canvas text-ink/50"
                       }`}
                     >
-                      <span className="font-display text-2xl font-extrabold">{index + 1}</span>
+                      <span className="font-display text-2xl font-bold">{index + 1}</span>
                     </div>
                   </div>
                 );
@@ -131,12 +126,12 @@ export default function Leaderboard() {
                       <span className="w-6 text-center font-display text-sm font-bold tabular-nums text-ink/35">
                         {i + 4}
                       </span>
-                      <Avatar name={r.name} src={r.avatarUrl} className="h-9 w-9 rounded-xl bg-night text-xs" />
+                      <Avatar name={r.name} src={r.avatarUrl} className="h-9 w-9 rounded-xl bg-ink-3 text-xs" />
                       <p className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">
                         {r.name}
                         {isMe && <span className="font-semibold text-accent">{t("leaderboard.you")}</span>}
                       </p>
-                      <p className="font-display text-lg font-extrabold tabular-nums text-ink">{r.bestScore}</p>
+                      <p className="font-display text-lg font-bold tabular-nums text-ink">{r.bestScore}</p>
                     </div>
                   );
                 })}

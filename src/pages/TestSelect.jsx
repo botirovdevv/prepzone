@@ -180,7 +180,7 @@ export default function TestSelect() {
                   )}
                 </div>
 
-                <h3 className="mt-5 font-display text-xl font-extrabold tracking-[-0.01em] text-ink">
+                <h3 className="mt-5 font-display text-xl font-bold tracking-[-0.01em] text-ink">
                   {p.title}
                 </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink/50">{p.description}</p>

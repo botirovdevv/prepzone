@@ -187,7 +187,7 @@ export default function History() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-display text-2xl font-extrabold tabular-nums text-ink">{a.total}</p>
+                      <p className="font-display text-2xl font-bold tabular-nums text-ink">{a.total}</p>
                       <p className="text-[11px] font-medium text-ink/40">/ 1600</p>
                     </div>
                     <LuChevronRight

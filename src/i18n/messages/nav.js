@@ -2,7 +2,7 @@
 export default {
   uz: {
     nav: {
-      groups: { main: "ASOSIY", practice: "MASHQ", learn: "O'RGANISH", progress: "NATIJALAR", admin: "ADMIN" },
+      groups: { main: "Asosiy", practice: "Mashq", learn: "O'rganish", progress: "Natijalar", admin: "Admin" },
       today: "Bugun",
       studyPlan: "O'quv reja",
       practiceTests: "Mock testlar",
@@ -23,11 +23,16 @@ export default {
       closeMenu: "Menyuni yopish",
       soonTitle: "{label} — tez orada",
       userFallback: "Foydalanuvchi",
+      accountHint: "Hisob, mavzu va til",
+      accountLabel: "{name} — hisob sozlamalari",
+      tabsLabel: "Asosiy bo'limlar",
+      tabs: { today: "Bugun", tests: "Testlar", practice: "Mashq", vocab: "Lug'at", more: "Yana" },
+      more: { title: "Yana" },
     },
   },
   en: {
     nav: {
-      groups: { main: "MAIN", practice: "PRACTICE", learn: "LEARN", progress: "PROGRESS", admin: "ADMIN" },
+      groups: { main: "Main", practice: "Practice", learn: "Learn", progress: "Progress", admin: "Admin" },
       today: "Today",
       studyPlan: "Study Plan",
       practiceTests: "Practice tests",
@@ -48,6 +53,11 @@ export default {
       closeMenu: "Close menu",
       soonTitle: "{label} — coming soon",
       userFallback: "User",
+      accountHint: "Account, appearance & language",
+      accountLabel: "{name} — account settings",
+      tabsLabel: "Main sections",
+      tabs: { today: "Today", tests: "Tests", practice: "Practice", vocab: "Vocab", more: "More" },
+      more: { title: "More" },
     },
   },
 };

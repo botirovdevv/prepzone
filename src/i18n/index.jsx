@@ -119,16 +119,17 @@ export function useI18n() {
 // UZ | EN almashtirgich. `tone="dark"` — to'q fonli joylar uchun.
 export function LanguageSwitch({ className = "", tone = "light" }) {
   const { lang, setLang, t } = useI18n();
-  const base =
+  // HIG segmented control: kulrang "quduq" ichida tanlangan segment ko'tarilib turadi.
+  const base = tone === "dark" ? "border-white/15 bg-white/5 text-white/60" : "border-transparent bg-fill text-ink-2";
+  const active =
     tone === "dark"
-      ? "border-white/15 bg-white/5 text-white/60"
-      : "border-ink/10 bg-surface text-ink-2";
-  const active = tone === "dark" ? "bg-white text-ink" : "bg-night text-white";
+      ? "bg-white text-ink"
+      : "bg-surface text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:bg-ink/25";
   return (
     <div
       role="group"
       aria-label={t("common.language")}
-      className={`inline-flex items-center rounded-full border p-0.5 text-[12px] font-bold ${base} ${className}`}
+      className={`inline-flex items-center rounded-full border p-[3px] text-[12px] font-semibold ${base} ${className}`}
     >
       {LANGS.map((l) => (
         <button
@@ -136,7 +137,7 @@ export function LanguageSwitch({ className = "", tone = "light" }) {
           type="button"
           onClick={() => setLang(l)}
           aria-pressed={lang === l}
-          className={`rounded-full px-2.5 py-1 uppercase transition ${lang === l ? active : "hover:opacity-80"}`}
+          className={`rounded-full px-2.5 py-1 uppercase transition ${lang === l ? active : "hover:text-ink"}`}
         >
           {l}
         </button>

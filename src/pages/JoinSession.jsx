@@ -51,8 +51,8 @@ export default function JoinSession() {
     <Page width="form" className="flex min-h-[80vh] flex-col justify-center">
       <div className="mx-auto w-full max-w-md">
         <Card className="p-7 sm:p-9">
-          <IconTile icon={LuKeyRound} tone="dark" size="lg" className="mx-auto" />
-          <h1 className="mt-5 text-center font-display text-2xl font-extrabold tracking-[-0.01em] text-ink">
+          <IconTile icon={LuKeyRound} tone="blue" size="lg" className="mx-auto" />
+          <h1 className="mt-5 text-center font-display text-2xl font-bold tracking-[-0.01em] text-ink">
             {t("join.title")}
           </h1>
           <p className="mt-1.5 text-center text-sm text-ink/50">{t("join.text")}</p>
@@ -81,7 +81,7 @@ export default function JoinSession() {
                   return (
                     <div
                       key={i}
-                      className={`flex h-14 items-center justify-center rounded-xl border-2 font-mono text-2xl font-black text-ink transition ${
+                      className={`flex h-14 items-center justify-center rounded-xl border-2 font-mono text-2xl font-bold text-ink transition ${
                         error
                           ? "border-red-300 bg-red-50/50"
                           : active

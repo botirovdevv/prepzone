@@ -38,7 +38,7 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
         </p>
         {d.steps?.length > 0 && (
           <>
-            <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-ink/45">{t("tutor.steps")}</p>
+            <p className="mt-3 text-[11px] font-bold text-ink/45">{t("tutor.steps")}</p>
             <ol className="mt-1 list-decimal space-y-1 pl-5">
               {d.steps.map((s, i) => (
                 <li key={i}>{s}</li>

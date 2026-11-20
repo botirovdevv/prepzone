@@ -137,7 +137,7 @@ export default function PracticeSet() {
         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
           <LuCircleCheck size={30} />
         </div>
-        <h1 className="text-2xl font-extrabold text-ink mb-2 text-center">{set.title}</h1>
+        <h1 className="text-2xl font-bold text-ink mb-2 text-center">{set.title}</h1>
         <p className="text-ink/60 mb-8 text-center">
           {t("practiceSet.summary", { answered: answeredCount, total, correct: correctCount })}
         </p>

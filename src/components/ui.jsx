@@ -6,28 +6,24 @@
 // Tokenlar yorug' va qorong'i rejimda o'zi almashadi (styles/tokens.css).
 // ------------------------------------------------------------------
 import { Link } from "react-router-dom";
-import { LuRotateCw, LuTriangleAlert } from "react-icons/lu";
+import { LuChevronRight, LuRotateCw, LuTriangleAlert } from "react-icons/lu";
 import { useI18n } from "../i18n";
 
 const cx = (...parts) => parts.filter(Boolean).join(" ");
 
-// ---------------- Sahifa sarlavhasi ----------------
-export function PageHeader({ eyebrow, icon: Icon, title, subtitle, actions, children }) {
+// ---------------- Sahifa sarlavhasi (HIG Large Title) ----------------
+// eyebrow — sarlavha ustidagi kichik izoh (masalan bo'lim nomi), oddiy ink-2 matn.
+export function PageHeader({ eyebrow, title, subtitle, actions, children }) {
   return (
-    <header className="mb-8">
+    <header className="mb-8 lg:mb-10">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {eyebrow && (
-            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-accent mb-2">
-              {Icon && <Icon size={14} />}
-              {eyebrow}
-            </p>
-          )}
-          <h1 className="font-display text-[30px] sm:text-[40px] font-bold tracking-[-0.025em] text-ink leading-[1.08]">
+          {eyebrow && <p className="mb-1 text-[15px] font-medium text-ink-2">{eyebrow}</p>}
+          <h1 className="font-display text-[28px] font-bold leading-[34px] tracking-[-0.02em] text-ink sm:text-[34px] sm:leading-[41px]">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-2.5 max-w-2xl text-[17px] leading-[1.47] text-ink-2">{subtitle}</p>
+            <p className="mt-2 max-w-2xl text-[17px] leading-[25px] text-ink-2">{subtitle}</p>
           )}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
@@ -57,8 +53,8 @@ export function CardHeader({ title, subtitle, action, className }) {
   return (
     <div className={cx("flex items-start justify-between gap-4 px-5 pt-5 sm:px-6 sm:pt-6", className)}>
       <div className="min-w-0">
-        <h2 className="font-display text-[19px] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
-        {subtitle && <p className="text-[14px] text-ink-2 mt-0.5">{subtitle}</p>}
+        <h2 className="font-display text-[20px] font-semibold leading-[25px] tracking-[-0.01em] text-ink">{title}</h2>
+        {subtitle && <p className="mt-1 text-[15px] leading-[20px] text-ink-2">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -99,6 +95,162 @@ export function Button({ variant = "primary", size = "md", to, className, childr
     <button className={classes} {...props}>
       {children}
     </button>
+  );
+}
+
+// ---------------- Segmentli boshqaruv (HIG segmented control) ----------------
+// 2–5 ta o'zaro istisno variant: mavzu, til, sahifa ichidagi tablar/filtrlar.
+//   options: [{ value, label, icon? }]
+export function SegmentedControl({ options, value, onChange, size = "md", iconOnly = false, label, className }) {
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  const h = size === "sm" ? "h-7 text-[12px]" : "h-8 text-[13px]";
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={cx("relative inline-grid rounded-full bg-fill p-[3px]", className)}
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      <span
+        aria-hidden="true"
+        className="pz-segment-pill absolute bottom-[3px] left-[3px] top-[3px] rounded-full bg-surface shadow-[0_1px_3px_rgb(0_0_0/0.12),0_1px_1px_rgb(0_0_0/0.04)] dark:bg-ink/25"
+        style={{ width: `calc((100% - 6px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
+      />
+      {options.map((o) => {
+        const active = o.value === value;
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={iconOnly ? o.label : undefined}
+            title={iconOnly ? o.label : undefined}
+            onClick={() => onChange(o.value)}
+            className={cx(
+              "relative z-10 flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 font-medium transition-colors",
+              h,
+              active ? "text-ink" : "text-ink-2 hover:text-ink"
+            )}
+          >
+            {Icon && <Icon size={size === "sm" ? 13 : 14} />}
+            {!iconOnly && o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------- iOS "inset grouped" ro'yxat ----------------
+// <SectionTitle> — guruh ustidagi kichik sarlavha; <ListGroup> — bitta yumaloq karta;
+// <ListRow> — qator (ikonka, sarlavha, izoh, qiymat, o'ng tomonda chevron yoki boshqaruv).
+export function SectionTitle({ children, action, className }) {
+  return (
+    <div className={cx("mb-2 flex items-end justify-between gap-3 px-4", className)}>
+      <h2 className="text-[13px] font-medium leading-[18px] text-ink-2">{children}</h2>
+      {action}
+    </div>
+  );
+}
+
+export function ListGroup({ as: Tag = "div", className, children, ...props }) {
+  return (
+    <Tag
+      className={cx(
+        "overflow-hidden rounded-card border border-ink/[0.06] bg-surface shadow-card",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+const ROW_ICON_TONES = {
+  blue: "bg-accent text-white",
+  green: "bg-success text-white",
+  orange: "bg-warning text-white",
+  red: "bg-danger text-white",
+  purple: "bg-purple text-white",
+  gray: "bg-ink-3 text-white",
+  plain: "text-ink-2",
+};
+
+export function ListRow({
+  icon: Icon,
+  iconTone = "plain",
+  title,
+  subtitle,
+  value,
+  accessory,
+  to,
+  onClick,
+  chevron,
+  destructive = false,
+  disabled = false,
+  className,
+  children,
+}) {
+  const interactive = Boolean(to || onClick) && !disabled;
+  const showChevron = chevron ?? interactive;
+  const content = (
+    <>
+      {Icon && (
+        <span
+          className={cx(
+            "flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px]",
+            ROW_ICON_TONES[iconTone]
+          )}
+        >
+          <Icon size={iconTone === "plain" ? 20 : 17} />
+        </span>
+      )}
+      <span className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 border-b border-ink/[0.08] py-2.5 pr-4 group-last/row:border-b-0">
+        <span className="min-w-0 flex-1">
+          <span
+            className={cx(
+              "block truncate text-[16px] leading-[21px]",
+              destructive ? "text-danger" : disabled ? "text-ink-3" : "text-ink"
+            )}
+          >
+            {title}
+          </span>
+          {subtitle && <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-2">{subtitle}</span>}
+          {children}
+        </span>
+        {value != null && <span className="shrink-0 text-[15px] text-ink-2 tabular-nums">{value}</span>}
+        {accessory}
+        {showChevron && <LuChevronRight size={17} className="shrink-0 text-ink-3" aria-hidden="true" />}
+      </span>
+    </>
+  );
+  const base = cx(
+    "group/row flex w-full items-center gap-3 pl-4 text-left",
+    interactive && "transition-colors hover:bg-ink/[0.03] active:bg-ink/[0.06]",
+    disabled && "cursor-not-allowed",
+    className
+  );
+  if (to && !disabled) {
+    return (
+      <Link to={to} className={base}>
+        {content}
+      </Link>
+    );
+  }
+  if (onClick && !disabled) {
+    return (
+      <button type="button" onClick={onClick} className={base}>
+        {content}
+      </button>
+    );
+  }
+  return (
+    <div className={base} aria-disabled={disabled || undefined}>
+      {content}
+    </div>
   );
 }
 
@@ -213,7 +365,7 @@ export function Spinner({ size = 28, className }) {
 // Sahifa yuklanmoqda.
 //   fullscreen — butun ekran markazida (layout'dan tashqari: auth tekshiruvi, test sahifalari);
 //   aks holda — DashboardLayout ichida, ko'rinib turgan kontent maydonining markazida
-//   (mobil header 3.5rem hisobga olinadi).
+//   (telefonda yuqori panel va tab bar hisobga olinadi).
 export function PageLoader({ fullscreen = false, label }) {
   const { t } = useI18n();
   return (
@@ -222,7 +374,7 @@ export function PageLoader({ fullscreen = false, label }) {
       aria-live="polite"
       className={cx(
         "pz-loader flex flex-col items-center justify-center gap-3",
-        fullscreen ? "fixed inset-0 z-40 bg-canvas" : "min-h-[calc(100dvh-3.5rem)] lg:min-h-[100dvh]"
+        fullscreen ? "fixed inset-0 z-40 bg-canvas" : "min-h-[calc(100dvh-52px-var(--tabbar-h))] lg:min-h-[100dvh]"
       )}
     >
       <Spinner />

@@ -266,7 +266,7 @@ export default function Results() {
                   r.route === "hard" ? t("results.routedHard") : t("results.routedEasy")
                 }
                 action={
-                  <span className="font-display text-3xl font-extrabold tabular-nums text-accent">{r.scaledScore}</span>
+                  <span className="font-display text-3xl font-bold tabular-nums text-accent">{r.scaledScore}</span>
                 }
               />
               <div className="space-y-6 p-5 sm:p-6">
