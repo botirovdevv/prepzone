@@ -45,6 +45,7 @@ const pages = {
   More: () => import("./pages/More"),
   DuelLobby: () => import("./pages/DuelLobby"),
   Duel: () => import("./pages/Duel"),
+  Rush: () => import("./pages/Rush"),
   Resources: () => import("./pages/Resources"),
 };
 const Dashboard = lazy(pages.Dashboard);
@@ -78,6 +79,7 @@ const Daily = lazy(pages.Daily);
 const More = lazy(pages.More);
 const DuelLobby = lazy(pages.DuelLobby);
 const Duel = lazy(pages.Duel);
+const Rush = lazy(pages.Rush);
 const Resources = lazy(pages.Resources);
 
 // Sidebar bilan ko'rsatiladigan (dashboard uslubidagi) himoyalangan sahifalar.
@@ -228,6 +230,14 @@ export default function AuthedApp() {
           element={
             <DashboardRoute>
               <DuelLobby />
+            </DashboardRoute>
+          }
+        />
+        <Route
+          path="duel/rush"
+          element={
+            <DashboardRoute>
+              <Rush />
             </DashboardRoute>
           }
         />

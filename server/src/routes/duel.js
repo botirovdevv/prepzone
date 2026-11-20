@@ -3,6 +3,7 @@ import { z } from "zod";
 import { notFound, parseBody } from "../lib/errors.js";
 import { perUserLimit } from "../lib/limiters.js";
 import { DUEL_CODE_RE, createDuel, duelLeaderboard, duelStats, getDuel, playerFromUser } from "../lib/duels.js";
+import { CATEGORIES, DUEL_MODES } from "../lib/duelModes.js";
 
 // ------------------------------------------------------------------
 // /api/duel — SAT Duel (1v1). O'yinning o'zi Socket.IO orqali (realtime.js).
@@ -15,8 +16,14 @@ import { DUEL_CODE_RE, createDuel, duelLeaderboard, duelStats, getDuel, playerFr
 const router = Router();
 
 router.post("/", perUserLimit({ windowMs: 60_000, limit: 10 }), async (req, res) => {
-  const { section } = parseBody(z.object({ section: z.enum(["math", "rw", "mix"]).default("mix") }), req.body);
-  const duel = await createDuel({ host: playerFromUser(req.user), section });
+  const { section, mode } = parseBody(
+    z.object({
+      section: z.enum(["math", "rw", "mix"]).default("mix"),
+      mode: z.enum(Object.keys(DUEL_MODES)).default("classic"),
+    }),
+    req.body
+  );
+  const duel = await createDuel({ host: playerFromUser(req.user), section, modeId: mode, origin: "invite" });
   res.json({ code: duel.code });
 });
 
@@ -24,8 +31,9 @@ router.get("/me", async (req, res) => {
   res.json(await duelStats(String(req.user.id)));
 });
 
-router.get("/leaderboard", async (_req, res) => {
-  res.json(await duelLeaderboard());
+router.get("/leaderboard", async (req, res) => {
+  const category = CATEGORIES.includes(req.query.category) ? req.query.category : "classic";
+  res.json(await duelLeaderboard(category));
 });
 
 router.get("/:code", (req, res) => {
@@ -37,8 +45,9 @@ router.get("/:code", (req, res) => {
   res.json({
     code,
     section: duel.section,
+    mode: duel.mode.id,
     status: duel.status,
-    host: { id: host.id, name: host.name, avatarUrl: host.avatarUrl },
+    host: { id: host.id, name: host.name, avatarUrl: host.avatarUrl, rating: host.rating },
     seated,
     open: seated || (duel.status === "waiting" && duel.players.length < 2),
   });

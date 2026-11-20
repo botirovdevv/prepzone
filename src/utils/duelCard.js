@@ -37,7 +37,7 @@ function player(ctx, cx, cy, name, score, color) {
   ctx.fillText(String(score), cx, cy + 350);
 }
 
-export async function drawDuelCard({ outcome, title, me, opp, rating, challenge, url }) {
+export async function drawDuelCard({ outcome, title, subtitle, me, opp, rating, challenge, url }) {
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -53,6 +53,11 @@ export async function drawDuelCard({ outcome, title, me, opp, rating, challenge,
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.font = `600 44px ${FONT}`;
   ctx.fillText("PrepZone · SAT Duel ⚔️", W / 2, 200);
+  if (subtitle) {
+    ctx.font = `600 40px ${FONT}`;
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillText(subtitle, W / 2, 260);
+  }
 
   ctx.font = `700 140px ${FONT}`;
   ctx.fillText(outcome === "win" ? "🏆" : outcome === "loss" ? "💪" : "🤝", W / 2, 440);
@@ -84,5 +89,47 @@ export async function drawDuelCard({ outcome, title, me, opp, rating, challenge,
   ctx.font = `500 46px ${FONT}`;
   ctx.fillText(url, W / 2, 1710);
 
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas"))), "image/png"));
+  return toPng(canvas);
+}
+
+const toPng = (canvas) =>
+  new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("canvas"))), "image/png"));
+
+// SAT Rush natijasi: katta ball, rejim va rekord.
+export async function drawRushCard({ score, modeLabel, best, newBest, challenge, url }) {
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#0B1020");
+  g.addColorStop(1, "#3A2A0B");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = `600 44px ${FONT}`;
+  ctx.fillText("PrepZone · SAT Rush ⚡", W / 2, 200);
+  ctx.font = `600 48px ${FONT}`;
+  ctx.fillText(modeLabel, W / 2, 300);
+  ctx.font = `700 140px ${FONT}`;
+  ctx.fillText(newBest ? "🎉" : "⚡", W / 2, 560);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `700 360px ${FONT}`;
+  ctx.fillText(String(score), W / 2, 980);
+  if (best != null) {
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.roundRect((W - 560) / 2, 1100, 560, 110, 55);
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = `600 48px ${FONT}`;
+    ctx.fillText(`Best ${best}`, W / 2, 1172);
+  }
+  ctx.font = `700 76px ${FONT}`;
+  ctx.fillText(challenge, W / 2, 1620);
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = `500 46px ${FONT}`;
+  ctx.fillText(url, W / 2, 1710);
+  return toPng(canvas);
 }

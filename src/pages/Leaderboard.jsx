@@ -22,14 +22,20 @@ export default function Leaderboard() {
   const [reloadKey, setReloadKey] = useState(0);
   // "score" — eng yuqori mock ball, "xp" — faollik (kun savollari, streak).
   const [tab, setTab] = useState("score");
+  // Duel tabida: reyting turi (bullet/blitz/rapid/classic) yoki SAT Rush.
+  const [duelCat, setDuelCat] = useState("blitz");
 
   useEffect(() => {
     setLoading(true);
     setLoadError(false);
     const req =
-      tab === "duel"
-        ? api.get("/duel/leaderboard").then((list) =>
-            list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.rating}` }))
+      tab === "duel" && duelCat === "rush"
+        ? api.get("/rush/leaderboard?mode=rush3").then((list) =>
+            list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.best}` }))
+          )
+        : tab === "duel"
+        ? api.get(`/duel/leaderboard?category=${duelCat}`).then((list) =>
+            list.slice(0, 15).map((r) => ({ ...r, id: r.uid, bestScore: `${r.rating}`, title: r.rating }))
           )
         : tab === "xp"
         ? api.get("/learn/xp-leaderboard").then((list) =>
@@ -43,7 +49,7 @@ export default function Leaderboard() {
         setLoadError(true);
       })
       .finally(() => setLoading(false));
-  }, [reloadKey, tab]);
+  }, [reloadKey, tab, duelCat]);
 
   const myRank = rows.findIndex((r) => r.uid === user?.uid);
   const rest = rows.slice(3);
@@ -67,6 +73,18 @@ export default function Leaderboard() {
         value={tab}
         onChange={setTab}
       />
+      {tab === "duel" && (
+        <SegmentedControl
+          className="mb-6 -mt-3"
+          size="sm"
+          options={[
+            ...["bullet", "blitz", "rapid", "classic"].map((c) => ({ value: c, label: t(`duel.groups.${c}`) })),
+            { value: "rush", label: "Rush" },
+          ]}
+          value={duelCat}
+          onChange={setDuelCat}
+        />
+      )}
 
       {loading ? (
         <div className="space-y-3">

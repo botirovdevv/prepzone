@@ -1,35 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { LuSwords, LuX, LuCopy, LuCheck, LuSend, LuShare2, LuRotateCcw, LuWifiOff, LuBot } from "react-icons/lu";
+import { useNavigate, useParams } from "react-router-dom";
+import { LuSwords } from "react-icons/lu";
 import { api } from "../api/client";
 import { getSocket } from "../api/socket";
 import { useAuth } from "../context/AuthContext";
-import { Button, Card, PageLoader, Spinner, Badge } from "../components/ui";
+import { Button, Card, PageLoader } from "../components/ui";
 import Avatar from "../components/Avatar";
-import QuizCard from "../components/learn/QuizCard";
 import { useI18n } from "../i18n";
-import { drawDuelCard } from "../utils/duelCard";
+import { modeById } from "../data/duelModes";
+import { play } from "../utils/duelSound";
+import { CenterCard, ConfirmSheet, ScoreBar, Shell, TitleBadge, WaitingCard } from "../components/duel/DuelParts";
+import { clockOf, useNow } from "../utils/duelClock";
+import ChatPanel from "../components/duel/ChatPanel";
+import ClockGame from "../components/duel/ClockGame";
+import ClassicGame from "../components/duel/ClassicGame";
+import ResultView from "../components/duel/ResultView";
 
 // ------------------------------------------------------------------
 // SAT Duel — jang ekrani (/duel/:code). To'liq ekran, sidebar'siz.
-// Holat serverdan keladi (duel:state); vaqt server soati bo'yicha
-// (serverNow orqali farq hisoblanadi). Kalit faqat raund yopilganda keladi.
+// Holat serverdan keladi (duel:state, har o'yinchiga alohida); vaqt server
+// soati bo'yicha (serverNow orqali farq hisoblanadi).
+//   classic → ClassicGame (sinxron raundlar)
+//   bullet/blitz/rapid → ClockGame (har kimning o'z soati)
+// Chat: ChatPanel (do'st bilan erkin matn, notanish bilan faqat iboralar).
 // ------------------------------------------------------------------
 
 export default function Duel() {
   const { code } = useParams();
   // Revanshda kod o'zgaradi — sahifa holati noldan boshlanadi.
   return <DuelGame key={code} code={String(code || "").toUpperCase()} />;
-}
-
-function useNow(active) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    const id = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(id);
-  }, [active]);
-  return now;
 }
 
 function DuelGame({ code }) {
@@ -42,16 +41,16 @@ function DuelGame({ code }) {
   const [error, setError] = useState("");
   const [joined, setJoined] = useState(false);
   const [state, setState] = useState(null);
-  const [choices, setChoices] = useState({}); // round -> choice
-  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [chat, setChat] = useState([]);
+  const [confirmResign, setConfirmResign] = useState(false);
   const [rematchSent, setRematchSent] = useState(false);
   const offset = useRef(0);
   const joinedRef = useRef(false);
+  const prevStatus = useRef(null);
 
   const applyState = useCallback((s) => {
     offset.current = s.serverNow - Date.now();
     setState(s);
-    if (s.myChoice != null && s.round >= 0) setChoices((c) => ({ ...c, [s.round]: s.myChoice }));
   }, []);
 
   useEffect(() => {
@@ -65,8 +64,7 @@ function DuelGame({ code }) {
   }, [code, t]);
 
   const join = useCallback(() => {
-    const s = getSocket();
-    s.emit("duel:join", code, (res) => {
+    getSocket().emit("duel:join", code, (res) => {
       if (!res?.ok) {
         setError(res?.reason === "full" ? t("duel.full") : t("duel.notFound"));
         return;
@@ -74,6 +72,7 @@ function DuelGame({ code }) {
       joinedRef.current = true;
       setJoined(true);
       applyState(res.state);
+      setChat(res.chat || []);
     });
   }, [code, t, applyState]);
 
@@ -85,42 +84,47 @@ function DuelGame({ code }) {
   useEffect(() => {
     const s = getSocket();
     const onState = (st) => st.code === code && applyState(st);
-    const onAnswered = ({ playerId }) =>
+    const onAnswered = ({ playerId }) => {
+      if (playerId !== myId) play("move");
       setState((st) => st && { ...st, players: st.players.map((p) => (p.id === playerId ? { ...p, answered: true } : p)) });
+    };
+    const onMove = ({ playerId }) => playerId !== myId && play("move");
+    const onChat = (m) => setChat((c) => (c.some((x) => x.id === m.id) ? c : [...c.slice(-49), m]));
     const onRematch = ({ code: next }) => navigate(`/duel/${next}`, { replace: true });
     const onConnect = () => joinedRef.current && join();
     s.on("duel:state", onState);
     s.on("duel:answered", onAnswered);
+    s.on("duel:move", onMove);
+    s.on("duel:chat", onChat);
     s.on("duel:rematch", onRematch);
     s.on("connect", onConnect);
     return () => {
       s.off("duel:state", onState);
       s.off("duel:answered", onAnswered);
+      s.off("duel:move", onMove);
+      s.off("duel:chat", onChat);
       s.off("duel:rematch", onRematch);
       s.off("connect", onConnect);
       if (joinedRef.current) s.emit("duel:leave", { forfeit: false });
     };
-  }, [code, join, navigate, applyState]);
+  }, [code, join, navigate, applyState, myId]);
 
-  const live = state && ["countdown", "round"].includes(state.status);
-  const now = useNow(Boolean(live)) + offset.current;
+  // O'yin boshlanishi — ovoz.
+  useEffect(() => {
+    if (!state) return;
+    if (prevStatus.current === "countdown" && ["round", "playing"].includes(state.status)) play("start");
+    prevStatus.current = state.status;
+  }, [state]);
+
+  const live = Boolean(state && ["countdown", "round", "playing"].includes(state.status));
+  const now = useNow(live, state?.status === "playing" ? 100 : 200) + offset.current;
 
   const me = state?.players.find((p) => p.id === myId);
   const opp = state?.players.find((p) => p.id !== myId);
 
-  const answer = (choice) => {
-    if (!state || state.status !== "round" || choices[state.round]) return;
-    const round = state.round;
-    setChoices((c) => ({ ...c, [round]: choice }));
-    getSocket().emit("duel:answer", { round, choice }, (res) => {
-      if (!res?.ok && res?.reason !== "already") setChoices((c) => ({ ...c, [round]: undefined }));
-    });
-  };
-
-  const leave = () => {
-    getSocket().emit("duel:leave", { forfeit: true });
-    joinedRef.current = false;
-    navigate("/duel");
+  const resign = () => {
+    setConfirmResign(false);
+    getSocket().emit("duel:resign", () => {});
   };
 
   const rematch = () => {
@@ -128,41 +132,19 @@ function DuelGame({ code }) {
     getSocket().emit("duel:rematch", () => {});
   };
 
-  const leaveDialog = () => {
-    if (!confirmLeave) return null;
-    return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setConfirmLeave(false)}>
-        <div className="w-full max-w-sm rounded-[28px] bg-elevated p-6 text-center" onClick={(e) => e.stopPropagation()}>
-          <p className="text-[17px] font-semibold text-ink">{t("duel.leaveConfirm")}</p>
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={() => setConfirmLeave(false)}>
-              {t("duel.stay")}
-            </Button>
-            <Button variant="danger" onClick={leave}>
-              {t("duel.leaveYes")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // ---------------- Ekranlar ----------------
 
   if (error) {
     return (
       <Shell>
-        <Card className="mx-auto mt-16 max-w-md p-8 text-center">
-          <p className="font-display text-[20px] font-semibold text-ink">{error}</p>
-          <Button className="mt-6" to="/duel">
-            {t("duel.toLobby")}
-          </Button>
-        </Card>
+        <CenterCard title={error} action={<Button className="mt-6" to="/duel">{t("duel.toLobby")}</Button>} />
       </Shell>
     );
   }
 
   if (!info) return <PageLoader fullscreen />;
+
+  const infoMode = modeById(info.mode);
 
   // Taklif: hali o'rinda emas.
   if (!joined && !info.seated) {
@@ -177,9 +159,14 @@ function DuelGame({ code }) {
           <h1 className="mt-6 font-display text-[22px] font-bold leading-[28px] tracking-[-0.01em] text-ink">
             {t("duel.invitedBy", { name: info.host.name })}
           </h1>
-          <p className="mt-2 text-[15px] text-ink-2">
-            {t("duel.inviteSection", { section: t(`duel.sections.${info.section}`) })}
+          <p className="mt-2 flex items-center justify-center gap-2 text-[15px] text-ink-2">
+            {t(`duel.groups.${infoMode.group}`)} {infoMode.short} · {t(`duel.sections.${info.section}`)} · {t("duel.questionsN", { n: infoMode.total })}
           </p>
+          {info.host.rating != null && (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-[13px] text-ink-2">
+              {info.host.name}: {info.host.rating} <TitleBadge rating={info.host.rating} />
+            </p>
+          )}
           <Button size="lg" className="mt-7 w-full" onClick={join}>
             <LuSwords size={18} /> {t("duel.accept")}
           </Button>
@@ -193,335 +180,68 @@ function DuelGame({ code }) {
   if (state.status === "cancelled") {
     return (
       <Shell>
-        <Card className="mx-auto mt-16 max-w-md p-8 text-center">
-          <p className="font-display text-[20px] font-semibold text-ink">{t("duel.cancelled")}</p>
-          <Button className="mt-6" to="/duel">
-            {t("duel.toLobby")}
-          </Button>
-        </Card>
+        <CenterCard title={t("duel.cancelled")} action={<Button className="mt-6" to="/duel">{t("duel.toLobby")}</Button>} />
       </Shell>
     );
   }
+
+  const mode = modeById(state.mode);
+  const clocked = mode.id !== "classic";
+  const myClock = clocked ? clockOf(me, state, now) : null;
+  const oppClock = clocked ? clockOf(opp, state, now) : null;
+  const modeLine = `${t(`duel.groups.${mode.group}`)} ${mode.short} · ${t("duel.questionsN", { n: state.total })}`;
+  const names = Object.fromEntries(state.players.map((p) => [p.id, p.name]));
 
   const header = (
     <ScoreBar
       me={me}
       opp={opp}
       t={t}
-      onLeave={live || state.status === "reveal" ? () => setConfirmLeave(true) : null}
+      total={state.total}
+      clocks={clocked && state.status !== "waiting" ? [myClock, oppClock] : null}
+      onResign={["countdown", "round", "reveal", "playing"].includes(state.status) ? () => setConfirmResign(true) : null}
       showAnswered={state.status === "round"}
     />
   );
+  const aside = <ChatPanel messages={chat} myId={myId} names={names} chatMode={state.chatMode} t={t} />;
+  const sheet = (
+    <ConfirmSheet
+      open={confirmResign}
+      text={t("duel.resignConfirm")}
+      cancel={t("duel.stay")}
+      confirm={t("duel.resignYes")}
+      onCancel={() => setConfirmResign(false)}
+      onConfirm={resign}
+    />
+  );
 
+  let body;
   if (state.status === "waiting") {
-    return (
-      <Shell header={header}>
-        <WaitingCard code={code} t={t} bot={state.bot} />
-      </Shell>
-    );
-  }
-
-  if (state.status === "finished") {
-    return (
-      <Shell header={header}>
-        <ResultView state={state} me={me} opp={opp} myId={myId} t={t} onRematch={rematch} rematchSent={rematchSent} />
-      </Shell>
-    );
-  }
-
-  if (state.status === "countdown") {
+    body = <WaitingCard code={code} t={t} bot={state.bot} modeLine={modeLine} />;
+  } else if (state.status === "finished") {
+    body = <ResultView state={state} me={me} opp={opp} myId={myId} t={t} onRematch={rematch} rematchSent={rematchSent} />;
+  } else if (state.status === "countdown") {
     const left = Math.max(1, Math.ceil((state.startsAt - now) / 1000));
-    return (
-      <Shell header={header}>
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-[17px] font-medium text-ink-2">{t("duel.getReady")}</p>
-          <p key={left} className="pz-duel-pop mt-2 font-display text-[96px] font-bold leading-none tabular-nums text-ink">
-            {left}
-          </p>
-        </div>
-        {leaveDialog()}
-      </Shell>
+    body = (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-[13px] font-semibold text-ink-2">{modeLine}</p>
+        <p className="mt-4 text-[17px] font-medium text-ink-2">{t("duel.getReady")}</p>
+        <p key={left} className="pz-duel-pop mt-2 font-display text-[96px] font-bold leading-none tabular-nums text-ink">
+          {left}
+        </p>
+        {clocked && <p className="mx-auto mt-6 max-w-sm text-[13px] text-ink-2">{t("duel.clockRules")}</p>}
+      </div>
     );
+  } else if (clocked) {
+    body = <ClockGame state={state} me={me} opp={opp} myClock={myClock} oppClock={oppClock} t={t} />;
+  } else {
+    body = <ClassicGame key={code} state={state} myId={myId} opp={opp} now={now} t={t} />;
   }
 
-  // round | reveal
-  const q = state.question;
-  const reveal = state.status === "reveal" ? state.reveal : null;
-  const mine = choices[state.round] ?? reveal?.answers.find((a) => a.playerId === myId)?.choice ?? null;
-  const remaining = Math.max(0, state.deadline - now);
-  const pct = state.status === "round" ? (remaining / state.roundMs) * 100 : 0;
-  const myReveal = reveal?.answers.find((a) => a.playerId === myId);
-  const oppReveal = reveal?.answers.find((a) => a.playerId !== myId);
-
   return (
-    <Shell header={header}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-[15px] font-semibold text-ink">
-          {t("duel.question", { n: state.round + 1, total: state.total })}
-        </p>
-        {state.status === "round" ? (
-          <p className={`font-display text-[17px] font-semibold tabular-nums ${remaining < 15_000 ? "text-danger" : "text-ink"}`}>
-            {Math.ceil(remaining / 1000)}s
-          </p>
-        ) : (
-          <Badge tone={myReveal?.correct ? "emerald" : "red"}>
-            {myReveal?.correct ? `${t("duel.correct")} ${t("duel.points", { n: myReveal.points })}` : myReveal?.choice ? t("duel.wrong") : t("duel.noAnswer")}
-          </Badge>
-        )}
-      </div>
-      <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-fill">
-        <div
-          className={`h-full rounded-full transition-[width] duration-200 ease-linear ${remaining < 15_000 ? "bg-danger" : "bg-accent"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-
-      {opp && !opp.connected && (
-        <p className="mb-4 flex items-center gap-2 rounded-xl bg-warning/10 px-4 py-3 text-[13px] font-medium text-warning">
-          <LuWifiOff size={16} /> {t("duel.reconnecting")}
-        </p>
-      )}
-
-      {q && (
-        <QuizCard
-          question={q}
-          selected={mine}
-          onSelect={answer}
-          reveal={Boolean(reveal)}
-          correctAnswer={reveal?.correctAnswer}
-        >
-          {reveal && oppReveal && (
-            <p className="mt-4 text-[13px] text-ink-2">
-              {opp?.name}: {oppReveal.choice ? `${oppReveal.choice} · ` : ""}
-              {oppReveal.correct ? `${t("duel.correct")} ${t("duel.points", { n: oppReveal.points })}` : oppReveal.choice ? t("duel.wrong") : t("duel.noAnswer")}
-            </p>
-          )}
-        </QuizCard>
-      )}
-
-      {state.status === "round" && mine && (
-        <p className="mt-4 text-center text-[15px] text-ink-2">{t("duel.waitingOpponent")}</p>
-      )}
-      {leaveDialog()}
+    <Shell header={header} aside={aside}>
+      {body}
+      {sheet}
     </Shell>
-  );
-}
-
-// ---------------- Qismlar ----------------
-
-function Shell({ header, children }) {
-  return (
-    <div className="min-h-[100dvh] bg-canvas">
-      {header}
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-5 sm:px-6">{children}</main>
-    </div>
-  );
-}
-
-function PlayerChip({ p, align = "left", label, showAnswered }) {
-  if (!p) {
-    return (
-      <div className={`flex min-w-0 flex-1 items-center gap-2.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
-        <span className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-fill" />
-        <span className="text-[13px] text-ink-3">…</span>
-      </div>
-    );
-  }
-  return (
-    <div className={`flex min-w-0 flex-1 items-center gap-2.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
-      <span className="relative">
-        {p.bot ? (
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-purple text-white">
-            <LuBot size={20} />
-          </span>
-        ) : (
-          <Avatar name={p.name} src={p.avatarUrl} className="h-10 w-10 rounded-full bg-ink-3 text-xs" />
-        )}
-        {showAnswered && p.answered && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-success text-white ring-2 ring-surface">
-            <LuCheck size={10} strokeWidth={3} />
-          </span>
-        )}
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-[13px] font-medium text-ink-2">{label || p.name}</p>
-        <p className="font-display text-[22px] font-bold leading-[26px] tabular-nums text-ink">{p.score}</p>
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ me, opp, t, onLeave, showAnswered }) {
-  return (
-    <header className="pz-material sticky top-0 z-30 border-b border-ink/[0.08]">
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3 sm:px-6">
-        <PlayerChip p={me} label={t("duel.you")} showAnswered={showAnswered} />
-        <LuSwords size={20} className="shrink-0 text-danger" />
-        <PlayerChip p={opp} align="right" showAnswered={showAnswered} />
-        {onLeave && (
-          <button
-            type="button"
-            onClick={onLeave}
-            aria-label={t("duel.leave")}
-            className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fill text-ink-2 hover:text-ink"
-          >
-            <LuX size={16} />
-          </button>
-        )}
-      </div>
-    </header>
-  );
-}
-
-function WaitingCard({ code, t, bot }) {
-  const [copied, setCopied] = useState(false);
-  const link = `${window.location.origin}/duel/${code}`;
-  const text = t("duel.shareText");
-  if (bot) {
-    return (
-      <div className="flex justify-center py-24">
-        <Spinner />
-      </div>
-    );
-  }
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* clipboard ruxsati yo'q */
-    }
-  };
-  const tg = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-  return (
-    <Card className="mt-6 p-6 text-center sm:p-8">
-      <div className="flex justify-center">
-        <Spinner />
-      </div>
-      <h1 className="mt-5 font-display text-[22px] font-bold tracking-[-0.01em] text-ink">{t("duel.waitingTitle")}</h1>
-      <p className="mx-auto mt-2 max-w-sm text-[15px] text-ink-2">{t("duel.waitingText")}</p>
-      <div className="mx-auto mt-6 flex max-w-sm items-center gap-2 rounded-xl bg-fill px-4 py-3">
-        <span className="min-w-0 flex-1 truncate text-left font-mono text-[13px] text-ink">{link}</span>
-        <button type="button" onClick={copy} className="shrink-0 text-[13px] font-semibold text-accent">
-          {copied ? <LuCheck size={16} /> : <LuCopy size={16} />}
-        </button>
-      </div>
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        <Button onClick={() => window.open(tg, "_blank", "noopener")}>
-          <LuSend size={16} /> {t("duel.shareTelegram")}
-        </Button>
-        <Button variant="outline" onClick={copy}>
-          {copied ? t("duel.copied") : t("duel.copy")}
-        </Button>
-      </div>
-      <Link to="/duel" className="mt-6 inline-block text-[15px] font-medium text-accent">
-        {t("duel.toLobby")}
-      </Link>
-    </Card>
-  );
-}
-
-function ResultView({ state, me, opp, myId, t, onRematch, rematchSent }) {
-  const r = state.result;
-  const [showReview, setShowReview] = useState(false);
-  const [sharing, setSharing] = useState(false);
-  const mine = r.players.find((p) => p.id === myId);
-  const theirs = r.players.find((p) => p.id !== myId);
-  const myIdx = r.players.findIndex((p) => p.id === myId);
-  const outcome = r.winner == null ? "draw" : r.winner === myId ? "win" : "loss";
-  const title = outcome === "win" ? t("duel.youWon") : outcome === "loss" ? t("duel.youLost") : t("duel.itsDraw");
-  const oppWantsRematch = opp && state.rematch.includes(opp.id) && !state.rematch.includes(myId);
-
-  const share = async () => {
-    setSharing(true);
-    try {
-      const blob = await drawDuelCard({
-        outcome,
-        title,
-        me: { name: me?.name || "", score: mine?.score ?? 0 },
-        opp: { name: opp?.name || "", score: theirs?.score ?? 0 },
-        rating: mine?.rating?.after ?? null,
-        challenge: t("duel.cardChallenge"),
-        url: `${window.location.host}/duel`,
-      });
-      const file = new File([blob], "prepzone-duel.png", { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: `${t("duel.shareText")} ${window.location.origin}/duel` });
-      } else {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = file.name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      }
-    } catch {
-      /* foydalanuvchi bekor qildi */
-    } finally {
-      setSharing(false);
-    }
-  };
-
-  return (
-    <div>
-      <Card className="mt-2 overflow-hidden text-center">
-        <div className={`px-6 pb-6 pt-8 ${outcome === "win" ? "bg-success/10" : outcome === "loss" ? "bg-danger/[0.06]" : "bg-fill/60"}`}>
-          <p className="text-[44px] leading-none">{outcome === "win" ? "🏆" : outcome === "loss" ? "💪" : "🤝"}</p>
-          <h1 className="mt-3 font-display text-[28px] font-bold leading-[34px] tracking-[-0.015em] text-ink">{title}</h1>
-          {r.forfeitBy && (
-            <p className="mt-1 text-[15px] text-ink-2">{r.forfeitBy === myId ? t("duel.forfeitLoss") : t("duel.forfeitWin")}</p>
-          )}
-          <p className="mt-4 font-display text-[48px] font-bold leading-none tabular-nums text-ink">
-            {mine?.score ?? 0} <span className="text-ink-3">:</span> {theirs?.score ?? 0}
-          </p>
-          <p className="mt-2 text-[13px] text-ink-2">
-            {t("duel.correctCount", { n: mine?.correct ?? 0 })} · {opp?.name} {t("duel.correctCount", { n: theirs?.correct ?? 0 })}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-2 border-t border-ink/[0.08] px-6 py-4">
-          {mine?.rating ? (
-            <Badge tone={mine.rating.delta >= 0 ? "emerald" : "red"}>
-              {t("duel.ratingDelta", { before: mine.rating.before, after: mine.rating.after })} ({mine.rating.delta >= 0 ? "+" : ""}
-              {mine.rating.delta})
-            </Badge>
-          ) : (
-            <Badge>{t("duel.unrated")}</Badge>
-          )}
-          {mine?.xp > 0 && <Badge tone="amber">{t("duel.xpEarned", { n: mine.xp })}</Badge>}
-        </div>
-      </Card>
-
-      {oppWantsRematch && (
-        <p className="mt-4 rounded-xl bg-accent/10 px-4 py-3 text-center text-[15px] font-semibold text-accent">{t("duel.rematchOffer")}</p>
-      )}
-
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <Button size="lg" onClick={onRematch} disabled={rematchSent || !opp}>
-          <LuRotateCcw size={18} /> {rematchSent && !state.bot ? t("duel.rematchWaiting") : t("duel.rematch")}
-        </Button>
-        <Button size="lg" variant="outline" onClick={share} disabled={sharing}>
-          <LuShare2 size={18} /> {t("duel.share")}
-        </Button>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[15px]">
-        <button type="button" className="font-medium text-accent" onClick={() => setShowReview((v) => !v)}>
-          {t("duel.review")}
-        </button>
-        <Link to="/duel" className="font-medium text-accent">
-          {t("duel.toLobby")}
-        </Link>
-      </div>
-      {(mine?.correct ?? 0) < r.questions.length && (
-        <p className="mt-3 text-center text-[13px] text-ink-2">{t("duel.mistakesNote")}</p>
-      )}
-
-      {showReview && (
-        <div className="mt-6 space-y-4">
-          {r.questions.map((q, i) => (
-            <QuizCard key={q.id} question={q} number={i + 1} selected={r.answers[myIdx]?.[i] ?? null} reveal />
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
