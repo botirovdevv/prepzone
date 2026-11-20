@@ -7,6 +7,7 @@ import { HttpError, notFound, parseBody } from "../lib/errors.js";
 import { dayKey } from "../lib/limits.js";
 import { addXp, streakDoc, XP } from "../lib/streaks.js";
 import { avatarUrl } from "../lib/serialize.js";
+import { perUserLimit } from "../lib/limiters.js";
 
 // ------------------------------------------------------------------
 // O'qish vositalari: xatolar daftari (spaced repetition), kun savollari,
@@ -33,14 +34,23 @@ const mistakeQuestion = z
     explanation: z.string().max(5_000).optional(),
     skill: z.string().max(200).optional(),
     domain: z.string().max(60).optional(),
-    // Faqat base64 rasm yoki saytdagi nisbiy yo'l (tashqi URL/javascript: emas).
+    html: z.boolean().optional(),
+    difficulty: z.string().max(4).optional(),
+    // Faqat base64 rasm, URL-kodlangan SVG chizma (<img> ichida skript
+    // ishlamaydi) yoki saytdagi nisbiy yo'l (tashqi URL/javascript: emas).
     image: z
       .string()
       .max(400_000)
-      .regex(/^(data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+|\/(?!\/)[\w\-./]+)$/, "Rasm noto'g'ri.")
+      .regex(
+        /^(data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+|data:image\/svg\+xml;charset=utf-8,[A-Za-z0-9%._~!*'()-]+|\/(?!\/)[\w\-./]+)$/,
+        "Rasm noto'g'ri."
+      )
       .optional(),
-  })
-  .passthrough();
+  });
+// Noma'lum maydonlar saqlanmaydi (zod object ularni tashlab yuboradi).
+
+// Bitta foydalanuvchi daftarida ko'pi bilan shuncha savol.
+const MAX_MISTAKES = 500;
 
 function mistakeDoc(m) {
   return {
@@ -74,7 +84,7 @@ router.get("/mistakes", async (req, res) => {
 
 // Natija/practice sahifasidan noto'g'ri javoblar. Takroriy yuborish xavfsiz:
 // mavjud xato qayta "ochiladi" faqat u o'zlashtirilgan bo'lsa.
-router.post("/mistakes/sync", async (req, res) => {
+router.post("/mistakes/sync", perUserLimit({ windowMs: 60_000, limit: 10 }), async (req, res) => {
   const body = parseBody(
     z.object({
       source: z.string().max(120),
@@ -91,17 +101,30 @@ router.post("/mistakes/sync", async (req, res) => {
     }),
     req.body
   );
-  // Bir natija ikki marta sinxronlansa wrong_count oshib ketmasin.
+  // Bir natija ikki marta sinxronlansa wrong_count oshib ketmasin. Marker
+  // tranzaksiya ichida — xato bo'lsa u ham bekor bo'ladi va qayta urinish ishlaydi.
   const marker = `mistakeSync:${createHash("sha1").update(body.source).digest("hex").slice(0, 16)}`;
-  const first = await one(
-    `INSERT INTO rate_limits (day, user_id, action, count) VALUES ('sync', $1, $2, 1)
-     ON CONFLICT DO NOTHING RETURNING 1`,
-    [req.user.id, marker]
-  );
-  if (!first) return res.json({ added: 0 });
-  let added = 0;
-  await tx(async (client) => {
+  const added = await tx(async (client) => {
+    const { rows: first } = await client.query(
+      `INSERT INTO rate_limits (day, user_id, action, count) VALUES ('sync', $1, $2, 1)
+       ON CONFLICT DO NOTHING RETURNING 1`,
+      [req.user.id, marker]
+    );
+    if (!first.length) return 0;
+    const { rows: existing } = await client.query(
+      "SELECT question_key FROM mistakes WHERE user_id = $1 AND question_key = ANY($2)",
+      [req.user.id, body.items.map((it) => it.key)]
+    );
+    const known = new Set(existing.map((r) => r.question_key));
+    const { rows: cnt } = await client.query("SELECT count(*)::int AS n FROM mistakes WHERE user_id = $1", [req.user.id]);
+    let room = MAX_MISTAKES - cnt[0].n;
+    let n = 0;
     for (const it of body.items) {
+      if (!known.has(it.key)) {
+        if (room <= 0) continue;
+        room -= 1;
+        known.add(it.key);
+      }
       const { rowCount } = await client.query(
         `INSERT INTO mistakes (user_id, question_key, source, section, domain, question)
          VALUES ($1, $2, $3, $4, $5, $6)
@@ -110,8 +133,9 @@ router.post("/mistakes/sync", async (req, res) => {
            stage = 0, due_at = now(), mastered_at = NULL, updated_at = now()`,
         [req.user.id, it.key, body.source, it.section, it.domain, it.question]
       );
-      added += rowCount;
+      n += rowCount;
     }
+    return n;
   });
   res.json({ added });
 });
@@ -125,6 +149,9 @@ router.post("/mistakes/review", async (req, res) => {
     );
     const m = rows[0];
     if (!m) throw notFound("Savol topilmadi.");
+    // XP faqat takrorlash vaqti kelgan, hali o'zlashtirilmagan savol uchun —
+    // bir savolni qayta-qayta "to'g'ri" deb yuborib XP yig'ib bo'lmaydi.
+    const wasDue = !m.mastered_at && new Date(m.due_at).getTime() <= Date.now();
     let stage = body.correct ? m.stage + 1 : 0;
     const mastered = stage >= MASTER_STAGE;
     stage = Math.min(stage, MASTER_STAGE);
@@ -136,7 +163,7 @@ router.post("/mistakes/review", async (req, res) => {
        WHERE user_id = $1 AND question_key = $2 RETURNING *`,
       [req.user.id, body.key, stage, days, mastered, body.correct]
     );
-    const streak = body.correct ? await addXp(client, req.user.id, XP.mistakeFixed) : null;
+    const streak = body.correct && wasDue ? await addXp(client, req.user.id, XP.mistakeFixed) : null;
     return { mistake: mistakeDoc(upd[0]), streak };
   });
   res.json(out);

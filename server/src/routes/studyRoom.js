@@ -33,12 +33,16 @@ function iceServers(userId, ttlSeconds) {
   return servers;
 }
 
+// TURN relay sozlanmagan bo'lsa qattiq NAT (mobil operator) ortida video
+// ulanmasligi mumkin — lobby shuni ogohlantiradi.
 router.get("/config", (_req, res) => {
-  res.json({ enabled: true });
+  res.json({ enabled: Boolean(config.turnSecret && config.turnUrls.length) });
 });
 
 router.post("/", (req, res) => {
-  res.status(201).json({ code: createRoom(req.user) });
+  const code = createRoom(req.user);
+  if (!code) throw new HttpError(429, "resource-exhausted", "Sizda allaqachon 2 ta faol xona bor.");
+  res.status(201).json({ code });
 });
 
 router.post("/:code/join", (req, res) => {
@@ -54,6 +58,7 @@ router.post("/:code/join", (req, res) => {
     throw new HttpError(409, "study-room/full", "Xona to'la — unda allaqachon 2 kishi bor.");
   }
 
+  room.allowed.add(String(req.user.id));
   const left = room.startedAt ? room.startedAt + room.limitMs - Date.now() : room.limitMs;
   res.json({
     code,

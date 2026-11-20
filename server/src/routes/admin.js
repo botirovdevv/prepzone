@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { disconnectUser } from "../lib/realtime.js";
 import { Router } from "express";
 import { endOtherSessions } from "../lib/session.js";
 import { z } from "zod";
@@ -196,6 +197,7 @@ router.patch("/users/:id/block", requirePerm("users"), async (req, res) => {
       [user.id, body.reason || null]
     );
     await endOtherSessions(user.id);
+    disconnectUser(user.id);
   } else {
     await query("UPDATE users SET blocked_at = NULL, blocked_reason = NULL WHERE id = $1", [user.id]);
   }
@@ -215,6 +217,8 @@ router.put("/users/:id/admin", requireOwner, async (req, res) => {
     perms,
     perms.length > 0,
   ]);
+  // Socket'dagi admin xonalari (session-admin:*) ulanishda beriladi — qayta ulansin.
+  disconnectUser(user.id);
   res.json({ user: await findUserItem(user.id) });
 });
 

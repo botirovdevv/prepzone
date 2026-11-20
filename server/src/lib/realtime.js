@@ -7,6 +7,7 @@ import {
   CODE_RE,
   MAX_PARTICIPANTS,
   MAX_POINTS_PER_STROKE,
+  MAX_ROOM_POINTS,
   MAX_STROKES,
   getRoom,
   isTimeUp,
@@ -37,9 +38,37 @@ function readCookie(header, name) {
   return null;
 }
 
+// Socket hodisalari uchun oddiy "token bucket": soniyasiga RATE ta, BURST
+// tagacha zaxira. Oshib ketgan hodisalar jim tashlab yuboriladi.
+const RATE = 40;
+const BURST = 120;
+function allowEvent(socket) {
+  const now = Date.now();
+  const b = (socket.data.bucket ||= { tokens: BURST, at: now });
+  b.tokens = Math.min(BURST, b.tokens + ((now - b.at) / 1000) * RATE);
+  b.at = now;
+  if (b.tokens < 1) return false;
+  b.tokens -= 1;
+  return true;
+}
+
+// WebSocket upgrade'da Socket.IO CORS'i ishlamaydi — Origin'ni o'zimiz
+// tekshiramiz (originCheck bilan bir xil ro'yxat). Origin yo'q (native
+// klient) so'rovlar cookie'siz bo'ladi va baribir autentifikatsiyadan o'tmaydi.
+function originAllowed(origin) {
+  if (!origin) return true;
+  const list = [config.publicUrl, config.clientOrigin].filter(Boolean).map((u) => new URL(u).origin);
+  if (!config.isProd) list.push("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173");
+  return list.some((o) => {
+    const u = new URL(o);
+    return origin === o || origin === `${u.protocol}//www.${u.host}`;
+  });
+}
+
 export function initRealtime(httpServer) {
   io = new Server(httpServer, {
     cors: config.clientOrigin ? { origin: config.clientOrigin, credentials: true } : undefined,
+    allowRequest: (req, cb) => cb(null, originAllowed(req.headers.origin)),
   });
 
   io.use(async (socket, next) => {
@@ -47,6 +76,7 @@ export function initRealtime(httpServer) {
       const user = await userFromToken(readCookie(socket.handshake.headers.cookie, COOKIE_NAME));
       if (!user || !user.email_verified) return next(new Error("unauthenticated"));
       socket.data.user = user;
+      socket.join(`user:${user.id}`);
       next();
     } catch (err) {
       next(err);
@@ -54,6 +84,8 @@ export function initRealtime(httpServer) {
   });
 
   io.on("connection", (socket) => {
+    // Har bir kiruvchi hodisa tezlik limitidan o'tadi.
+    socket.use((_packet, next) => (allowEvent(socket) ? next() : undefined));
     socket.on("session:watch", (sessionId) => {
       if (typeof sessionId !== "string") return;
       socket.join(`session:${sessionId}`);
@@ -102,7 +134,9 @@ function registerBoard(socket) {
   socket.on("board:join", (raw, ack) => {
     const next = typeof raw === "string" ? raw.toUpperCase() : "";
     const board = CODE_RE.test(next) ? getRoom(next) : null;
-    if (!board) return typeof ack === "function" && ack({ ok: false });
+    if (!board || !board.allowed.has(String(socket.data.user.id)) || isTimeUp(board)) {
+      return typeof ack === "function" && ack({ ok: false });
+    }
     if (code) socket.leave(`board:${code}`);
     code = next;
     socket.join(`board:${code}`);
@@ -120,10 +154,12 @@ function registerBoard(socket) {
     const points = validPoints(msg.points);
     if (!points) return;
 
+    if (board.points + points.length > MAX_ROOM_POINTS) return;
     let stroke = board.strokes.get(msg.id);
     if (stroke) {
       if (stroke.points.length + points.length > MAX_POINTS_PER_STROKE) return;
       stroke.points.push(...points);
+      board.points += points.length;
       socket.to(`board:${code}`).emit("board:stroke", { id: msg.id, points });
       return;
     }
@@ -133,12 +169,17 @@ function registerBoard(socket) {
     if (!Number.isFinite(size) || size < 0.0005 || size > 0.1) return;
     stroke = { id: msg.id, tool: msg.tool, color: msg.color, size, points };
     board.strokes.set(msg.id, stroke);
+    board.points += points.length;
     socket.to(`board:${code}`).emit("board:stroke", stroke);
   });
 
   socket.on("board:undo", (id) => {
     const board = room();
-    if (!board || typeof id !== "string" || !board.strokes.delete(id)) return;
+    if (!board || typeof id !== "string") return;
+    const stroke = board.strokes.get(id);
+    if (!stroke) return;
+    board.strokes.delete(id);
+    board.points -= stroke.points.length;
     socket.to(`board:${code}`).emit("board:undo", id);
   });
 
@@ -146,6 +187,7 @@ function registerBoard(socket) {
     const board = room();
     if (!board) return;
     board.strokes.clear();
+    board.points = 0;
     socket.to(`board:${code}`).emit("board:clear");
   });
 }
@@ -190,7 +232,7 @@ function registerCall(socket) {
     const next = typeof raw?.code === "string" ? raw.code.toUpperCase() : "";
     phone = Boolean(raw?.phone);
     const room = CODE_RE.test(next) ? getRoom(next) : null;
-    if (!room) return reply({ ok: false, reason: "not-found" });
+    if (!room || !room.allowed.has(String(user.id))) return reply({ ok: false, reason: "not-found" });
     if (isTimeUp(room)) return reply({ ok: false, reason: "time-up" });
     if (code) leave();
 
@@ -255,4 +297,10 @@ export function emitSessionUpdate(sessionId, publicDoc, adminDoc) {
 export function emitToAdmins(sessionId, event, payload) {
   if (!io) return;
   io.to(`session-admin:${sessionId}`).emit(event, payload);
+}
+
+// Logout, bloklash yoki huquq o'zgarganda — foydalanuvchining barcha ochiq
+// socketlari uziladi (huquqlar faqat ulanishda tekshiriladi).
+export function disconnectUser(userId) {
+  io?.in(`user:${userId}`).disconnectSockets(true);
 }

@@ -17,6 +17,7 @@ import { publicUser } from "../lib/serialize.js";
 import { issueCode, consumeCode } from "../lib/otp.js";
 import { verifyGoogle } from "../lib/google.js";
 import { requireAuth } from "../middleware/auth.js";
+import { disconnectUser } from "../lib/realtime.js";
 
 const router = Router();
 
@@ -173,6 +174,7 @@ router.post("/google", strictLimiter, async (req, res) => {
 
 router.post("/logout", async (req, res) => {
   await endSession(req.user?.session_id);
+  if (req.user) disconnectUser(req.user.id);
   clearSessionCookie(res);
   res.json({ ok: true });
 });
@@ -218,7 +220,18 @@ router.post("/password/forgot", strictLimiter, async (req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/password/reset", strictLimiter, async (req, res) => {
+// Kodni taxmin qilishga qarshi qo'shimcha to'siq: bitta email'ga 15 daqiqada
+// 10 ta reset urinishi (OTP'ning o'z urinish/kunlik limitlaridan tashqari).
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => `reset:${String(req.body?.email || "").trim().toLowerCase().slice(0, 254)}`,
+  handler: tooManyAttempts,
+});
+
+router.post("/password/reset", strictLimiter, resetLimiter, async (req, res) => {
   const body = parseBody(z.object({ email, code, password }), req.body);
   const user = await findByEmail(body.email);
   if (!user) throw badRequest("invalid-argument", "Kod noto'g'ri.");
@@ -231,6 +244,7 @@ router.post("/password/reset", strictLimiter, async (req, res) => {
     [user.id, await hashPassword(body.password)]
   );
   await endOtherSessions(user.id);
+  disconnectUser(user.id);
   await startSession(req, res, updated, "reset");
   sendUser(res, updated);
 });
@@ -276,6 +290,7 @@ router.post("/password/change", requireAuth, async (req, res) => {
   // Boshqa qurilmalardagi sessiyalar bekor bo'ladi, shu qurilmadagisi qoladi.
   await endOtherSessions(user.id, req.user.session_id);
   setSessionCookie(res, user, req.user.session_id);
+  disconnectUser(user.id);
   sendUser(res, user);
 });
 
@@ -292,11 +307,16 @@ router.post("/email/change", requireAuth, async (req, res) => {
   if (taken && taken.id !== req.user.id) {
     throw new HttpError(409, "auth/email-already-in-use", "Bu email allaqachon ro'yxatdan o'tgan.");
   }
+  // Boshqa qurilmalardagi seanslar bekor qilinadi (hisob egasi o'zgargan bo'lishi mumkin).
   const user = await one(
-    `UPDATE users SET email = $2, email_verified = FALSE WHERE id = $1 RETURNING *`,
+    `UPDATE users SET email = $2, email_verified = FALSE, token_version = token_version + 1
+     WHERE id = $1 RETURNING *`,
     [req.user.id, body.newEmail]
   );
   await query("DELETE FROM otp_codes WHERE user_id = $1", [user.id]);
+  await endOtherSessions(user.id, req.user.session_id);
+  setSessionCookie(res, user, req.user.session_id);
+  disconnectUser(user.id);
   sendUser(res, user);
 });
 
@@ -345,6 +365,7 @@ router.post("/sessions/revoke-all", requireAuth, async (req, res) => {
   );
   await endOtherSessions(user.id, req.user.session_id);
   setSessionCookie(res, user, req.user.session_id);
+  disconnectUser(user.id);
   sendUser(res, user);
 });
 
@@ -412,6 +433,7 @@ router.post("/account/delete", strictLimiter, requireAuth, async (req, res) => {
     }
   }
   await query("DELETE FROM users WHERE id = $1", [req.user.id]);
+  disconnectUser(req.user.id);
   clearSessionCookie(res);
   res.json({ ok: true });
 });

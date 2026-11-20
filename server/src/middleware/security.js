@@ -8,14 +8,24 @@ import { HttpError } from "../lib/errors.js";
 // (begona saytdan cookie bilan yuborilgan so'rovlarni rad etish).
 // ------------------------------------------------------------------
 
-// Rasmli savollar, PDF import va avatar — katta body kerak bo'lgan yo'llar.
-const LARGE_BODY = [/^\/api\/admin\//, /^\/api\/question-sets/, /^\/api\/desmos/, /^\/api\/sessions/, /^\/api\/me\/avatar/, /^\/api\/learn\/mistakes\/sync/];
+// Body hajmi yo'l va foydalanuvchiga qarab. loadUser'dan KEYIN ishlaydi:
+// anonim so'rov hech qachon katta body bilan tahlil qilinmaydi.
+//   - admin yo'llari (rasmli savollar, PDF import) — faqat admin uchun 25 MB;
+//   - avatar va xatolar daftari (rasmli savollar) — tasdiqlangan user, 5 MB;
+//   - qolgan hammasi — 1 MB.
+const ADMIN_LARGE = [/^\/api\/admin\//, /^\/api\/question-sets/, /^\/api\/desmos/, /^\/api\/sessions/];
+const USER_MEDIUM = [/^\/api\/me\/avatar/, /^\/api\/learn\/mistakes\/sync/];
 
 const largeJson = express.json({ limit: "25mb" });
+const mediumJson = express.json({ limit: "5mb" });
 const smallJson = express.json({ limit: "1mb" });
 
 export function jsonBody(req, res, next) {
-  const parser = LARGE_BODY.some((re) => re.test(req.path)) ? largeJson : smallJson;
+  const u = req.user;
+  const isAdmin = Boolean(u && (u.is_admin || u.is_owner) && u.email_verified);
+  let parser = smallJson;
+  if (isAdmin && ADMIN_LARGE.some((re) => re.test(req.path))) parser = largeJson;
+  else if (u?.email_verified && USER_MEDIUM.some((re) => re.test(req.path))) parser = mediumJson;
   return parser(req, res, next);
 }
 

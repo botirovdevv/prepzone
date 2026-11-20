@@ -40,10 +40,10 @@ if (config.clientOrigin) {
 // Xato xabarlari brauzer tilida (X-Lang) — body parser xatolari ham.
 app.use(localizeErrors);
 app.use("/api", globalLimiter);
-// Body hajmi yo'lga qarab: rasmli savollar/PDF uchun 25 MB, qolgani 1 MB.
-app.use(jsonBody);
 app.use(cookieParser());
 app.use(loadUser);
+// Body hajmi yo'l va foydalanuvchiga qarab (middleware/security.js).
+app.use(jsonBody);
 app.use("/api", originCheck);
 
 app.get("/api/health", async (_req, res) => {

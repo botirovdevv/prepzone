@@ -21,9 +21,14 @@ export const ROOM_MINUTES = 40;
 
 export const MAX_STROKES = 5000;
 export const MAX_POINTS_PER_STROKE = 4000;
+// Bitta doskadagi jami nuqtalar — xotirani to'ldirib serverni yiqitmaslik uchun.
+export const MAX_ROOM_POINTS = 200_000;
+// Bitta foydalanuvchi bir vaqtda yaratgan xonalar soni.
+const MAX_ROOMS_PER_USER = 2;
 
 // code -> { createdBy, createdAt, touchedAt, limitMs, startedAt, endTimer,
-//           strokes: Map<id, stroke>, peers: Map<socketId, { userId, name }> }
+//           strokes: Map<id, stroke>, points, allowed: Set<userId>,
+//           peers: Map<socketId, { userId, name }> }
 const rooms = new Map();
 
 export function roomLimitMinutes(_user) {
@@ -39,6 +44,17 @@ function newCode() {
 }
 
 export function createRoom(user) {
+  // Eski bo'sh xonalari o'chiriladi; band xonalar soni limitdan oshmasin.
+  const mine = [...rooms].filter(([, r]) => r.createdBy === user.id).sort((a, b) => a[1].createdAt - b[1].createdAt);
+  for (const [c, r] of mine) {
+    if (mine.length < MAX_ROOMS_PER_USER) break;
+    if (r.peers.size === 0) {
+      clearTimeout(r.endTimer);
+      rooms.delete(c);
+      mine.splice(mine.findIndex(([x]) => x === c), 1);
+    }
+  }
+  if (mine.length >= MAX_ROOMS_PER_USER) return null;
   const code = newCode();
   const now = Date.now();
   rooms.set(code, {
@@ -49,6 +65,10 @@ export function createRoom(user) {
     startedAt: null, // birinchi kishi kirganda boshlanadi
     endTimer: null,
     strokes: new Map(),
+    points: 0,
+    // REST /join orqali ruxsat olgan foydalanuvchilar — socket'da faqat ular
+    // doska va qo'ng'iroqqa ulana oladi (kodni socket orqali taxmin qilib bo'lmaydi).
+    allowed: new Set([String(user.id)]),
     peers: new Map(),
   });
   return code;
