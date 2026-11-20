@@ -8,6 +8,7 @@ import { dayKey } from "../lib/limits.js";
 import { addXp, streakDoc, XP } from "../lib/streaks.js";
 import { avatarUrl } from "../lib/serialize.js";
 import { perUserLimit } from "../lib/limiters.js";
+import { stripQuestion } from "../lib/satScoring.js";
 
 // ------------------------------------------------------------------
 // O'qish vositalari: xatolar daftari (spaced repetition), kun savollari,
@@ -212,7 +213,17 @@ async function dailySet(day) {
   return [...pick(b.rw, 3, "rw"), ...pick(b.math, 2, "math")].map((q, i) => ({ ...q, id: `${day}-${i}` }));
 }
 
-const publicQ = ({ correctAnswer: _c, explanation: _e, ...q }) => q;
+// Yechilmaguncha — kalitsiz; yechilgandan keyin ham ichki manba id'si (sourceId) bermaymiz.
+const publicQ = (q) => ({ ...stripQuestion(q), section: q.section });
+const reviewQ = ({ sourceId: _s, ...q }) => q;
+
+// Kecha yuklangan savollar yarim tundan keyin yuborilsa — o'sha kun bo'yicha
+// baholanadi (faqat bugun yoki kecha).
+function answerDay(requested) {
+  const today = dayKey();
+  const yesterday = dayKey(new Date(Date.now() - 24 * 3600_000));
+  return requested === yesterday ? yesterday : today;
+}
 
 router.get("/daily", async (req, res) => {
   const day = dayKey();
@@ -221,12 +232,18 @@ router.get("/daily", async (req, res) => {
     "SELECT count FROM rate_limits WHERE day = $1 AND user_id = $2 AND action = 'daily'",
     [day, req.user.id]
   );
-  res.json({ day, questions: done ? qs : qs.map(publicQ), done: done ? { correct: done.count - 1 } : null });
+  res.json({ day, questions: done ? qs.map(reviewQ) : qs.map(publicQ), done: done ? { correct: done.count - 1 } : null });
 });
 
 router.post("/daily", async (req, res) => {
-  const body = parseBody(z.object({ answers: z.array(z.string().max(4).nullable()).length(5) }), req.body);
-  const day = dayKey();
+  const body = parseBody(
+    z.object({
+      answers: z.array(z.string().max(4).nullable()).length(5),
+      day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    }),
+    req.body
+  );
+  const day = answerDay(body.day);
   const qs = await dailySet(day);
   const results = qs.map((q, i) => body.answers[i] === q.correctAnswer);
   const correct = results.filter(Boolean).length;
@@ -252,7 +269,7 @@ router.post("/daily", async (req, res) => {
     }
     return { xp, streak };
   });
-  res.json({ correct, results, questions: qs, ...out });
+  res.json({ correct, results, questions: qs.map(reviewQ), ...out });
 });
 
 // ---------------- Streak / XP ----------------

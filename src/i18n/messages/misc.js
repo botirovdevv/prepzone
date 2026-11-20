@@ -21,6 +21,7 @@ export default {
       working: "Bajarilmoqda...",
     },
     qrApprove: {
+      codeLabel: "Kompyuter ekranidagi 2 xonali raqam",
       eyebrow: "QR orqali kirish",
       askTitle: "Kompyuterga kirasizmi?",
       title: "QR orqali kirish",
@@ -92,6 +93,7 @@ export default {
       working: "Working...",
     },
     qrApprove: {
+      codeLabel: "The 2-digit number shown on the computer",
       eyebrow: "QR login",
       askTitle: "Log in on the computer?",
       title: "QR login",

@@ -136,6 +136,7 @@ export default function Results() {
   const [notFound, setNotFound] = useState(false);
   const [keys, setKeys] = useState(null);
   const [keysError, setKeysError] = useState(false);
+  const [keysLocked, setKeysLocked] = useState(false);
   // Eski natijalarda testId saqlanmagan — ular birinchi statik testniki edi.
   const loadedTest = useSatTest(testId || (results ? "bluebook-1" : ""));
   // Test saytdan olib tashlangan bo'lsa — ballar ko'rinadi, savollar yo'q.
@@ -165,7 +166,11 @@ export default function Results() {
     setKeysError(false);
     api
       .get(`/sat/review?id=${encodeURIComponent(resultId)}`)
-      .then((d) => !cancelled && setKeys(d.keys))
+      .then((d) => {
+        if (cancelled) return;
+        setKeys(d.keys);
+        setKeysLocked(Boolean(d.locked));
+      })
       .catch((err) => {
         console.error("To'g'ri javoblarni yuklashda xatolik:", err);
         if (!cancelled) setKeysError(true);
@@ -303,7 +308,13 @@ export default function Results() {
 
                 {!keys && (
                   <p className="rounded-xl bg-canvas px-4 py-3 text-sm text-ink/55">
-                    {retired ? t("results.retired") : keysError ? t("results.keysError") : t("results.keysLoading")}
+                    {retired
+                      ? t("results.retired")
+                      : keysLocked
+                        ? t("results.keysLocked")
+                        : keysError
+                          ? t("results.keysError")
+                          : t("results.keysLoading")}
                   </p>
                 )}
                 {reviewModules.map((m) => (

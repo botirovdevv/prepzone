@@ -203,6 +203,8 @@ export default function SessionTest() {
   const [busy, setBusy] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const finishingRef = useRef(false);
+  // Qayta yuborilgan (retry) natija serverda dublikat bo'lmasin.
+  const attemptIdRef = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -473,6 +475,7 @@ export default function SessionTest() {
     try {
       const data = await withRetry(() =>
         api.post(`/sessions/${sessionId}/finish`, {
+          attemptId: attemptIdRef.current,
           attempts: finalAttempts,
           ...(extraState.terminated ? { terminated: true, terminationReason: extraState.reason } : {}),
         })

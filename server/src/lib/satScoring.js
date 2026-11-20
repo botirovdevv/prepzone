@@ -29,15 +29,17 @@ export function cleanAnswers(arr, length) {
   });
 }
 
-// Brauzerga yuboriladigan nusxadan javob kalitlari olib tashlanadi
-// (scripts/build-content.mjs bilan bir xil maydonlar).
-// aiNote — admin uchun AI import izohi ("grafik bor" va h.k.), talabaga ko'rsatilmaydi.
-const SECRET_KEYS = ["correctAnswer", "answers", "explanation", "aiNote"];
+// Brauzerga yuboriladigan nusxa — faqat ruxsat etilgan maydonlar (allow-list).
+// Kalitlar (correctAnswer, answers, explanation), admin izohlari (aiNote,
+// issues) va manba identifikatorlari (sourceId) hech qachon talabaga bormaydi;
+// kelajakda qo'shiladigan yangi maydon ham avtomatik yashirin bo'ladi.
+const PUBLIC_KEYS = ["id", "type", "html", "passage", "prompt", "image", "domain", "skill", "difficulty"];
 const MODULE_KEYS = ["module1", "module2Easy", "module2Hard", "module2Mixed"];
 
 export function stripQuestion(q) {
-  const out = { ...q };
-  for (const k of SECRET_KEYS) delete out[k];
+  const out = {};
+  for (const k of PUBLIC_KEYS) if (q[k] !== undefined) out[k] = q[k];
+  if (Array.isArray(q.choices)) out.choices = q.choices.map((c) => ({ label: c.label, text: c.text }));
   return out;
 }
 

@@ -40,6 +40,7 @@ function Approve({ qrId, scanCode }) {
   const [state, setState] = useState("loading"); // loading | ask | approved | denied | expired | invalid
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState("");
   // AuthContext funksiyasi har renderda yangi — so'rov bir marta ketsin.
   const qrInfoRef = useRef(qrInfo);
 
@@ -64,7 +65,7 @@ function Approve({ qrId, scanCode }) {
     setError("");
     try {
       if (approve) {
-        await qrApprove(qrId, scanCode);
+        await qrApprove(qrId, scanCode, confirm);
         setState("approved");
       } else {
         await qrDeny(qrId, scanCode);
@@ -118,8 +119,21 @@ function Approve({ qrId, scanCode }) {
             </div>
           )}
 
+          <label className="mt-4 block">
+            <span className="text-[13px] font-medium text-ink-2">{t("qrApprove.codeLabel")}</span>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={2}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              className="mt-1.5 h-[56px] w-full rounded-xl border border-ink/[0.12] bg-surface text-center font-display text-[28px] font-bold tracking-[0.3em] text-ink tabular-nums outline-none focus:border-accent focus:ring-4 focus:ring-accent/15"
+              placeholder="••"
+            />
+          </label>
+
           <div className="mt-5 space-y-2.5">
-            <PrimaryButton type="button" onClick={() => decide(true)} loading={busy} loadingText={t("qrApprove.approving")}>
+            <PrimaryButton type="button" onClick={() => decide(true)} disabled={confirm.length !== 2} loading={busy} loadingText={t("qrApprove.approving")}>
               {t("qrApprove.yes")}
             </PrimaryButton>
             <button

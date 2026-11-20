@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { one, pool, query } from "../db/index.js";
-import { parseBody } from "../lib/errors.js";
+import { HttpError, parseBody } from "../lib/errors.js";
 import { generateJson } from "../lib/gemini.js";
 import { consumeAi, aiQuota } from "../lib/quota.js";
 import { perUserLimit } from "../lib/limiters.js";
@@ -54,6 +54,17 @@ router.post("/explain", perUserLimit({ windowMs: 60_000, limit: 12 }), async (re
     }),
     req.body
   );
+  // Jonli (kodli yoki ochiq) testni topshirayotgan talaba AI'dan javob
+  // so'ray olmaydi — test paytida tutor o'chiq.
+  const live = await one(
+    `SELECT 1 FROM session_participants
+     WHERE user_id = $1 AND data->>'status' = 'active' AND updated_at > now() - interval '4 hours'
+     LIMIT 1`,
+    [req.user.id]
+  );
+  if (live) {
+    throw new HttpError(409, "failed-precondition", "Test davomida AI tushuntirish o'chirilgan. Testni tugatgach qayta urinib ko'ring.");
+  }
   const q = body.question;
   const text = [
     q.passage && `Passage/context: ${stripHtml(q.passage)}`,

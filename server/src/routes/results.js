@@ -43,6 +43,7 @@ leaderboardRouter.get("/", async (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 15, 1), 100);
   const { rows } = await query(
     `SELECT l.*, u.avatar_updated_at FROM leaderboard l JOIN users u ON u.id = l.user_id
+     WHERE u.blocked_at IS NULL
      ORDER BY l.best_score DESC, l.updated_at ASC LIMIT $1`,
     [limit]
   );

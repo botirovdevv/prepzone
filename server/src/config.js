@@ -8,8 +8,8 @@ function required(name, devFallback) {
   throw new Error(`Muhit o'zgaruvchisi topilmadi: ${name}`);
 }
 
-// Production'da zaif maxfiy kalit. `fatal` — yangi kalitlar uchun (ishga tushmaydi);
-// JWT_SECRET uchun faqat ogohlantirish, aks holda mavjud sayt to'xtab qolardi.
+// Production'da zaif maxfiy kalit bilan server ishga tushmaydi (qisqa kalit
+// bilan sessiya tokenlarini soxtalashtirish mumkin).
 function strongSecret(name, value, { min = 32, fatal = true } = {}) {
   if (isProd && value && value.length < min) {
     const msg = `${name} kamida ${min} belgi bo'lishi kerak (uzun tasodifiy satr qo'ying).`;
@@ -23,7 +23,7 @@ export const config = {
   isProd,
   port: Number(process.env.PORT) || 4000,
   databaseUrl: required("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/prepzone"),
-  jwtSecret: strongSecret("JWT_SECRET", required("JWT_SECRET", "dev-only-secret-change-me"), { fatal: false }),
+  jwtSecret: strongSecret("JWT_SECRET", required("JWT_SECRET", "dev-only-secret-change-me")),
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   resendApiKey: process.env.RESEND_API_KEY || "",
   fromEmail: process.env.FROM_EMAIL || "Prepzone <verify@mail.prep-zone.uz>",

@@ -47,6 +47,12 @@ const secret = z.string().min(16).max(100);
 
 const expired = (row) => new Date(row.expires_at).getTime() < Date.now();
 
+// Kompyuter ekranida ko'rsatiladigan 2 xonali tasdiq raqami. Telefonda shu
+// raqam kiritilmasa tasdiqlab bo'lmaydi — begona odam yuborgan QR havolasini
+// (fishing) bosgan user o'sha kompyuter ekranini ko'rmaydi. poll_hash'dan
+// hosil qilinadi, alohida saqlash shart emas.
+const confirmFrom = (pollHash) => String((parseInt(pollHash.slice(0, 8), 16) % 90) + 10);
+
 // Telefon tomoni: QR'dagi id + scanCode bo'yicha topadi.
 async function findByScan(qrId, scanCode) {
   const row = await one("SELECT * FROM qr_logins WHERE id = $1 AND scan_hash = $2", [qrId, hash(scanCode)]);
@@ -72,7 +78,7 @@ router.post("/start", startLimiter, async (req, res) => {
       expiresAt,
     ]
   );
-  res.json({ id: qrId, scanCode, pollSecret, expiresAt });
+  res.json({ id: qrId, scanCode, pollSecret, expiresAt, confirm: confirmFrom(hash(pollSecret)) });
 });
 
 // Kompyuter tomoni. Holatlar: pending | scanned | approved | denied | expired.
@@ -124,8 +130,16 @@ router.get("/info", requireAuth, async (req, res) => {
 const decisionBody = z.object({ id, scanCode: secret });
 
 router.post("/approve", approveLimiter, requireVerified, async (req, res) => {
-  const body = parseBody(decisionBody, req.body);
-  await findByScan(body.id, body.scanCode);
+  const body = parseBody(
+    decisionBody.extend({ confirm: z.string().regex(/^\d{2}$/, "Kompyuterdagi 2 xonali raqamni kiriting.") }),
+    req.body
+  );
+  const found = await findByScan(body.id, body.scanCode);
+  if (body.confirm !== confirmFrom(found.poll_hash)) {
+    // Bitta urinish: noto'g'ri raqamdan keyin bu QR yaroqsiz bo'ladi.
+    await query("UPDATE qr_logins SET status = 'denied' WHERE id = $1 AND status IN ('pending', 'scanned')", [found.id]);
+    throw badRequest("invalid-argument", "Raqam mos kelmadi. Kompyuterdagi yangi QR'ni skanerlang.");
+  }
   const row = await one(
     `UPDATE qr_logins SET status = 'approved', user_id = $2
      WHERE id = $1 AND status IN ('pending', 'scanned') AND expires_at > now()

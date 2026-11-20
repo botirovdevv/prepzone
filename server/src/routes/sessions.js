@@ -7,9 +7,11 @@ import { HttpError, forbidden, notFound, parseBody } from "../lib/errors.js";
 import {
   eventDoc,
   participantDoc,
+  resultDoc,
   sessionDoc,
   sessionResultDoc,
 } from "../lib/serialize.js";
+import { consumeDaily } from "../lib/limits.js";
 import { emitSessionUpdate, emitToAdmins } from "../lib/realtime.js";
 import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
 import { routeFor, scoreAttempt, stripSections } from "../lib/satScoring.js";
@@ -359,7 +361,8 @@ router.get("/:id/content", async (req, res) => {
 // Ishtirokchi o'z holatini yangilaydi (admin monitoringi uchun). Faqat
 // ruxsat etilgan maydonlar qabul qilinadi, vaqt belgilari serverda qo'yiladi.
 router.patch("/:id/participants/me", async (req, res) => {
-  await requireParticipant(req);
+  const current = await requireParticipant(req);
+  const session = await getSession(req.params.id);
   const body = parseBody(
     z.object({
       status: z.enum(PARTICIPANT_STATUSES).optional(),
@@ -368,6 +371,17 @@ router.patch("/:id/participants/me", async (req, res) => {
     }),
     req.body
   );
+  // Kodli (bir martalik) testda chetlatilgan talaba o'zini qayta "active"
+  // qila olmaydi va qoidabuzarliklar soni faqat oshadi. Doimiy ochiq testni
+  // qayta topshirishda esa holat yangidan boshlanadi.
+  if (session.access_type !== "open") {
+    if (current.data?.status === "terminated" && body.status && body.status !== "terminated") {
+      throw new HttpError(409, "failed-precondition", "Siz bu testdan chetlatilgansiz.");
+    }
+    if (body.violationCount != null) {
+      body.violationCount = Math.max(body.violationCount, Number(current.data?.violationCount) || 0);
+    }
+  }
   const now = new Date().toISOString();
   const patch = { ...body };
   if (body.status === "active") patch.startedAt = now;
@@ -383,7 +397,7 @@ router.patch("/:id/participants/me", async (req, res) => {
   res.json(participantDoc(p));
 });
 
-router.post("/:id/events", async (req, res) => {
+router.post("/:id/events", perUserLimit({ windowMs: 60_000, limit: 30 }), async (req, res) => {
   await requireParticipant(req);
   const body = parseBody(
     z.object({ type: z.string().max(60), message: z.string().max(500).optional() }),
@@ -424,6 +438,8 @@ router.post("/:id/finish", async (req, res) => {
       ),
       terminated: z.boolean().optional(),
       terminationReason: z.string().max(40).optional(),
+      // Tarmoq xatosidan keyin qayta yuborilgan so'rov dublikat yaratmasin.
+      attemptId: z.string().regex(/^[A-Za-z0-9-]{16,64}$/).optional(),
     }),
     req.body
   );
@@ -450,6 +466,21 @@ router.post("/:id/finish", async (req, res) => {
   const data = { results, name: studentName(req.user), email: req.user.email, sessionTitle: title, ...termFields };
 
   const p = await tx(async (client) => {
+    if (body.attemptId) {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [body.attemptId]);
+      const { rows: dup } = await client.query("SELECT user_id FROM results WHERE attempt_id = $1", [body.attemptId]);
+      if (dup.length) {
+        if (dup[0].user_id !== req.user.id) throw new HttpError(409, "already-exists", "attemptId band.");
+        return { duplicate: true };
+      }
+    }
+    await consumeDaily(client, req.user.id, "sessionFinish", 15, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
+    // Reytingga shu testning faqat BIRINCHI to'liq urinishi tushadi — ochiq
+    // testni qayta-qayta topshirib kalitni "teshib" olish foyda bermaydi.
+    const { rowCount: earlier } = await client.query(
+      "SELECT 1 FROM results WHERE user_id = $1 AND session_id = $2 AND complete LIMIT 1",
+      [req.user.id, s.id]
+    );
     await client.query(
       `INSERT INTO session_results (session_id, user_id, total, data, finished_at)
        VALUES ($1, $2, $3, $4, now())
@@ -458,8 +489,9 @@ router.post("/:id/finish", async (req, res) => {
       [s.id, req.user.id, total, data]
     );
     await client.query(
-      `INSERT INTO results (id, user_id, total, session_id, complete, data) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [crypto.randomUUID(), req.user.id, total, s.id, complete, data]
+      `INSERT INTO results (id, user_id, total, session_id, complete, attempt_id, data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [crypto.randomUUID(), req.user.id, total, s.id, complete, body.attemptId || null, data]
     );
     const now = new Date().toISOString();
     const participantPatch = terminated
@@ -472,10 +504,15 @@ router.post("/:id/finish", async (req, res) => {
     );
     // Reytingga faqat to'liq SAT (ikkala bo'lim) tushadi.
     const fullSat = ["rw", "math"].every((id) => sections.some((sec) => sec.id === id));
-    if (complete && fullSat) await maybeUpdateLeaderboard(client, req.user, total);
+    if (complete && fullSat && earlier === 0) await maybeUpdateLeaderboard(client, req.user, total);
     return updated.rows[0];
   });
 
+  if (p?.duplicate) {
+    const prev = await one("SELECT * FROM results WHERE attempt_id = $1", [body.attemptId]);
+    const doc = resultDoc(prev);
+    return res.json({ results: doc.results, total: doc.total, sections: sectionsMeta, alreadySubmitted: true });
+  }
   if (p) emitToAdmins(s.id, "participant:update", participantDoc(p));
   res.status(201).json({ results, total, sections: sectionsMeta });
 });

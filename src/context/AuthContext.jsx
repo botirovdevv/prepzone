@@ -127,7 +127,7 @@ export function AuthProvider({ children }) {
   };
   const qrInfo = (id, scanCode) =>
     api.get(`/auth/qr/info?i=${encodeURIComponent(id)}&c=${encodeURIComponent(scanCode)}`);
-  const qrApprove = (id, scanCode) => api.post("/auth/qr/approve", { id, scanCode });
+  const qrApprove = (id, scanCode, confirm) => api.post("/auth/qr/approve", { id, scanCode, confirm });
   const qrDeny = (id, scanCode) => api.post("/auth/qr/deny", { id, scanCode });
 
   const value = {

@@ -36,7 +36,13 @@ export default function QrLogin({ onSuccess }) {
       const url = `${window.location.origin}/qr?i=${data.id}&c=${encodeURIComponent(data.scanCode)}`;
       const image = await QRCode.toDataURL(url, { margin: 1, width: 440, errorCorrectionLevel: "M" });
       if (!alive.current) return;
-      setQr({ id: data.id, pollSecret: data.pollSecret, expiresAt: new Date(data.expiresAt).getTime(), image });
+      setQr({
+        id: data.id,
+        pollSecret: data.pollSecret,
+        confirm: data.confirm,
+        expiresAt: new Date(data.expiresAt).getTime(),
+        image,
+      });
       setStatus("pending");
     } catch (err) {
       if (!alive.current) return;
@@ -122,7 +128,10 @@ export default function QrLogin({ onSuccess }) {
               <>
                 <LuSmartphone size={30} className="text-accent" />
                 <p className="text-[15px] font-semibold text-ink">{t("auth.qr.confirmOnPhone")}</p>
-                <p className="text-[13px] text-ink-2">{t("auth.qr.pressYes")}</p>
+                <p className="text-[13px] text-ink-2">{t("auth.qr.enterCode")}</p>
+                <p className="font-display text-[44px] font-bold leading-none tracking-[0.08em] text-ink tabular-nums">
+                  {qr?.confirm}
+                </p>
               </>
             )}
             {status === "approved" && (

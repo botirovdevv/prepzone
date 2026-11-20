@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { one, tx } from "../db/index.js";
+import { one, query, tx } from "../db/index.js";
 import { HttpError, notFound, parseBody } from "../lib/errors.js";
 import { getStaticSections, reviewKeys, routeFor, scoreAttempt } from "../lib/satScoring.js";
 import { maybeUpdateLeaderboard } from "../lib/leaderboard.js";
@@ -70,10 +70,15 @@ router.post("/finish", async (req, res) => {
 
   const out = await tx(async (client) => {
     await consumeDaily(client, req.user.id, "satFinish", 15, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
+    // Avval to'liq topshirgan yoki javob kalitlarini ko'rgan bo'lsa — reytingga
+    // tushmaydi (kalitlar progress tiklanganda ham "ko'rilgan" bo'lib qoladi).
     const previous = complete
       ? await client.query(
-          "SELECT 1 FROM results WHERE user_id = $1 AND test_id = $2 AND complete LIMIT 1",
-          [req.user.id, body.testId]
+          `SELECT 1 FROM results WHERE user_id = $1 AND test_id = $2 AND complete
+           UNION ALL
+           SELECT 1 FROM rate_limits WHERE day = 'seen' AND user_id = $1 AND action = $3
+           LIMIT 1`,
+          [req.user.id, body.testId, `keys:${body.testId}`]
         )
       : null;
     const { rows } = await client.query(
@@ -116,8 +121,21 @@ router.get("/review", async (req, res) => {
   if (row.session_id) {
     throw new HttpError(400, "invalid-argument", "Sessiya natijalari uchun ko'rib chiqish mavjud emas.");
   }
+  // Tugallanmagan (chala tashlab ketilgan yoki chetlatilgan) urinish uchun
+  // kalitlar berilmaydi — aks holda testni ataylab to'xtatib, javoblarni
+  // ko'rib, keyin "birinchi to'liq urinish"da 1600 olish mumkin bo'lardi.
+  const isStaff = row.user_id !== req.user.id;
+  if (!row.complete && !isStaff) return res.json({ keys: null, locked: true });
   // Test saytdan olib tashlangan bo'lsa — kalitlar yo'q (natija ballari qoladi).
-  const data = getStaticSections(row.test_id || "bluebook-1");
+  const testId = row.test_id || "bluebook-1";
+  const data = getStaticSections(testId);
+  if (data && !isStaff) {
+    await query(
+      `INSERT INTO rate_limits (day, user_id, action, count) VALUES ('seen', $1, $2, 1)
+       ON CONFLICT DO NOTHING`,
+      [req.user.id, `keys:${testId}`]
+    );
+  }
   res.json({ keys: data ? reviewKeys(data.sections) : null });
 });
 

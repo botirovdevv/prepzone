@@ -30,7 +30,7 @@ export default function Daily() {
   const submit = async () => {
     setSending(true);
     try {
-      setResult(await api.post("/learn/daily", { answers }));
+      setResult(await api.post("/learn/daily", { answers, day: data.day }));
     } catch (e) {
       setError(e.message);
     } finally {

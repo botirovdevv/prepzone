@@ -34,8 +34,10 @@ export function sanitizeRichText(html) {
   if (!html) return "";
   if (typeof document === "undefined") return "";
 
-  const container = document.createElement("div");
-  container.innerHTML = html;
+  // DOMParser hujjati "inert": unda <img onerror> yuklanmaydi va skript
+  // ishlamaydi. Joriy sahifadagi div.innerHTML esa tozalashdan OLDIN rasm
+  // yuklashni boshlab, onerror'ni ishga tushirib yuborishi mumkin edi.
+  const container = new DOMParser().parseFromString(`<!doctype html><body>${html}`, "text/html").body;
 
   const walk = (node) => {
     const children = Array.from(node.childNodes);

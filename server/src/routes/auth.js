@@ -282,6 +282,19 @@ router.post("/password/change", requireAuth, async (req, res) => {
     req.body
   );
   await checkCurrentPassword(req.user, body.currentPassword);
+  // Paroli yo'q (Google) hisobga QR orqali ochilgan seansdan birinchi parolni
+  // o'rnatib bo'lmaydi — bu hisobni egallab olish yo'li bo'lardi. Email
+  // orqali "Parolni tiklash" (OTP) ishlatiladi.
+  if (!req.user.password_hash) {
+    const s = await one("SELECT method FROM user_sessions WHERE id = $1", [req.user.session_id]);
+    if (s?.method === "qr") {
+      throw new HttpError(
+        403,
+        "permission-denied",
+        "Xavfsizlik uchun parolni \"Parolni unutdingizmi?\" orqali email kodi bilan o'rnating."
+      );
+    }
+  }
   const user = await one(
     `UPDATE users SET password_hash = $2, token_version = token_version + 1
      WHERE id = $1 RETURNING *`,
