@@ -20,6 +20,10 @@ export default {
         "Bluebook'dagi kabi adaptiv mocklar, xatolar daftari va real ballingizni oldindan aytadigan predictor. Kuniga 15 daqiqa, istalgan joyda.",
       heroFree: "To'liq bepul — karta shart emas",
       growthEyebrow: "Nega PrepZone",
+      benefitsEyebrow: "Nega PrepZone",
+      benefitsTitle: "Test ishlash yetmaydi. Xatodan o'rganish kerak.",
+      alsoIncluded: "Bundan tashqari, hammasi bepul:",
+      dayShort: "kun",
       growthTitle: "Test ishlash yetmaydi. Xatodan o'rganish kerak.",
       growthText: "Boshqa platformalar sizga test beradi. PrepZone esa xatolaringizni saqlaydi, o'sha mavzuni qayta so'raydi va natijangizni oldindan aytadi.",
       growth: [
@@ -147,6 +151,10 @@ export default {
         "Bluebook-style adaptive mocks, a mistake notebook and a predictor that tells you your real score in advance. 15 minutes a day, anywhere.",
       heroFree: "Completely free, no card needed",
       growthEyebrow: "Why PrepZone",
+      benefitsEyebrow: "Why PrepZone",
+      benefitsTitle: "Taking tests isn't enough. You have to learn from mistakes.",
+      alsoIncluded: "Also included, all free:",
+      dayShort: "days",
       growthTitle: "Taking tests isn't enough. You have to learn from mistakes.",
       growthText: "Other platforms give you tests. PrepZone saves your mistakes, asks you that topic again and predicts your score.",
       growth: [

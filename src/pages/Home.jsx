@@ -6,14 +6,12 @@ import {
   LuBookOpenCheck,
   LuCalculator,
   LuCalendarClock,
-  LuChartColumn,
   LuCheck,
   LuChevronDown,
   LuClock,
   LuKeyRound,
   LuLayers,
   LuLanguages,
-  LuListChecks,
   LuMenu,
   LuTarget,
   LuTrophy,
@@ -28,7 +26,7 @@ import { LanguageSwitch, useI18n } from "../i18n";
 
 const logo = "/Logo.png";
 
-const NAV_LINKS = ["tests", "features", "how", "faq"];
+const NAV_LINKS = ["features", "how", "faq"];
 
 const scrollToSection = (id) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -66,7 +64,7 @@ const formatDay = (key) => key.split("-").reverse().join(".");
 // ---------------- Global nav (apple.com uslubi) ----------------
 // Ixcham: logo, 3 ta havola, "Kirish" va "Boshlash". Mavzu va til — footer'da
 // (telefonda — menyu ichida).
-const NAV_BAR_LINKS = ["tests", "features", "faq"];
+const NAV_BAR_LINKS = ["features", "how", "faq"];
 
 function Navbar({ onLogin, onRegister }) {
   const { t } = useI18n();
@@ -166,50 +164,6 @@ function SectionHead({ eyebrow, title, muted, text, center = false, className = 
   );
 }
 
-// ---------------- Nega PrepZone: 4 ta asosiy farq ----------------
-const GROWTH_STYLE = [
-  { icon: LuNotebookPen, cls: "bg-danger" },
-  { icon: LuGauge, cls: "bg-accent" },
-  { icon: LuFlame, cls: "bg-warning" },
-];
-
-function GrowthSection() {
-  const { t, tr } = useI18n();
-  return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-[1024px] px-5 py-24 lg:py-32">
-        <SectionHead eyebrow={t("home.growthEyebrow")} title={t("home.growthTitle")} text={t("home.growthText")} />
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
-          {(tr("home.growth") || []).map((g, i) => {
-            const { icon: Icon, cls } = GROWTH_STYLE[i];
-            return (
-              <div
-                key={g.title}
-                className="home-reveal rounded-[28px] bg-canvas p-7 sm:p-8"
-                style={{ "--reveal-delay": `${i * 80}ms` }}
-              >
-                <span className={`flex h-11 w-11 items-center justify-center rounded-[12px] text-white ${cls}`}>
-                  <Icon size={21} />
-                </span>
-                <h3 className="mt-6 font-display text-[21px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink">{g.title}</h3>
-                <p className="mt-2 text-[17px] leading-[1.47] text-ink-2">{g.text}</p>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-16 grid grid-cols-3 gap-6 sm:gap-8">
-          {(tr("home.stats") || []).map((s) => (
-            <div key={s.label} className="home-reveal">
-              <p className="font-display text-[48px] font-bold leading-none tracking-[-0.025em] text-ink">{s.value}</p>
-              <p className="mt-2 text-[15px] text-ink-2">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ---------------- Hero preview: SAT ----------------
 function SatPreview() {
   const { t } = useI18n();
@@ -295,7 +249,7 @@ function TestDayPills() {
   const items = [["SAT", nextTestDate(), "bg-accent"]].filter(([, d]) => d);
   if (!items.length) return null;
   return (
-    <div className="mt-8 flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       {items.map(([label, date, dot]) => {
         const left = daysLeft(date);
         return (
@@ -314,182 +268,82 @@ function TestDayPills() {
   );
 }
 
-// ---------------- Imkoniyatlar (bento) ----------------
-function FeatureCard({ icon: Icon, tone = "blue", title, text, className = "", children, delay = 0 }) {
-  const tones = {
-    blue: "bg-accent/10 text-accent",
-    red: "bg-danger/10 text-danger",
-    emerald: "bg-success/10 text-success",
-    amber: "bg-warning/10 text-warning",
-    ink: "bg-ink/[0.06] text-ink",
-  };
+// ---------------- Asosiy foydalar: 3 ta karta + qo'shimcha imkoniyatlar ----------------
+function BenefitCard({ icon: Icon, tone, title, text, children, delay = 0 }) {
   return (
-    <div
-      className={`home-reveal flex flex-col rounded-[28px] bg-surface p-7 sm:p-8 ${className}`}
-      style={{ "--reveal-delay": `${delay}ms` }}
-    >
-      <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${tones[tone]}`}>
-        <Icon size={20} />
+    <div className="home-reveal flex flex-col rounded-[28px] bg-canvas p-7 sm:p-8" style={{ "--reveal-delay": `${delay}ms` }}>
+      <span className={`flex h-11 w-11 items-center justify-center rounded-[12px] text-white ${tone}`}>
+        <Icon size={21} />
       </span>
-      <h3 className="mt-5 font-display text-[21px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink">{title}</h3>
-      <p className="mt-2 text-[17px] leading-[1.47] text-ink-2">{text}</p>
-      {children && <div className="mt-6 flex-1">{children}</div>}
+      <h3 className="mt-6 font-display text-[21px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink">{title}</h3>
+      <p className="mt-2 flex-1 text-[17px] leading-[1.47] text-ink-2">{text}</p>
+      <div className="mt-7">{children}</div>
     </div>
   );
 }
 
-function Features() {
+function Benefits() {
   const { t, tr } = useI18n();
+  const [notebook, predictor, daily] = tr("home.growth") || [];
+  const extras = [
+    { icon: LuLayers, title: t("home.fSetsTitle") },
+    { icon: LuFlame, title: daily?.title },
+    { icon: LuCalendarClock, title: t("home.fPlanTitle") },
+    { icon: LuLanguages, title: t("home.fVocabTitle") },
+    { icon: LuTrophy, title: t("home.fRankTitle") },
+    { icon: LuKeyRound, title: t("home.fCodeTitle") },
+  ];
   return (
-    <section id="features" className="scroll-mt-16 bg-canvas">
+    <section id="features" className="scroll-mt-16 bg-surface">
       <div className="mx-auto max-w-[1024px] px-5 py-24 lg:py-32">
-        <SectionHead
-          eyebrow={t("home.featuresEyebrow")}
-          title={t("home.featuresTitle")}
-          muted={t("home.featuresTitleMuted")}
-        />
+        <SectionHead center eyebrow={t("home.benefitsEyebrow")} title={t("home.benefitsTitle")} text={t("home.growthText")} />
 
-        <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <FeatureCard
-            icon={LuBookOpenCheck}
-            title={t("home.fAdaptiveTitle")}
-            text={t("home.fAdaptiveText")}
-            className="lg:col-span-2"
-          >
-            <div className="grid grid-cols-3 gap-2 text-center text-[11px] font-semibold">
-              {[
-                ["Module 1", "bg-accent/[0.12] text-accent"],
-                ["Module 2 · Hard", "bg-accent text-white"],
-                ["Module 2 · Easy", "bg-ink/[0.05] text-ink-3"],
-              ].map(([label, cls]) => (
-                <div key={label} className={`rounded-xl px-2 py-3 ${cls}`}>
-                  {label}
-                </div>
-              ))}
-              <div className="col-span-3 flex items-center justify-center gap-4 rounded-xl border border-dashed border-ink/10 py-2.5 text-ink-2">
-                <span className="flex items-center gap-1.5">
-                  <LuCalculator size={13} /> {t("home.desmosSoon")}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <LuClock size={13} /> {t("home.timer")}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <LuListChecks size={13} /> Mark for review
-                </span>
+        <div className="mt-14 grid gap-4 md:grid-cols-3">
+          <BenefitCard icon={LuBookOpenCheck} tone="bg-accent" title={t("home.fAdaptiveTitle")} text={t("home.fAdaptiveText")}>
+            <div className="space-y-2 text-[12px] font-medium">
+              <div className="rounded-xl bg-surface px-3 py-2.5 text-ink">Module 1</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-accent px-3 py-2.5 text-white">Module 2 · Hard</div>
+                <div className="rounded-xl bg-surface px-3 py-2.5 text-ink-3">Module 2 · Easy</div>
               </div>
             </div>
-          </FeatureCard>
+          </BenefitCard>
 
-          <FeatureCard
-            icon={LuLayers}
-            tone="red"
-            title={t("home.fSetsTitle")}
-            text={t("home.fSetsText")}
-            delay={80}
-          >
-            {/* Namuna: haqiqiy to'plamlar admin panelda qo'shiladi, shuning uchun son ko'rsatilmaydi. */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {tr("home.months").map((k) => (
-                <div key={k} className="rounded-xl bg-canvas py-2.5 text-ink">
-                  <p className="text-[10px] font-bold text-ink-3">SAT</p>
-                  <p className="text-[15px] font-bold">{k}</p>
-                </div>
-              ))}
-            </div>
-          </FeatureCard>
-
-          <FeatureCard
-            icon={LuChartColumn}
-            tone="emerald"
-            title={t("home.fTopicsTitle")}
-            text={t("home.fTopicsText")}
-          >
-            <div className="space-y-2.5">
-              {[
-                ["Algebra", 86],
-                ["Advanced Math", 64],
-                ["Craft & Structure", 52],
-              ].map(([label, pct]) => (
-                <div key={label}>
-                  <div className="mb-1 flex justify-between text-[11px] font-semibold text-ink-2">
-                    <span>{label}</span>
-                    <span className="tabular-nums">{pct}%</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
-                    <div
-                      className={`h-full rounded-full ${pct >= 70 ? "bg-success" : "bg-warning"}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </FeatureCard>
-
-          <FeatureCard
-            icon={LuCalendarClock}
-            tone="amber"
-            title={t("home.fPlanTitle")}
-            text={t("home.fPlanText")}
-            delay={80}
-          >
-            <div className="flex items-end justify-between rounded-2xl bg-canvas p-4">
-              <div>
-                <p className="text-[12px] font-medium text-ink-2">{t("home.planTarget")}</p>
-                <p className="mt-1 font-display text-[30px] font-bold leading-none text-ink">
-                  24 <span className="text-[15px] font-medium text-ink-2">{t("home.planDays")}</span>
-                </p>
-              </div>
-              <LuTarget size={22} className="text-accent" />
-            </div>
-          </FeatureCard>
-
-          <FeatureCard
-            icon={LuLanguages}
-            tone="ink"
-            title={t("home.fVocabTitle")}
-            text={t("home.fVocabText")}
-            delay={160}
-          >
-            <div className="flex flex-wrap gap-1.5">
-              {["meticulous", "ubiquitous", "mitigate", "coherent", "plausible"].map((w) => (
-                <span key={w} className="rounded-full border border-ink/10 px-3 py-1 text-[12px] font-medium text-ink">
-                  {w}
+          <BenefitCard icon={LuNotebookPen} tone="bg-danger" title={notebook?.title} text={notebook?.text} delay={80}>
+            <div className="flex items-center gap-2">
+              {["1", "3", "7"].map((d) => (
+                <span key={d} className="flex-1 rounded-xl bg-surface py-2.5 text-center text-[12px] font-medium text-ink-2">
+                  <b className="font-display text-[17px] font-semibold text-ink">{d}</b> {t("home.dayShort")}
                 </span>
               ))}
             </div>
-          </FeatureCard>
+          </BenefitCard>
 
-          <FeatureCard
-            icon={LuTrophy}
-            tone="amber"
-            title={t("home.fRankTitle")}
-            text={t("home.fRankText")}
-          />
-
-          <FeatureCard
-            icon={LuKeyRound}
-            title={t("home.fCodeTitle")}
-            text={t("home.fCodeText")}
-            className="lg:col-span-2"
-            delay={80}
-          >
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex gap-1.5">
-                {"482913".split("").map((d, i) => (
-                  <span
-                    key={i}
-                    className="flex h-11 w-9 items-center justify-center rounded-lg border border-ink/12 bg-surface-2 font-display text-[18px] font-semibold"
-                  >
-                    {d}
-                  </span>
-                ))}
+          <BenefitCard icon={LuGauge} tone="bg-success" title={predictor?.title} text={predictor?.text} delay={160}>
+            <div className="rounded-xl bg-surface p-3.5">
+              <div className="flex items-baseline justify-between">
+                <span className="font-display text-[22px] font-bold tabular-nums text-ink">1320–1400</span>
+                <span className="text-[12px] text-ink-2">{t("home.goal")} 1450</span>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-[12px] font-semibold text-success">
-                <span className="h-1.5 w-1.5 rounded-full bg-success" /> {t("home.liveMonitor")}
-              </span>
+              <div className="relative mt-2.5 h-1.5 rounded-full bg-ink/[0.08]">
+                <div className="absolute inset-y-0 left-[55%] right-[22%] rounded-full bg-success" />
+                <div className="absolute -top-1 left-[88%] h-3.5 w-0.5 rounded-full bg-ink" />
+              </div>
             </div>
-          </FeatureCard>
+          </BenefitCard>
+        </div>
+
+        {/* Qolgan imkoniyatlar — ixcham, kartalarsiz */}
+        <div className="home-reveal mt-12">
+          <p className="text-center text-[15px] font-medium text-ink-2">{t("home.alsoIncluded")}</p>
+          <ul className="mt-5 flex flex-wrap justify-center gap-2.5">
+            {extras.map(({ icon: Icon, title }) => (
+              <li key={title} className="inline-flex items-center gap-2 rounded-full bg-canvas px-4 py-2.5 text-[15px] text-ink">
+                <Icon size={16} className="text-accent" />
+                {title}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
@@ -624,9 +478,9 @@ function Footer({ onNavigate }) {
     {
       title: t("home.footer.exams"),
       links: [
-        { label: examA, section: "tests" },
-        { label: examB, section: "tests" },
-        { label: examC, section: "tests" },
+        { label: examA, section: "features" },
+        { label: examB, section: "features" },
+        { label: examC, section: "features" },
       ],
     },
     {
@@ -734,7 +588,7 @@ export default function Home() {
 
       {/* Hero — markazda, katta sarlavha, ostida mahsulot ko'rinishi */}
       <section className="bg-canvas">
-        <div className="mx-auto max-w-[1024px] px-5 pb-24 pt-16 text-center sm:pt-24 lg:pb-32">
+        <div className="mx-auto max-w-[1024px] px-5 pb-20 pt-12 text-center sm:pt-16 lg:pb-28">
           <div className="home-reveal">
             <p className="text-[17px] font-semibold text-accent sm:text-[21px]">{t("home.heroBadge")}</p>
             <h1 className="mx-auto mt-3 max-w-[900px] font-display text-[44px] font-bold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[64px] lg:text-[80px]">
@@ -754,62 +608,21 @@ export default function Home() {
               </button>
             </div>
 
-            <p className="mt-5 flex items-center justify-center gap-2 text-[13px] text-ink-2">
-              <LuCheck size={14} className="text-success" /> {t("home.heroFree")}
-            </p>
-
-            <TestDayPills />
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+              <p className="flex items-center gap-2 text-[13px] text-ink-2">
+                <LuCheck size={14} className="text-success" /> {t("home.heroFree")}
+              </p>
+              <TestDayPills />
+            </div>
           </div>
 
-          <div className="home-reveal mx-auto mt-16 max-w-[900px] text-left" style={{ "--reveal-delay": "120ms" }}>
+          <div className="home-reveal mx-auto mt-10 max-w-[900px] text-left" style={{ "--reveal-delay": "120ms" }}>
             <HeroPreview />
           </div>
         </div>
       </section>
 
-      {/* Imtihonlar */}
-      <section id="tests" className="scroll-mt-16 bg-surface">
-        <div className="mx-auto max-w-[1024px] px-5 py-24 lg:py-32">
-          <SectionHead center eyebrow={t("home.nav.tests")} title={t("home.testsTitle")} />
-          <div className="mt-14 grid gap-4 md:grid-cols-3">
-            {[
-              { icon: LuBookOpenCheck, accent: "text-white bg-accent" },
-              { icon: LuLayers, accent: "text-white bg-warning" },
-              { icon: LuKeyRound, accent: "text-white bg-ink-3" },
-            ]
-              .map((style, i) => ({ ...style, ...tr("home.tests")[i] }))
-              .map((card, i) => (
-                <div
-                  key={card.name}
-                  className="home-reveal flex flex-col rounded-[28px] bg-canvas p-7"
-                  style={{ "--reveal-delay": `${i * 80}ms` }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-[12px] ${card.accent}`}>
-                      <card.icon size={21} />
-                    </span>
-                    {card.soon && (
-                      <span className="rounded-full bg-fill px-2.5 py-1 text-[12px] font-medium text-ink-2">{t("common.soon")}</span>
-                    )}
-                  </div>
-                  <h3 className={`mt-6 font-display text-[21px] font-semibold tracking-[-0.01em] ${card.soon ? "text-ink-2" : "text-ink"}`}>
-                    {card.name}
-                  </h3>
-                  <p className="mt-2 flex-1 text-[17px] leading-[1.47] text-ink-2">{card.text}</p>
-                  {!card.soon && (
-                    <button onClick={handleStart} className="mt-6 self-start text-[17px] text-accent hover:underline">
-                      {t("home.startMock")} ›
-                    </button>
-                  )}
-                </div>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      <Features />
-
-      <GrowthSection />
+      <Benefits />
 
       {/* Qanday ishlaydi */}
       <section id="how" className="scroll-mt-16 bg-canvas">
