@@ -39,10 +39,10 @@ import { translate, useI18n } from "../i18n";
 const MINUTE_OPTIONS = [30, 60, 90, 120];
 
 const TASK_META = {
-  mock: { icon: LuNotebookPen, tone: "text-[#087fd1] bg-[#087fd1]/10" },
+  mock: { icon: LuNotebookPen, tone: "text-accent bg-accent/10" },
   review: { icon: LuHistory, tone: "text-amber-600 bg-amber-500/10" },
   practice: { icon: LuTarget, tone: "text-emerald-600 bg-emerald-500/10" },
-  vocab: { icon: LuBookOpen, tone: "text-[#2a9d8f] bg-[#2a9d8f]/10" },
+  vocab: { icon: LuBookOpen, tone: "text-success bg-success/10" },
   exam: { icon: LuTrophy, tone: "text-red-600 bg-red-500/10" },
 };
 
@@ -76,8 +76,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
   return (
     <Card className="p-5 sm:p-7">
-      <h2 className="font-display text-[19px] font-bold text-[#12213D]">{t("studyPlan.setupTitle")}</h2>
-      <p className="mt-1 text-sm text-[#12213D]/50">{t("studyPlan.setupText")}</p>
+      <h2 className="font-display text-[19px] font-bold text-ink">{t("studyPlan.setupTitle")}</h2>
+      <p className="mt-1 text-sm text-ink/50">{t("studyPlan.setupText")}</p>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <Field label={t("studyPlan.examDate")}>
@@ -97,13 +97,13 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
             step={10}
             value={form.targetScore}
             onChange={(e) => set({ targetScore: Number(e.target.value) })}
-            className="mt-3 w-full accent-[#087fd1]"
+            className="mt-3 w-full accent-accent"
           />
         </Field>
       </div>
 
       <div className="mt-6">
-        <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">{t("studyPlan.dailyTime")}</p>
+        <p className="mb-2 text-[13px] font-semibold text-ink/75">{t("studyPlan.dailyTime")}</p>
         <div className="flex flex-wrap gap-2">
           {MINUTE_OPTIONS.map((m) => (
             <button
@@ -112,8 +112,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
               onClick={() => set({ dailyMinutes: m })}
               className={`h-10 rounded-xl border px-4 text-sm font-semibold transition ${
                 form.dailyMinutes === m
-                  ? "border-[#087fd1] bg-[#087fd1] text-white"
-                  : "border-[#12213D]/12 text-[#12213D]/70 hover:border-[#12213D]/25"
+                  ? "border-accent bg-accent text-white"
+                  : "border-ink/12 text-ink/70 hover:border-ink/25"
               }`}
             >
               {formatMinutes(m)}
@@ -124,7 +124,7 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-[13px] font-semibold text-[#12213D]/75">{t("studyPlan.restDays")}</p>
+          <p className="mb-2 text-[13px] font-semibold text-ink/75">{t("studyPlan.restDays")}</p>
           <div className="flex flex-wrap gap-1.5">
             {tr("studyPlan.weekdaysShort").map((w, d) => (
               <button
@@ -133,8 +133,8 @@ function SettingsForm({ initial, defaultTarget, onSave, onCancel, saving }) {
                 onClick={() => toggleRest(d)}
                 className={`h-9 min-w-[44px] rounded-lg px-2 text-[13px] font-semibold transition ${
                   form.restDays.includes(d)
-                    ? "bg-[#12213D] text-white"
-                    : "bg-[#12213D]/[0.05] text-[#12213D]/60 hover:bg-[#12213D]/10"
+                    ? "bg-ink text-on-ink"
+                    : "bg-ink/[0.05] text-ink/60 hover:bg-ink/10"
                 }`}
               >
                 {w}
@@ -207,7 +207,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
   const left = daysUntil(settings.examDate);
   const gap = analysis.current != null ? settings.targetScore - analysis.current : null;
   return (
-    <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#12213D] via-[#163056] to-[#0b5fa0] text-white shadow-[0_18px_40px_-20px_rgba(18,33,61,0.6)]">
+    <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#163056] to-[#0b5fa0] text-white shadow-[0_18px_40px_-20px_rgba(18,33,61,0.6)]">
       <div className="grid gap-6 p-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:p-8">
         <div>
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/50">{t("studyPlan.untilExam")}</p>
@@ -253,7 +253,7 @@ function Hero({ settings, analysis, streakCount, status, ai, generating, onGener
           type="button"
           onClick={onGenerate}
           disabled={generating}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-[#12213D] transition hover:bg-white/90 disabled:opacity-60"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-ink transition hover:bg-white/90 disabled:opacity-60"
         >
           {generating ? (
             <LuRefreshCw size={16} className="animate-spin" />
@@ -287,12 +287,12 @@ function DayStrip({ week, done, selected, onSelect }) {
               onClick={() => onSelect(day.key)}
               className={`flex w-[76px] snap-start flex-col items-center rounded-2xl border px-2 py-3 transition sm:w-auto ${
                 active
-                  ? "border-[#087fd1] bg-[#087fd1] text-white shadow-[0_10px_24px_-12px_rgba(8,127,209,0.8)]"
+                  ? "border-accent bg-accent text-white shadow-[0_10px_24px_-12px_rgba(8,127,209,0.8)]"
                   : isExam
                     ? "border-red-200 bg-red-50 text-red-700 hover:border-red-300"
                     : day.rest || day.afterExam
-                      ? "border-[#12213D]/[0.06] bg-[#12213D]/[0.02] text-[#12213D]/40 hover:border-[#12213D]/15"
-                      : "border-[#12213D]/[0.07] bg-white text-[#12213D] hover:border-[#12213D]/20"
+                      ? "border-ink/[0.06] bg-ink/[0.02] text-ink/40 hover:border-ink/15"
+                      : "border-ink/[0.07] bg-surface text-ink hover:border-ink/20"
               }`}
             >
               <span className={`text-[11px] font-bold uppercase ${active ? "text-white/70" : "opacity-60"}`}>
@@ -309,7 +309,7 @@ function DayStrip({ week, done, selected, onSelect }) {
                     <span
                       key={t.id}
                       className={`h-1.5 w-1.5 rounded-full ${
-                        k < finished ? (active ? "bg-white" : "bg-emerald-500") : active ? "bg-white/35" : "bg-[#12213D]/15"
+                        k < finished ? (active ? "bg-white" : "bg-emerald-500") : active ? "bg-white/35" : "bg-ink/15"
                       }`}
                     />
                   ))
@@ -332,7 +332,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
   return (
     <div
       className={`flex items-start gap-3.5 rounded-2xl border p-4 transition sm:items-center ${
-        done ? "border-emerald-200 bg-emerald-50/50" : "border-[#12213D]/[0.07] bg-white hover:border-[#12213D]/15"
+        done ? "border-emerald-200 bg-emerald-50/50" : "border-ink/[0.07] bg-surface hover:border-ink/15"
       }`}
     >
       <button
@@ -341,7 +341,7 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
         disabled={!canCheck}
         aria-label={done ? t("studyPlan.markUndone") : t("studyPlan.markDone")}
         className={`mt-0.5 shrink-0 transition sm:mt-0 disabled:cursor-not-allowed ${
-          done ? "text-emerald-500" : canCheck ? "text-[#12213D]/20 hover:text-[#12213D]/45" : "text-[#12213D]/10"
+          done ? "text-emerald-500" : canCheck ? "text-ink/20 hover:text-ink/45" : "text-ink/10"
         }`}
       >
         {done ? <LuCircleCheck size={26} /> : <LuCircle size={26} />}
@@ -351,17 +351,17 @@ function TaskCard({ task, done, canCheck, canStart, onToggle }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-[#12213D]/40">{t(`studyPlan.taskLabels.${task.type}`)}</span>
+          <span className="text-[11px] font-bold uppercase tracking-wide text-ink/40">{t(`studyPlan.taskLabels.${task.type}`)}</span>
           {task.minutes > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#12213D]/40">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink/40">
               <LuClock size={11} /> {formatMinutes(task.minutes)}
             </span>
           )}
         </div>
-        <p className={`mt-0.5 text-[15px] font-semibold ${done ? "text-[#12213D]/40 line-through" : "text-[#12213D]"}`}>
+        <p className={`mt-0.5 text-[15px] font-semibold ${done ? "text-ink/40 line-through" : "text-ink"}`}>
           {task.title}
         </p>
-        {task.detail && <p className="mt-0.5 text-[13px] leading-relaxed text-[#12213D]/50">{task.detail}</p>}
+        {task.detail && <p className="mt-0.5 text-[13px] leading-relaxed text-ink/50">{task.detail}</p>}
       </div>
       {task.to && canStart && !done && (
         <Button to={task.to} variant="outline" size="sm" className="hidden shrink-0 sm:inline-flex">
@@ -384,27 +384,27 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
     <Card className="p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-[19px] font-bold text-[#12213D]">
+          <h2 className="font-display text-[19px] font-bold text-ink">
             {isToday ? t("studyPlan.today") : tr("studyPlan.weekdays")[day.weekday]} · {shortDate(day.key)}
           </h2>
           {day.focus && !generating && (
-            <p className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-[#087fd1]">
+            <p className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-accent">
               <LuSparkles size={13} /> {day.focus}
             </p>
           )}
         </div>
         {day.tasks.length > 0 && !generating && (
           <div className="text-right">
-            <p className="text-[13px] font-semibold tabular-nums text-[#12213D]/70">
+            <p className="text-[13px] font-semibold tabular-nums text-ink/70">
               {t("studyPlan.doneCount", { done: finished, total: day.tasks.length })}
             </p>
-            <p className="text-xs text-[#12213D]/40">{formatMinutes(minutes)}</p>
+            <p className="text-xs text-ink/40">{formatMinutes(minutes)}</p>
           </div>
         )}
       </div>
 
       {day.tasks.length > 0 && !generating && (
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
           <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-500" style={{ width: `${pct}%` }} />
         </div>
       )}
@@ -415,14 +415,14 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
             {[0, 1, 2].map((k) => (
               <Skeleton key={k} className="h-[76px]" />
             ))}
-            <p className="pt-1 text-center text-[13px] text-[#12213D]/45">{t("studyPlan.aiWorking")}</p>
+            <p className="pt-1 text-center text-[13px] text-ink/45">{t("studyPlan.aiWorking")}</p>
           </>
         ) : day.rest ? (
-          <div className="flex items-center gap-3 rounded-2xl bg-[#12213D]/[0.03] p-5 text-sm text-[#12213D]/55">
+          <div className="flex items-center gap-3 rounded-2xl bg-ink/[0.03] p-5 text-sm text-ink/55">
             <LuCoffee size={20} /> {t("studyPlan.restDay")}
           </div>
         ) : day.afterExam ? (
-          <p className="rounded-2xl bg-[#12213D]/[0.03] p-5 text-sm text-[#12213D]/55">
+          <p className="rounded-2xl bg-ink/[0.03] p-5 text-sm text-ink/55">
             {t("studyPlan.afterExam")}
           </p>
         ) : (
@@ -439,7 +439,7 @@ function DayPanel({ day, isToday, done, generating, onToggle }) {
         )}
       </div>
       {!isToday && !generating && day.tasks.length > 0 && (
-        <p className="mt-4 text-center text-xs text-[#12213D]/40">{t("studyPlan.onlyToday")}</p>
+        <p className="mt-4 text-center text-xs text-ink/40">{t("studyPlan.onlyToday")}</p>
       )}
     </Card>
   );
@@ -453,7 +453,7 @@ function TopicsCard({ analysis }) {
       <CardHeader title={t("studyPlan.topicsTitle")} subtitle={t("studyPlan.topicsSubtitle")} />
       <div className="px-5 pb-6 pt-4 sm:px-6">
         {!analysis.hasData || analysis.domains.length === 0 ? (
-          <div className="text-sm text-[#12213D]/55">
+          <div className="text-sm text-ink/55">
             <p>{t("studyPlan.topicsEmpty")}</p>
             <Button to="/sat/select" size="sm" className="mt-4">
               {t("studyPlan.diagnostic")} <LuArrowRight size={14} />
@@ -467,12 +467,12 @@ function TopicsCard({ analysis }) {
               return (
                 <div key={d.id}>
                   <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
-                    <span className={`truncate font-semibold ${weak ? "text-red-600" : "text-[#12213D]"}`}>{d.label}</span>
-                    <span className="shrink-0 tabular-nums text-[#12213D]/50">{pct}%</span>
+                    <span className={`truncate font-semibold ${weak ? "text-red-600" : "text-ink"}`}>{d.label}</span>
+                    <span className="shrink-0 tabular-nums text-ink/50">{pct}%</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
                     <div
-                      className={`h-full rounded-full ${weak ? "bg-red-500" : pct >= 85 ? "bg-emerald-500" : "bg-[#087fd1]"}`}
+                      className={`h-full rounded-full ${weak ? "bg-red-500" : pct >= 85 ? "bg-emerald-500" : "bg-accent"}`}
                       style={{ width: `${Math.max(pct, 2)}%` }}
                     />
                   </div>
@@ -494,17 +494,17 @@ function SourceCard({ status, ai }) {
     <Card className="flex items-start gap-3 p-5">
       <span
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-          isAi ? "bg-[#087fd1]/10 text-[#087fd1]" : "bg-[#12213D]/[0.06] text-[#12213D]/50"
+          isAi ? "bg-accent/10 text-accent" : "bg-ink/[0.06] text-ink/50"
         }`}
       >
         {isAi ? <LuSparkles size={18} /> : <LuCpu size={18} />}
       </span>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-bold text-[#12213D]">{isAi ? t("studyPlan.aiPlan") : t("studyPlan.standardPlan")}</p>
+          <p className="text-sm font-bold text-ink">{isAi ? t("studyPlan.aiPlan") : t("studyPlan.standardPlan")}</p>
           {status === "stale" && <Badge tone="amber">{t("studyPlan.needsUpdate")}</Badge>}
         </div>
-        <p className="mt-0.5 text-xs leading-relaxed text-[#12213D]/50">
+        <p className="mt-0.5 text-xs leading-relaxed text-ink/50">
           {isAi
             ? t("studyPlan.aiMade", { date: fmtDate(when, { day: "2-digit", month: "2-digit", year: "numeric" }) })
             : t("studyPlan.autoPlan")}
@@ -686,9 +686,9 @@ export default function StudyPlan() {
       </div>
 
       {analysis.latestResultPath && (
-        <p className="mt-6 text-center text-xs text-[#12213D]/40">
+        <p className="mt-6 text-center text-xs text-ink/40">
           {t("studyPlan.updateHint")}{" "}
-          <Link to={analysis.latestResultPath} className="font-semibold text-[#087fd1] hover:underline">
+          <Link to={analysis.latestResultPath} className="font-semibold text-accent hover:underline">
             {t("studyPlan.latestResult")}
           </Link>
         </p>

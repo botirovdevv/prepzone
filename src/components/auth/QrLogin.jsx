@@ -101,7 +101,7 @@ export default function QrLogin({ onSuccess }) {
 
   return (
     <div>
-      <p className="mb-4 rounded-[14px] bg-[#eef6ff] px-4 py-3 text-[13px] leading-[1.45] text-[#0a5d99] sm:hidden">
+      <p className="mb-4 rounded-[14px] bg-accent/[0.08] px-4 py-3 text-[13px] leading-[1.45] text-accent-press sm:hidden">
         {t("auth.qr.mobileNote")}
       </p>
 
@@ -120,26 +120,26 @@ export default function QrLogin({ onSuccess }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
             {status === "scanned" && (
               <>
-                <LuSmartphone size={30} className="text-[#087fd1]" />
-                <p className="text-[15px] font-semibold text-[#1d1d1f]">{t("auth.qr.confirmOnPhone")}</p>
-                <p className="text-[13px] text-[#6e6e73]">{t("auth.qr.pressYes")}</p>
+                <LuSmartphone size={30} className="text-accent" />
+                <p className="text-[15px] font-semibold text-ink">{t("auth.qr.confirmOnPhone")}</p>
+                <p className="text-[13px] text-ink-2">{t("auth.qr.pressYes")}</p>
               </>
             )}
             {status === "approved" && (
               <>
                 <LuCircleCheck size={32} className="text-emerald-600" />
-                <p className="text-[15px] font-semibold text-[#1d1d1f]">{t("auth.qr.approved")}</p>
+                <p className="text-[15px] font-semibold text-ink">{t("auth.qr.approved")}</p>
               </>
             )}
             {(status === "denied" || status === "stale") && (
               <>
-                <p className="text-[15px] font-semibold text-[#1d1d1f]">
+                <p className="text-[15px] font-semibold text-ink">
                   {status === "denied" ? t("auth.qr.denied") : t("auth.qr.expired")}
                 </p>
                 <button
                   type="button"
                   onClick={manualRefresh}
-                  className="pz-press mt-1 inline-flex items-center gap-2 rounded-full bg-[#087fd1] px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#0673bd]"
+                  className="pz-press mt-1 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-[14px] font-semibold text-white hover:bg-accent"
                 >
                   <LuRefreshCw size={15} /> {t("auth.qr.newQr")}
                 </button>
@@ -149,16 +149,16 @@ export default function QrLogin({ onSuccess }) {
         )}
       </div>
 
-      <p className="mt-3 text-center text-[12px] tabular-nums text-[#86868b]">
+      <p className="mt-3 text-center text-[12px] tabular-nums text-ink-3">
         {status === "pending" && secondsLeft > 0
           ? t("auth.qr.refreshIn", { time: `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}` })
           : " "}
       </p>
 
-      <ol className="mt-4 space-y-2.5 text-[14px] leading-[1.45] text-[#1d1d1f]">
+      <ol className="mt-4 space-y-2.5 text-[14px] leading-[1.45] text-ink">
         {tr("auth.qr.steps").map((text, i) => (
           <li key={i} className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#087fd1]/10 text-[12px] font-bold text-[#087fd1]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[12px] font-bold text-accent">
               {i + 1}
             </span>
             {text}
@@ -166,7 +166,7 @@ export default function QrLogin({ onSuccess }) {
         ))}
       </ol>
 
-      <p className="mt-4 flex items-start gap-2 text-[12px] leading-[1.45] text-[#86868b]">
+      <p className="mt-4 flex items-start gap-2 text-[12px] leading-[1.45] text-ink-3">
         <LuShieldCheck size={14} className="mt-px shrink-0" />
         {t("auth.qr.warning")}
       </p>

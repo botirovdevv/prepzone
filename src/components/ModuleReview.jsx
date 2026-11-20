@@ -53,8 +53,8 @@ export default function ModuleReview({
                     className={`relative h-11 rounded-md font-bold text-sm flex items-center justify-center transition
                       ${
                         isAnswered
-                          ? "bg-[#375DFB] text-white hover:bg-[#2b4bd9]"
-                          : "bg-white text-[#375DFB] border-2 border-dashed border-gray-400 hover:bg-gray-50"
+                          ? "bg-accent text-white hover:bg-accent"
+                          : "bg-surface text-accent border-2 border-dashed border-gray-400 hover:bg-gray-50"
                       }`}
                   >
                     {i + 1}
@@ -80,7 +80,7 @@ export default function ModuleReview({
       </div>
 
       <div className="h-20" />
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-dashed border-gray-400 bg-[#F3F4F6]">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-dashed border-gray-400 bg-fill">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="text-sm font-bold text-gray-900 truncate max-w-[180px]">
             {studentName || "Student"}
@@ -88,13 +88,13 @@ export default function ModuleReview({
           <div className="flex items-center gap-2">
             <button
               onClick={onBack}
-              className="rounded-full bg-[#375DFB] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2b4bd9]"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent"
             >
               Back
             </button>
             <button
               onClick={onSubmit}
-              className="bg-[#375DFB] text-white rounded-full px-6 py-2 text-sm font-semibold hover:bg-[#2b4bd9]"
+              className="bg-accent text-white rounded-full px-6 py-2 text-sm font-semibold hover:bg-accent"
             >
               Next
             </button>

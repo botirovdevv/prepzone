@@ -129,7 +129,7 @@ export default function SetForm() {
           if (isDirty && !window.confirm("Saqlanmagan o'zgarishlar bor. Sahifadan chiqsangiz, ular yo'qoladi. Baribir chiqasizmi?")) return;
           navigate("/admin/sets");
         }}
-        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-[#12213D]/50 transition hover:text-[#12213D]"
+        className="mb-5 flex items-center gap-1.5 text-sm font-medium text-ink/50 transition hover:text-ink"
       >
         <LuArrowLeft size={16} /> Amaliyot to'plamlari
       </button>
@@ -164,8 +164,8 @@ export default function SetForm() {
           </div>
         </Card>
 
-        <div className="flex items-start gap-3 rounded-2xl border border-[#087fd1]/15 bg-[#087fd1]/[0.04] p-4 text-sm leading-relaxed text-[#12213D]/70">
-          <LuInfo size={18} className="mt-0.5 shrink-0 text-[#087fd1]" />
+        <div className="flex items-start gap-3 rounded-2xl border border-accent/15 bg-accent/[0.04] p-4 text-sm leading-relaxed text-ink/70">
+          <LuInfo size={18} className="mt-0.5 shrink-0 text-accent" />
           <p>
             Bu to'plam <strong>vaqt cheklanmagan</strong> holatda ko'rsatiladi va talaba javob
             belgilashi bilanoq to'g'ri/noto'g'riligini darhol ko'radi — moslashuvchan (Module 1/2)
@@ -205,8 +205,8 @@ export default function SetForm() {
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
         )}
 
-        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-[#12213D]/[0.07] bg-white/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
-          <p className="text-sm text-[#12213D]/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
+        <div className="sticky bottom-4 z-20 flex items-center justify-between gap-3 rounded-2xl border border-ink/[0.07] bg-surface/90 p-3 pl-5 shadow-[0_12px_32px_-12px_rgba(18,33,61,0.3)] backdrop-blur">
+          <p className="text-sm text-ink/50">{isDirty ? "Saqlanmagan o'zgarishlar bor" : "Barcha o'zgarishlar saqlangan"}</p>
           <Button type="submit" disabled={saving}>
             {saving ? "Saqlanmoqda..." : isEdit ? "O'zgarishlarni saqlash" : "To'plamni yaratish"}
           </Button>

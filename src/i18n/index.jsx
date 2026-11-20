@@ -122,8 +122,8 @@ export function LanguageSwitch({ className = "", tone = "light" }) {
   const base =
     tone === "dark"
       ? "border-white/15 bg-white/5 text-white/60"
-      : "border-[#111827]/10 bg-white text-[#566176]";
-  const active = tone === "dark" ? "bg-white text-[#111827]" : "bg-[#111827] text-white";
+      : "border-ink/10 bg-surface text-ink-2";
+  const active = tone === "dark" ? "bg-white text-ink" : "bg-night text-white";
   return (
     <div
       role="group"

@@ -57,7 +57,7 @@ function TimerBlock({ endAt }) {
     <div className="relative flex flex-col items-center">
       <div
         className={`flex h-7 items-center text-xl font-bold tabular-nums ${
-          lowTime ? "text-[#c8102e]" : "text-gray-900"
+          lowTime ? "text-danger" : "text-gray-900"
         }`}
         aria-live={lowTime ? "polite" : "off"}
       >
@@ -93,7 +93,7 @@ function LineReader() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 z-20 h-20 rounded-sm border-y-2 border-[#375DFB]"
+      className="pointer-events-none fixed inset-x-0 z-20 h-20 rounded-sm border-y-2 border-accent"
       style={{ top: y - 40, boxShadow: "0 0 0 100vmax rgba(17, 24, 39, 0.45)" }}
     />
   );
@@ -106,7 +106,7 @@ function HeaderButton({ icon: Icon, label, onClick, active }) {
       onClick={onClick}
       aria-pressed={active}
       className={`flex flex-col items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium ${
-        active ? "text-[#375DFB]" : "text-gray-800 hover:text-[#375DFB]"
+        active ? "text-accent" : "text-gray-800 hover:text-accent"
       }`}
     >
       <Icon size={19} />
@@ -132,7 +132,7 @@ function HelpDialog({ onClose }) {
         aria-modal="true"
         aria-label="Help"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-2xl"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-surface p-6 shadow-2xl"
       >
         <h2 className="text-xl font-bold text-gray-900">Help</h2>
         <dl className="mt-4 space-y-3">
@@ -193,7 +193,7 @@ function TestHeader({
 
   return (
     <div className="sticky top-0 z-30 w-full">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b-2 border-dashed border-gray-400 bg-[#F3F4F6] px-4 py-2 sm:px-6">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b-2 border-dashed border-gray-400 bg-fill px-4 py-2 sm:px-6">
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-gray-900 sm:text-base">
             {sectionLabel}: {title}
@@ -201,7 +201,7 @@ function TestHeader({
           <button
             onClick={() => setShowDirections((s) => !s)}
             aria-expanded={showDirections}
-            className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-gray-800 hover:text-[#375DFB]"
+            className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-gray-800 hover:text-accent"
           >
             Directions {showDirections ? <LuChevronUp size={15} /> : <LuChevronDown size={15} />}
           </button>
@@ -239,7 +239,7 @@ function TestHeader({
           <div className="relative" ref={moreRef}>
             <HeaderButton icon={LuEllipsisVertical} label="More" onClick={() => setShowMore((s) => !s)} active={showMore} />
             {showMore && (
-              <div className="absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg">
+              <div className="absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-lg border border-gray-200 bg-surface py-1 text-sm shadow-lg">
                 <button
                   onClick={() => {
                     setShowHelp(true);
@@ -257,7 +257,7 @@ function TestHeader({
                   className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left hover:bg-gray-100"
                 >
                   <LuRuler size={16} /> Line Reader
-                  {lineReader && <LuCheck size={15} className="ml-auto text-[#375DFB]" />}
+                  {lineReader && <LuCheck size={15} className="ml-auto text-accent" />}
                 </button>
                 {isMath && (
                   <button
@@ -287,7 +287,7 @@ function TestHeader({
         </div>
       </div>
       {practiceMode && (
-        <div className="bg-[#0B2265] py-1.5 text-center text-xs font-semibold tracking-wide text-white">
+        <div className="bg-night py-1.5 text-center text-xs font-semibold tracking-wide text-white">
           THIS IS A PRACTICE TEST
         </div>
       )}
@@ -298,7 +298,7 @@ function TestHeader({
             role="dialog"
             aria-label="Directions"
             onClick={(e) => e.stopPropagation()}
-            className="absolute left-2 right-2 top-16 mx-auto max-h-[75vh] max-w-3xl overflow-y-auto rounded-xl bg-white p-6 text-[15px] leading-7 text-gray-900 shadow-2xl sm:left-6 sm:right-auto sm:p-8"
+            className="absolute left-2 right-2 top-16 mx-auto max-h-[75vh] max-w-3xl overflow-y-auto rounded-xl bg-surface p-6 text-[15px] leading-7 text-gray-900 shadow-2xl sm:left-6 sm:right-auto sm:p-8"
           >
             <TestDirections type={sectionType} />
             <div className="mt-6 flex justify-end">

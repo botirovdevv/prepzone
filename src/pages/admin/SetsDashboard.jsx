@@ -63,17 +63,17 @@ export default function SetsDashboard() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="grid divide-y divide-[#12213D]/[0.06]">
+          <div className="grid divide-y divide-ink/[0.06]">
             {sets.map((s) => (
               <Link
                 key={s.id}
                 to={`/admin/sets/${s.id}/edit`}
-                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
               >
                 <IconTile icon={LuLibrary} tone="blue" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#12213D]">{s.title}</p>
-                  {s.description && <p className="mt-0.5 truncate text-sm text-[#12213D]/50">{s.description}</p>}
+                  <p className="truncate font-semibold text-ink">{s.title}</p>
+                  {s.description && <p className="mt-0.5 truncate text-sm text-ink/50">{s.description}</p>}
                 </div>
                 <Badge tone="blue" icon={LuBookOpen} className="hidden sm:inline-flex">
                   {countQuestions(s)} ta savol
@@ -84,7 +84,7 @@ export default function SetsDashboard() {
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   title="Talaba sifatida ko'rish"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#12213D]/40 transition hover:bg-white hover:text-[#12213D] hover:shadow-sm"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink/40 transition hover:bg-surface hover:text-ink hover:shadow-sm"
                 >
                   <LuEye size={17} />
                 </a>
@@ -97,7 +97,7 @@ export default function SetsDashboard() {
                 </button>
                 <LuChevronRight
                   size={18}
-                  className="shrink-0 text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]"
+                  className="shrink-0 text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent"
                 />
               </Link>
             ))}

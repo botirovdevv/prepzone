@@ -86,7 +86,7 @@ function Approve({ qrId, scanCode }) {
       eyebrow={t("qrApprove.eyebrow")}
       title={state === "ask" ? t("qrApprove.askTitle") : t("qrApprove.title")}
       footer={
-        <Link to="/dashboard" className="font-semibold text-[#087fd1] hover:underline">
+        <Link to="/dashboard" className="font-semibold text-accent hover:underline">
           {t("qrApprove.back")}
         </Link>
       }
@@ -94,14 +94,14 @@ function Approve({ qrId, scanCode }) {
       {state === "ask" && info && (
         <>
           <div className="flex items-center gap-4 rounded-[18px] bg-black/[0.04] p-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#087fd1] shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-accent shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
               <DeviceIcon size={22} />
             </span>
             <div className="min-w-0">
-              <p className="text-[16px] font-semibold text-[#1d1d1f]">
+              <p className="text-[16px] font-semibold text-ink">
                 {info.browser} · {info.os}
               </p>
-              <p className="mt-0.5 truncate text-[13px] text-[#6e6e73]">
+              <p className="mt-0.5 truncate text-[13px] text-ink-2">
                 IP {info.ip || t("qrApprove.unknown")} · {t("qrApprove.requestedAt", { time: formatTime(info.createdAt) })}
               </p>
             </div>
@@ -126,7 +126,7 @@ function Approve({ qrId, scanCode }) {
               type="button"
               onClick={() => decide(false)}
               disabled={busy}
-              className="pz-press flex h-[52px] w-full items-center justify-center rounded-full border border-black/[0.12] bg-white text-[17px] font-semibold text-[#1d1d1f] hover:bg-[#fafafa] disabled:opacity-60"
+              className="pz-press flex h-[52px] w-full items-center justify-center rounded-full border border-black/[0.12] bg-surface text-[17px] font-semibold text-ink hover:bg-surface-2 disabled:opacity-60"
             >
               {t("qrApprove.no")}
             </button>
@@ -141,9 +141,9 @@ function Approve({ qrId, scanCode }) {
 
 const RESULTS = {
   approved: { icon: LuCircleCheck, tone: "text-emerald-600" },
-  denied: { icon: LuCircleX, tone: "text-[#c4252b]" },
+  denied: { icon: LuCircleX, tone: "text-danger" },
   expired: { icon: LuTriangleAlert, tone: "text-[#8a5a00]" },
-  invalid: { icon: LuTriangleAlert, tone: "text-[#c4252b]" },
+  invalid: { icon: LuTriangleAlert, tone: "text-danger" },
 };
 
 function Result({ state }) {
@@ -154,8 +154,8 @@ function Result({ state }) {
   return (
     <div className="py-4 text-center">
       <Icon size={40} className={`mx-auto ${r.tone}`} />
-      <p className="mt-3 text-[19px] font-semibold text-[#1d1d1f]">{r.title}</p>
-      <p className="mt-1.5 text-[15px] leading-[1.47] text-[#6e6e73]">{r.text}</p>
+      <p className="mt-3 text-[19px] font-semibold text-ink">{r.title}</p>
+      <p className="mt-1.5 text-[15px] leading-[1.47] text-ink-2">{r.text}</p>
     </div>
   );
 }

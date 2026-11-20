@@ -36,7 +36,7 @@ export default function TextField({ label, type = "text", error, hint, action, c
             onClick={() => setReveal((r) => !r)}
             aria-label={reveal ? t("auth.hidePassword") : t("auth.showPassword")}
             aria-pressed={reveal}
-            className="pz-press absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.05] hover:text-[#1d1d1f]"
+            className="pz-press absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-ink-3 hover:bg-ink/[0.05] hover:text-ink"
           >
             {reveal ? <LuEyeOff size={18} /> : <LuEye size={18} />}
           </button>
@@ -45,11 +45,11 @@ export default function TextField({ label, type = "text", error, hint, action, c
       {(error || hint || action) && (
         <div className="mt-1.5 flex items-start justify-between gap-3 px-1">
           {error ? (
-            <p id={`${id}-error`} className="pz-fade text-[13px] leading-[1.4] text-[#d93036]">
+            <p id={`${id}-error`} className="pz-fade text-[13px] leading-[1.4] text-danger">
               {error}
             </p>
           ) : hint ? (
-            <div id={`${id}-hint`} className="flex-1 text-[13px] leading-[1.4] text-[#6e6e73]">
+            <div id={`${id}-hint`} className="flex-1 text-[13px] leading-[1.4] text-ink-2">
               {hint}
             </div>
           ) : (

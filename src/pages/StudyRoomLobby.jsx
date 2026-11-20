@@ -69,8 +69,8 @@ export default function StudyRoomLobby() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="flex flex-col p-6">
           <IconTile icon={LuPlus} tone="solid" />
-          <h2 className="mt-4 font-display text-[17px] font-bold text-[#12213D]">{t("studyRoom.newRoom")}</h2>
-          <p className="mt-1 flex-1 text-sm text-[#12213D]/55">{t("studyRoom.newRoomText")}</p>
+          <h2 className="mt-4 font-display text-[17px] font-bold text-ink">{t("studyRoom.newRoom")}</h2>
+          <p className="mt-1 flex-1 text-sm text-ink/55">{t("studyRoom.newRoomText")}</p>
           <Button className="mt-5" onClick={createRoom} disabled={!enabled || creating}>
             <LuPlus size={16} /> {creating ? t("studyRoom.opening") : t("studyRoom.openRoom")}
           </Button>
@@ -78,8 +78,8 @@ export default function StudyRoomLobby() {
 
         <Card as="form" onSubmit={join} className="flex flex-col p-6">
           <IconTile icon={LuLogIn} tone="ink" />
-          <h2 className="mt-4 font-display text-[17px] font-bold text-[#12213D]">{t("studyRoom.joinTitle")}</h2>
-          <p className="mt-1 text-sm text-[#12213D]/55">{t("studyRoom.joinText")}</p>
+          <h2 className="mt-4 font-display text-[17px] font-bold text-ink">{t("studyRoom.joinTitle")}</h2>
+          <p className="mt-1 text-sm text-ink/55">{t("studyRoom.joinText")}</p>
           <input
             value={code}
             onChange={(e) => {
@@ -103,8 +103,8 @@ export default function StudyRoomLobby() {
           <div key={f.title} className="flex items-start gap-3 rounded-2xl bg-white/60 p-4">
             <IconTile icon={FEATURE_ICONS[i]} tone="blue" size="sm" />
             <div>
-              <p className="text-sm font-semibold text-[#12213D]">{f.title}</p>
-              <p className="text-[13px] text-[#12213D]/55">{f.text}</p>
+              <p className="text-sm font-semibold text-ink">{f.title}</p>
+              <p className="text-[13px] text-ink/55">{f.text}</p>
             </div>
           </div>
         ))}

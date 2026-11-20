@@ -79,7 +79,7 @@ function GoogleButtonView({ onClick, disabled, busy }) {
       type="button"
       onClick={onClick}
       disabled={disabled || busy}
-      className="pz-press flex h-[52px] w-full items-center justify-center gap-3 rounded-full border border-black/[0.12] bg-white px-4 text-[17px] font-semibold tracking-[-0.01em] text-[#1d1d1f] hover:border-black/20 hover:bg-[#fafafa] disabled:cursor-not-allowed disabled:opacity-60"
+      className="pz-press flex h-[52px] w-full items-center justify-center gap-3 rounded-full border border-ink/[0.12] bg-surface px-4 text-[17px] font-semibold tracking-[-0.01em] text-ink hover:border-ink/20 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
       {busy ? t("auth.google.connecting") : t("auth.google.continue")}

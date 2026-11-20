@@ -25,8 +25,8 @@ function Review({ items, onDone }) {
     return (
       <Card className="p-8 text-center">
         <LuCircleCheck size={44} className="mx-auto text-emerald-500" />
-        <h2 className="mt-3 text-xl font-bold text-[#12213D]">{t("mistakes.sessionDone")}</h2>
-        <p className="mt-1 text-[#12213D]/60">{t("mistakes.sessionStats", { correct: score, total: items.length })}</p>
+        <h2 className="mt-3 text-xl font-bold text-ink">{t("mistakes.sessionDone")}</h2>
+        <p className="mt-1 text-ink/60">{t("mistakes.sessionStats", { correct: score, total: items.length })}</p>
         <Button className="mt-6" onClick={onDone}>
           {t("mistakes.backToList")}
         </Button>
@@ -52,8 +52,8 @@ function Review({ items, onDone }) {
 
   return (
     <div className="space-y-4">
-      <div className="h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
-        <div className="h-full rounded-full bg-[#087fd1] transition-all" style={{ width: `${(i / items.length) * 100}%` }} />
+      <div className="h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(i / items.length) * 100}%` }} />
       </div>
       <QuizCard question={q} selected={selected} onSelect={setSelected} reveal={revealed} number={i + 1}>
         {revealed && (
@@ -61,7 +61,7 @@ function Review({ items, onDone }) {
             <p className={`text-sm font-bold ${lastCorrect ? "text-emerald-600" : "text-red-600"}`}>
               {lastCorrect ? t("mistakes.correct") : t("mistakes.wrong", { answer: answerText })}
             </p>
-            {q.explanation && <p className="rounded-xl bg-[#F6F7FB] p-3 text-sm text-[#12213D]/75">{q.explanation}</p>}
+            {q.explanation && <p className="rounded-xl bg-canvas p-3 text-sm text-ink/75">{q.explanation}</p>}
             <AiExplain question={q} userAnswer={selected} />
           </div>
         )}
@@ -157,7 +157,7 @@ export default function Mistakes() {
                 key={id}
                 onClick={() => setFilter(id)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  filter === id ? "bg-[#12213D] text-white" : "bg-white text-[#12213D]/60 border border-[#12213D]/10"
+                  filter === id ? "bg-night text-white" : "bg-surface text-ink/60 border border-ink/10"
                 }`}
               >
                 {label}
@@ -168,10 +168,10 @@ export default function Mistakes() {
             {visible.map((m) => (
               <Card key={m.key} className="flex items-center gap-4 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold text-[#12213D]">
+                  <p className="truncate text-[14px] font-semibold text-ink">
                     {(m.question.prompt || "").replace(/<[^>]+>/g, " ").slice(0, 140)}
                   </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px] text-[#12213D]/50">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px] text-ink/50">
                     <Badge tone={m.section === "math" ? "blue" : "amber"}>{DOMAIN_LABELS[m.domain] || m.domain || m.section}</Badge>
                     <span>{t(`mistakes.sources.${m.source.split(":")[0] || "mock"}`)}</span>
                     <span>· {t("mistakes.wrongTimes", { n: m.wrongCount })}</span>
@@ -182,15 +182,15 @@ export default function Mistakes() {
                   onClick={() => remove(m.key)}
                   title={t("mistakes.remove")}
                   aria-label={t("mistakes.remove")}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#12213D]/35 hover:bg-red-50 hover:text-red-600"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink/35 hover:bg-red-50 hover:text-red-600"
                 >
                   <LuTrash2 size={16} />
                 </button>
               </Card>
             ))}
           </div>
-          <p className="mt-6 text-center text-sm text-[#12213D]/45">
-            <Link to="/daily" className="font-semibold text-[#087fd1]">
+          <p className="mt-6 text-center text-sm text-ink/45">
+            <Link to="/daily" className="font-semibold text-accent">
               {t("daily.title")} →
             </Link>
           </p>

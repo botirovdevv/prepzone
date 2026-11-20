@@ -9,7 +9,7 @@ export default function HighlightsPanel({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-sm h-full shadow-2xl flex flex-col"
+        className="bg-surface w-full max-w-sm h-full shadow-2xl flex flex-col"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h2 className="text-base font-bold text-gray-800 flex items-center gap-2">
@@ -40,7 +40,7 @@ export default function HighlightsPanel({ onClose }) {
                   onChange={(e) => highlights?.setNote(item.id, e.target.value)}
                   placeholder="Add a note (optional)..."
                   rows={2}
-                  className="w-full text-xs rounded-lg border border-gray-200 px-2.5 py-1.5 outline-none focus:border-[#375DFB] resize-none"
+                  className="w-full text-xs rounded-lg border border-gray-200 px-2.5 py-1.5 outline-none focus:border-accent resize-none"
                 />
               </div>
             ))

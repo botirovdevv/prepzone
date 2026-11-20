@@ -11,8 +11,17 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  font-family: "Inter", sans-serif;
-  background: #f6f7fb;
+  font-family: var(--font-text);
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+:root {
+  --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Tight", "Inter", system-ui, sans-serif;
 }
 
 h1,
@@ -21,7 +30,48 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Inter Tight", "Inter", sans-serif;
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* Logotip qorong'i rejimda (index.html'dagi SVG filtr). */
+:root[data-theme="dark"] .pz-logo { filter: url(#pz-logo-dark); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pz-logo { filter: url(#pz-logo-dark); }
+}
+
+::selection {
+  background: rgb(var(--c-accent) / 0.22);
+}
+
+/* Mavzu almashganda ranglar silliq o'tadi (sakrab o'zgarmaydi).
+   ThemeContext <html>'ga qisqa muddat .pz-theme-switching qo'yadi. */
+.pz-theme-switching,
+.pz-theme-switching *,
+.pz-theme-switching *::before,
+.pz-theme-switching *::after {
+  transition: background-color 280ms var(--ease-out), border-color 280ms var(--ease-out),
+    color 280ms var(--ease-out), fill 280ms var(--ease-out), stroke 280ms var(--ease-out) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pz-theme-switching,
+  .pz-theme-switching * { transition: none !important; }
+}
+
+/* Apple materiali: kontent ostidan o'tadigan shaffof panel (navbar, sidebar). */
+.pz-material {
+  background: rgb(var(--c-canvas) / 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+.pz-material-surface {
+  background: rgb(var(--c-surface) / 0.78);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pz-material { background: rgb(var(--c-canvas)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .pz-material-surface { background: rgb(var(--c-surface)); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 /* custom scrollbar for passage panel */
 .passage-scroll::-webkit-scrollbar {
@@ -29,48 +79,40 @@ h6 {
 }
 
 .passage-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--c-ink) / 0.2);
   border-radius: 4px;
 }
 
 .font-display {
-  font-family: "Inter Tight", "Inter", sans-serif;
+  font-family: var(--font-display);
 }
 
 /* ------------------------------------------------------------------
-   Dizayn tokenlari — Prepzone
+   (eski) Dizayn tokenlari — Prepzone. Yangi tokenlar: styles/tokens.css
    Sovuq-neytral fon ustida issiqroq, quvnoqroq aksent ranglar bilan
    "dashboard" hissi. Har bir mazmun turi (mock testlar, amaliyot,
    natijalar, reyting) o'ziga xos rangga ega — bir xil ko'k rangda
    monoton ko'rinishning oldini olish uchun.
 ------------------------------------------------------------------ */
 :root {
-  --pz-ink: #12213d;
-  --pz-ink-soft: rgba(18, 33, 61, 0.6);
-  --pz-bg: #f6f7fb;
-  --pz-blue: #2f6fed;
-  --pz-blue-soft: #eaf0ff;
-  --pz-violet: #7c6ff0;
-  --pz-violet-soft: #efedfe;
-  --pz-amber: #f59e0b;
-  --pz-amber-soft: #fef3e0;
-  --pz-mint: #12b981;
-  --pz-mint-soft: #e6f9f1;
-  --pz-rose: #f5518c;
-  --pz-rose-soft: #fdeaf1;
+  --pz-ink: rgb(var(--c-ink));
+  --pz-bg: rgb(var(--c-canvas));
+  --pz-blue: rgb(var(--c-accent));
 }
 
 .pz-card {
-  background: #ffffff;
-  border: 1px solid rgba(18, 33, 61, 0.07);
+  background: rgb(var(--c-surface));
+  border: 1px solid rgb(var(--c-ink) / 0.06);
   border-radius: 20px;
-  box-shadow: 0 1px 2px rgba(18, 33, 61, 0.03);
+  box-shadow: var(--shadow-card);
 }
+.pz-shadow { box-shadow: var(--shadow-card); }
+.pz-shadow-lift { box-shadow: var(--shadow-lift); }
 /* Admin panelidagi passage rich-text tahrirlagichi uchun placeholder va
    oddiy formatlash (bold/italic/underline) ko'rinishi. */
 .richtext-editable:empty:before {
   content: attr(data-placeholder);
-  color: rgba(18, 33, 61, 0.35);
+  color: rgb(var(--c-ink) / 0.35);
   pointer-events: none;
 }
 .richtext-editable b,
@@ -98,12 +140,12 @@ h6 {
 }
 .sat-rich th,
 .sat-rich td {
-  border: 1px solid #9ca3af;
+  border: 1px solid rgb(var(--c-ink) / 0.35);
   padding: 0.3rem 0.75rem;
   text-align: center;
 }
 .sat-rich th {
-  background: #f3f4f6;
+  background: rgb(var(--c-fill));
   font-weight: 600;
 }
 .sat-rich ul {
@@ -281,11 +323,11 @@ h6 {
    label'li maydonlar, faqat transform/opacity animatsiyalari.
 ------------------------------------------------------------------ */
 :root {
-  --auth-ink: #1d1d1f;
-  --auth-ink-2: #6e6e73;
-  --auth-line: rgba(0, 0, 0, 0.1);
-  --auth-blue: #087fd1;
-  --auth-blue-press: #066fb8;
+  --auth-ink: rgb(var(--c-ink));
+  --auth-ink-2: rgb(var(--c-ink-2));
+  --auth-line: rgb(var(--c-ink) / 0.12);
+  --auth-blue: rgb(var(--c-accent));
+  --auth-blue-press: rgb(var(--c-accent-press));
   --auth-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -315,17 +357,17 @@ h6 {
 
 .pz-auth-bg {
   background:
-    radial-gradient(48rem 28rem at 12% -10%, rgba(8, 127, 209, 0.10), transparent 70%),
-    radial-gradient(40rem 24rem at 100% 110%, rgba(124, 111, 240, 0.08), transparent 70%),
-    #f5f5f7;
+    radial-gradient(48rem 28rem at 12% -10%, rgb(var(--c-accent) / 0.10), transparent 70%),
+    radial-gradient(40rem 24rem at 100% 110%, rgb(var(--c-purple) / 0.08), transparent 70%),
+    rgb(var(--c-canvas));
 }
 
 /* Navbar — kontent ostidan o'tadigan shaffof material. */
 .pz-auth-nav {
-  background: rgba(245, 245, 247, 0.72);
+  background: rgb(var(--c-canvas) / 0.72);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 -1px 0 rgb(var(--c-ink) / 0.08);
 }
 
 /* Segment pill: interruptible CSS transition, joriy pozitsiyadan davom etadi. */
@@ -334,11 +376,9 @@ h6 {
 }
 
 .pz-auth-card {
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.02),
-    0 12px 40px -12px rgba(16, 24, 40, 0.12);
+  background: rgb(var(--c-surface) / 0.86);
+  border: 1px solid rgb(var(--c-ink) / 0.07);
+  box-shadow: var(--shadow-lift);
 }
 
 /* Yuzuvchi label: placeholder bo'sh bo'lsa label markazda, fokus yoki qiymat bo'lsa tepaga chiqadi. */
@@ -350,7 +390,7 @@ h6 {
   width: 100%;
   border-radius: 14px;
   border: 1px solid var(--auth-line);
-  background: #fff;
+  background: rgb(var(--c-surface));
   padding: 22px 16px 6px;
   font-size: 17px; /* iOS fokusda zoom qilmasligi uchun */
   line-height: 1.2;
@@ -359,13 +399,13 @@ h6 {
   transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
 }
 .pz-field input::placeholder { color: transparent; }
-.pz-field input:hover { border-color: rgba(0, 0, 0, 0.2); }
+.pz-field input:hover { border-color: rgb(var(--c-ink) / 0.24); }
 .pz-field input:focus {
   border-color: var(--auth-blue);
-  box-shadow: 0 0 0 4px rgba(8, 127, 209, 0.14);
+  box-shadow: 0 0 0 4px rgb(var(--c-accent) / 0.16);
 }
-.pz-field[data-invalid] input { border-color: #e5484d; }
-.pz-field[data-invalid] input:focus { box-shadow: 0 0 0 4px rgba(229, 72, 77, 0.14); }
+.pz-field[data-invalid] input { border-color: rgb(var(--c-danger)); }
+.pz-field[data-invalid] input:focus { box-shadow: 0 0 0 4px rgb(var(--c-danger) / 0.14); }
 .pz-field label {
   position: absolute;
   left: 17px;
@@ -374,7 +414,7 @@ h6 {
   display: flex;
   align-items: center;
   font-size: 17px;
-  color: #86868b;
+  color: rgb(var(--c-ink-3));
   pointer-events: none;
   transform-origin: left center;
   transition: transform 200ms var(--auth-spring), color 150ms var(--ease-out);
@@ -385,12 +425,12 @@ h6 {
   transform: translateY(-11px) scale(0.72);
 }
 .pz-field input:focus + label { color: var(--auth-blue); }
-.pz-field[data-invalid] input + label { color: #d93036; }
+.pz-field[data-invalid] input + label { color: rgb(var(--c-danger)); }
 
 /* O'ng panel (faqat katta ekran) — qorong'i, chuqur material. */
 .pz-auth-aside {
   background:
-    radial-gradient(36rem 26rem at 85% 0%, rgba(8, 127, 209, 0.55), transparent 65%),
+    radial-gradient(36rem 26rem at 85% 0%, rgba(0, 113, 227, 0.55), transparent 65%),
     radial-gradient(30rem 22rem at 0% 100%, rgba(124, 111, 240, 0.45), transparent 65%),
     #0b1220;
 }
@@ -409,12 +449,12 @@ h6 {
   .pz-segment-pill, .pz-field label { transition-duration: 0ms; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .pz-auth-nav { background: #f5f5f7; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .pz-auth-card { background: #fff; }
+  .pz-auth-nav { background: rgb(var(--c-canvas)); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .pz-auth-card { background: rgb(var(--c-surface)); }
   .pz-glass { background: #1a2333; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
-  .pz-field input, .pz-auth-card { border-color: rgba(0, 0, 0, 0.45); }
+  .pz-field input, .pz-auth-card { border-color: rgb(var(--c-ink) / 0.45); }
 }
 
 /* ------------------------------------------------------------------

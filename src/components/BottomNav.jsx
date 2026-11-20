@@ -16,7 +16,7 @@ function BottomNav({
   finishLabel = "Next",
 }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-dashed border-gray-400 bg-[#F3F4F6]">
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-dashed border-gray-400 bg-fill">
       <div className="relative flex items-center justify-between gap-2 px-3 py-3 sm:px-6">
         <div className="hidden max-w-[180px] truncate text-sm font-bold text-gray-900 sm:block">
           {studentName || "Student"}
@@ -37,7 +37,7 @@ function BottomNav({
             <button
               type="button"
               onClick={onPrev}
-              className="rounded-full bg-[#375DFB] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2b4bd9]"
+              className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent"
             >
               Back
             </button>
@@ -45,7 +45,7 @@ function BottomNav({
           <button
             type="button"
             onClick={isLastQuestion ? onFinishModule : onNext}
-            className="rounded-full bg-[#375DFB] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2b4bd9]"
+            className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white hover:bg-accent"
           >
             {isLastQuestion ? finishLabel : "Next"}
           </button>

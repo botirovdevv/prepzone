@@ -77,7 +77,7 @@ function ToolButton({ active, onClick, title, children, disabled }) {
       onClick={onClick}
       disabled={disabled}
       className={`flex h-9 w-9 items-center justify-center rounded-xl transition disabled:opacity-35 ${
-        active ? "bg-[#12213D] text-white" : "text-[#12213D]/70 hover:bg-[#12213D]/[0.06]"
+        active ? "bg-night text-white" : "text-ink/70 hover:bg-ink/[0.06]"
       }`}
     >
       {children}
@@ -388,7 +388,7 @@ export default function Whiteboard({ code }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Asboblar paneli */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-[#12213D]/[0.07] bg-white px-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-1 border-b border-ink/[0.07] bg-surface px-2 py-1.5">
         <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} title={t("studyRoom.whiteboard.pen")}>
           <LuPen size={17} />
         </ToolButton>
@@ -399,7 +399,7 @@ export default function Whiteboard({ code }) {
           <LuEraser size={17} />
         </ToolButton>
 
-        <span className="mx-1 h-6 w-px bg-[#12213D]/10" />
+        <span className="mx-1 h-6 w-px bg-ink/10" />
 
         {COLORS.map((c) => (
           <button
@@ -411,13 +411,13 @@ export default function Whiteboard({ code }) {
               if (tool === "eraser") setTool("pen");
             }}
             className={`h-7 w-7 rounded-full border-2 transition ${
-              color === c && tool !== "eraser" ? "border-[#12213D] scale-110" : "border-white shadow-sm"
+              color === c && tool !== "eraser" ? "border-ink scale-110" : "border-white shadow-sm"
             }`}
             style={{ backgroundColor: c }}
           />
         ))}
 
-        <span className="mx-1 h-6 w-px bg-[#12213D]/10" />
+        <span className="mx-1 h-6 w-px bg-ink/10" />
 
         {SIZES.map((_, i) => (
           <ToolButton key={i} active={sizeIdx === i} onClick={() => setSizeIdx(i)} title={t("studyRoom.whiteboard.size", { n: i + 1 })}>
@@ -443,7 +443,7 @@ export default function Whiteboard({ code }) {
       </div>
 
       {/* Doska */}
-      <div className="flex min-h-0 flex-1 bg-[#eef0f5] p-2">
+      <div className="flex min-h-0 flex-1 bg-fill p-2">
         <div ref={wrapRef} className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center">
           <div
             className="relative overflow-hidden rounded-lg bg-white shadow-sm"

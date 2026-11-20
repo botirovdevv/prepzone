@@ -69,31 +69,31 @@ export default function AdminDashboard() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="grid divide-y divide-[#12213D]/[0.06]">
+          <div className="grid divide-y divide-ink/[0.06]">
             {sessions.map((s) => {
               const badge = sessionStatusLabel(s);
               return (
                 <Link
                   key={s.id}
                   to={`/admin/sessions/${s.id}/monitor`}
-                  className="group flex items-center gap-4 px-5 py-4 transition hover:bg-[#F6F7FB] sm:px-6"
+                  className="group flex items-center gap-4 px-5 py-4 transition hover:bg-canvas sm:px-6"
                 >
                   <IconTile icon={s.accessType === "open" ? LuGlobe : LuCalendarClock} tone="blue" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-semibold text-[#12213D]">{s.title}</p>
+                      <p className="truncate font-semibold text-ink">{s.title}</p>
                       <Badge tone={badge.tone}>{badge.text}</Badge>
                     </div>
-                    <p className="mt-0.5 text-sm text-[#12213D]/50">
+                    <p className="mt-0.5 text-sm text-ink/50">
                       {s.accessType === "open" ? "Kod talab qilinmaydi" : formatDateTime(s.scheduledAt)}
                     </p>
                   </div>
-                  <span className="hidden rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-[#12213D]/70 sm:inline">
+                  <span className="hidden rounded-lg bg-canvas px-2.5 py-1.5 font-mono text-sm font-bold tracking-wider text-ink/70 sm:inline">
                     {s.accessType === "open" ? "OPEN" : s.code || "······"}
                   </span>
                   <LuChevronRight
                     size={18}
-                    className="shrink-0 text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]"
+                    className="shrink-0 text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent"
                   />
                 </Link>
               );

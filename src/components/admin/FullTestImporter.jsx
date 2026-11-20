@@ -115,14 +115,14 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
   };
 
   return (
-    <Card className="border-[#087fd1]/25 bg-gradient-to-br from-[#087fd1]/[0.06] to-transparent p-5 sm:p-6">
+    <Card className="border-accent/25 bg-gradient-to-br from-accent/[0.06] to-transparent p-5 sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#087fd1] text-white">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
           <LuSparkles size={19} />
         </span>
         <div className="min-w-0">
-          <h2 className="font-display text-[17px] font-bold text-[#12213D]">Butun testni PDF'dan yuklash</h2>
-          <p className="mt-0.5 text-sm leading-relaxed text-[#12213D]/55">
+          <h2 className="font-display text-[17px] font-bold text-ink">Butun testni PDF'dan yuklash</h2>
+          <p className="mt-0.5 text-sm leading-relaxed text-ink/55">
             To'liq mock test PDF'ini (masalan, 98 savol) yuklang — AI Reading & Writing va Math'ni, modullarni va javob
             kalitini o'zi ajratib, quyidagi modullarga joylaydi. 40 MB gacha, ~1–2 daqiqa.
           </p>
@@ -135,12 +135,12 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={busy}
-          className="flex items-center gap-2 rounded-xl border border-[#087fd1]/25 bg-white px-3.5 py-2 text-sm font-semibold text-[#087fd1] transition hover:bg-[#087fd1]/5 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl border border-accent/25 bg-surface px-3.5 py-2 text-sm font-semibold text-accent transition hover:bg-accent/5 disabled:opacity-50"
         >
           <LuFileUp size={15} /> {file ? "Boshqa PDF" : "PDF tanlash"}
         </button>
         {file && (
-          <span className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs text-[#12213D]/70 ring-1 ring-[#12213D]/10">
+          <span className="flex items-center gap-1 rounded-lg bg-surface px-2 py-1 text-xs text-ink/70 ring-1 ring-ink/10">
             {file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB
             {!busy && (
               <button
@@ -151,7 +151,7 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
                   reset();
                 }}
                 aria-label="PDF'ni olib tashlash"
-                className="text-[#12213D]/40 hover:text-red-500"
+                className="text-ink/40 hover:text-red-500"
               >
                 <LuX size={12} />
               </button>
@@ -163,7 +163,7 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
             type="button"
             onClick={run}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-xl bg-[#087fd1] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#066fb8] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white hover:bg-accent-press disabled:opacity-50"
           >
             {busy ? <LuLoaderCircle size={15} className="animate-spin" /> : <LuSparkles size={15} />}
             {busy ? "AI o'qimoqda..." : "AI bilan testni tuzish"}
@@ -183,13 +183,13 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
                 const mods = MODULES.filter((m) => result[s.id][m.key].length);
                 const count = mods.reduce((n, m) => n + result[s.id][m.key].length, 0);
                 return (
-                  <div key={s.id} className="rounded-xl bg-white p-4 ring-1 ring-[#12213D]/[0.07]">
+                  <div key={s.id} className="rounded-xl bg-surface p-4 ring-1 ring-ink/[0.07]">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-sm font-bold text-[#12213D]">{s.title}</p>
-                      <p className="text-xs font-semibold tabular-nums text-[#12213D]/45">{count} ta savol</p>
+                      <p className="text-sm font-bold text-ink">{s.title}</p>
+                      <p className="text-xs font-semibold tabular-nums text-ink/45">{count} ta savol</p>
                     </div>
                     {mods.length === 0 ? (
-                      <p className="mt-2 text-xs text-[#12213D]/40">PDF'da bu bo'lim topilmadi</p>
+                      <p className="mt-2 text-xs text-ink/40">PDF'da bu bo'lim topilmadi</p>
                     ) : (
                       <ul className="mt-2 space-y-1 text-[13px]">
                         {mods.map((m) => {
@@ -197,8 +197,8 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
                           const review = list.filter((q) => q.aiGenerated).length;
                           return (
                             <li key={m.key} className="flex items-center justify-between gap-2">
-                              <span className="text-[#12213D]/70">{m.label}</span>
-                              <span className="tabular-nums font-semibold text-[#12213D]">
+                              <span className="text-ink/70">{m.label}</span>
+                              <span className="tabular-nums font-semibold text-ink">
                                 {list.length}
                                 {review > 0 && <span className="ml-1.5 text-[11px] font-semibold text-violet-600">({review} tekshirish)</span>}
                               </span>
@@ -212,7 +212,7 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
               })}
             </div>
 
-            <p className="text-xs leading-relaxed text-[#12213D]/55">
+            <p className="text-xs leading-relaxed text-ink/55">
               Jami <strong>{all.length}</strong> ta savol.{" "}
               {result.rw.module2Mixed.length + result.math.module2Mixed.length > 0 &&
                 "PDF'da Module 2 oson/qiyin deb ajratilmagan — joylagandan keyin \"Testni adaptiv qilish\" tugmasi bilan ikkinchi variantni savol bankidan qo'shing. "}
@@ -235,7 +235,7 @@ export default function FullTestImporter({ hasQuestions, onApply }) {
                   type="button"
                   onClick={apply}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#087fd1] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#066fb8] disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white hover:bg-accent-press disabled:opacity-50"
                 >
                   <LuCircleCheck size={15} /> {all.length} ta savolni testga joylash
                 </button>

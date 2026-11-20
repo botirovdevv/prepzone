@@ -97,13 +97,13 @@ function PageBars({ entries, total, label = routeLabel }) {
         return (
           <div key={key}>
             <div className="mb-1 flex items-baseline justify-between gap-3 text-[13px]">
-              <span className="truncate font-semibold text-[#12213D]">{label(key)}</span>
-              <span className="shrink-0 tabular-nums text-[#12213D]/55">
+              <span className="truncate font-semibold text-ink">{label(key)}</span>
+              <span className="shrink-0 tabular-nums text-ink/55">
                 {count.toLocaleString()} · {pct}%
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-[#12213D]/[0.06]">
-              <div className="h-full rounded-full bg-[#087fd1]" style={{ width: `${Math.max(pct, 1)}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-ink/[0.06]">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(pct, 1)}%` }} />
             </div>
           </div>
         );
@@ -222,13 +222,13 @@ export default function Analytics() {
         actions={
           <>
             {canAnalytics && (
-              <div className="flex rounded-xl border border-[#12213D]/10 bg-white p-1">
+              <div className="flex rounded-xl border border-ink/10 bg-surface p-1">
                 {RANGES.map((r) => (
                   <button
                     key={r}
                     onClick={() => setRange(r)}
                     className={`h-8 rounded-lg px-3 text-[13px] font-semibold transition ${
-                      range === r ? "bg-[#12213D] text-white" : "text-[#12213D]/55 hover:text-[#12213D]"
+                      range === r ? "bg-ink text-on-ink" : "text-ink/55 hover:text-ink"
                     }`}
                   >
                     {r} kun
@@ -297,7 +297,7 @@ export default function Analytics() {
                 title="Kunlik faollik"
                 subtitle={`${data.series[0]?.key} — ${data.series.at(-1)?.key}`}
                 action={
-                  <div className="flex rounded-lg bg-[#12213D]/[0.05] p-0.5 text-[12px] font-semibold">
+                  <div className="flex rounded-lg bg-ink/[0.05] p-0.5 text-[12px] font-semibold">
                     {[
                       ["views", "Ko'rishlar"],
                       ["active", "Faol userlar"],
@@ -306,7 +306,7 @@ export default function Analytics() {
                         key={k}
                         onClick={() => setChartMetric(k)}
                         className={`rounded-md px-2.5 py-1 transition ${
-                          chartMetric === k ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                          chartMetric === k ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                         }`}
                       >
                         {label}
@@ -324,7 +324,7 @@ export default function Analytics() {
               <CardHeader title="Eng ko'p ishlatiladigan sahifalar" subtitle={`Oxirgi ${range} kun`} />
               <div className="px-5 pb-6 pt-4 sm:px-6">
                 {data.pages.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-[#12213D]/45">Hali ma'lumot yo'q</p>
+                  <p className="py-8 text-center text-sm text-ink/45">Hali ma'lumot yo'q</p>
                 ) : (
                   <PageBars entries={data.pages.slice(0, 10)} total={data.views} />
                 )}
@@ -336,7 +336,7 @@ export default function Analytics() {
             <CardHeader title="Bizni qayerdan topishdi" subtitle={`${sourcesTotal} ta javob · ro'yxatdan o'tishdagi so'rovnoma`} />
             <div className="px-5 pb-6 pt-4 sm:px-6">
               {sourcesTotal === 0 ? (
-                <p className="py-4 text-center text-sm text-[#12213D]/45">Hali javob yo'q</p>
+                <p className="py-4 text-center text-sm text-ink/45">Hali javob yo'q</p>
               ) : (
                 <PageBars entries={sources} total={sourcesTotal} label={(k) => SOURCE_LABELS[k] || k} />
               )}
@@ -355,13 +355,13 @@ export default function Analytics() {
           }
           action={
             <div className="flex w-full flex-wrap items-center justify-end gap-2">
-              <div className="flex rounded-lg bg-[#12213D]/[0.05] p-0.5 text-[12px] font-semibold">
+              <div className="flex rounded-lg bg-ink/[0.05] p-0.5 text-[12px] font-semibold">
                 {USER_FILTERS.map(([k, label]) => (
                   <button
                     key={k}
                     onClick={() => setFilter(k)}
                     className={`rounded-md px-2.5 py-1 transition ${
-                      filter === k ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                      filter === k ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                     }`}
                   >
                     {label}
@@ -371,7 +371,7 @@ export default function Analytics() {
               <div className="relative w-full max-w-[240px]">
                 <LuSearch
                   size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#12213D]/35"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35"
                 />
                 <input
                   value={search}
@@ -395,7 +395,7 @@ export default function Analytics() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-[13px]">
               <thead>
-                <tr className="border-y border-[#12213D]/[0.06] bg-[#F6F7FB] text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
+                <tr className="border-y border-ink/[0.06] bg-canvas text-[11px] font-bold uppercase tracking-wide text-ink/45">
                   <th className="px-5 py-2.5 sm:px-6">User</th>
                   <th className="px-3 py-2.5">Ro'yxatdan o'tgan</th>
                   <th className="px-3 py-2.5">Oxirgi faollik</th>
@@ -406,7 +406,7 @@ export default function Analytics() {
                   <th className="w-10 px-3 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#12213D]/[0.06]">
+              <tbody className="divide-y divide-ink/[0.06]">
                 {users.map((u) => {
                   const open = expanded === u.id;
                   const userPages = sortedPages(u.pages);
@@ -425,7 +425,7 @@ export default function Analytics() {
               </tbody>
             </table>
             {(usersHasMore || usersLoading) && (
-              <div className="border-t border-[#12213D]/[0.06] p-4 text-center">
+              <div className="border-t border-ink/[0.06] p-4 text-center">
                 <Button
                   variant="outline"
                   size="sm"
@@ -448,48 +448,48 @@ function UserRow({ user, open, onToggle, best, pages, onUpdated }) {
   const tests = user.tests;
   return (
     <>
-      <tr onClick={onToggle} className="cursor-pointer transition hover:bg-[#F6F7FB]">
+      <tr onClick={onToggle} className="cursor-pointer transition hover:bg-canvas">
         <td className="px-5 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-[#12213D]">{name}</p>
+            <p className="font-semibold text-ink">{name}</p>
             {user.provider === "google.com" && <Badge tone="ink">Google</Badge>}
             {!user.emailVerified && <Badge tone="amber">tasdiqlanmagan</Badge>}
             {user.isOwner ? <Badge tone="blue">Owner</Badge> : user.isAdmin && <Badge tone="blue">Admin</Badge>}
             {user.blocked && <Badge tone="red">Bloklangan</Badge>}
           </div>
-          <p className="text-[12px] text-[#12213D]/45">{user.email}</p>
+          <p className="text-[12px] text-ink/45">{user.email}</p>
         </td>
-        <td className="px-3 py-3 text-[#12213D]/70">{formatDate(user.createdAt)}</td>
-        <td className="px-3 py-3 text-[#12213D]/70" title={formatDate(user.lastSeenAt, true)}>
+        <td className="px-3 py-3 text-ink/70">{formatDate(user.createdAt)}</td>
+        <td className="px-3 py-3 text-ink/70" title={formatDate(user.lastSeenAt, true)}>
           {relativeTime(user.lastSeenAt)}
         </td>
-        <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#12213D]">
+        <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">
           {(user.pageViews || 0).toLocaleString()}
         </td>
-        <td className="px-3 py-3 text-right tabular-nums text-[#12213D]">{tests ?? "—"}</td>
-        <td className="px-3 py-3 text-right font-semibold tabular-nums text-[#087fd1]">{best ?? "—"}</td>
+        <td className="px-3 py-3 text-right tabular-nums text-ink">{tests ?? "—"}</td>
+        <td className="px-3 py-3 text-right font-semibold tabular-nums text-accent">{best ?? "—"}</td>
         <td className="px-3 py-3">
-          <p className="font-semibold text-[#12213D]">{formatTargets(user.onboarding?.targets)}</p>
+          <p className="font-semibold text-ink">{formatTargets(user.onboarding?.targets)}</p>
           {user.onboarding?.source && (
-            <p className="text-[12px] text-[#12213D]/45">
+            <p className="text-[12px] text-ink/45">
               {SOURCE_LABELS[user.onboarding.source] || user.onboarding.source}
               {user.onboarding.sourceOther ? `: ${user.onboarding.sourceOther}` : ""}
             </p>
           )}
         </td>
-        <td className="px-3 py-3 text-[#12213D]/35">
+        <td className="px-3 py-3 text-ink/35">
           <LuChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} />
         </td>
       </tr>
       {open && (
-        <tr className="bg-[#F6F7FB]/60">
+        <tr className="bg-canvas/60">
           <td colSpan={8} className="px-5 py-4 sm:px-6">
             <UserAdminActions key={`${user.id}:${user.adminPerms?.join()}:${user.blocked}`} user={user} onUpdated={onUpdated} />
             {pages.length === 0 ? (
-              <p className="text-[13px] text-[#12213D]/45">Bu user uchun sahifa statistikasi hali yo'q.</p>
+              <p className="text-[13px] text-ink/45">Bu user uchun sahifa statistikasi hali yo'q.</p>
             ) : (
               <div className="max-w-xl">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-ink/45">
                   Eng ko'p kirgan sahifalari
                 </p>
                 <PageBars entries={pages.slice(0, 8)} total={user.pageViews || 0} />

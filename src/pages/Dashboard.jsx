@@ -139,7 +139,7 @@ export default function Dashboard() {
               title={t("dashboard.trendTitle")}
               subtitle={t("dashboard.trendSubtitle")}
               action={
-                <Link to="/sat/history" className="flex items-center gap-1 text-sm font-semibold text-[#087fd1] hover:text-[#066fb8]">
+                <Link to="/sat/history" className="flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-press">
                   {t("dashboard.all")} <LuArrowUpRight size={15} />
                 </Link>
               }
@@ -151,8 +151,8 @@ export default function Dashboard() {
                 <ScoreTrend scores={trend} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <p className="font-semibold text-[#12213D]/70">{t("dashboard.noData")}</p>
-                  <p className="mt-1 text-sm text-[#12213D]/45">{t("dashboard.noDataHint")}</p>
+                  <p className="font-semibold text-ink/70">{t("dashboard.noData")}</p>
+                  <p className="mt-1 text-sm text-ink/45">{t("dashboard.noDataHint")}</p>
                 </div>
               )}
             </div>
@@ -160,31 +160,31 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader title={t("dashboard.recent")} />
-            <div className="mt-3 divide-y divide-[#12213D]/[0.06]">
+            <div className="mt-3 divide-y divide-ink/[0.06]">
               {loadingAttempts ? (
                 <div className="space-y-2 px-5 pb-5">
                   <Skeleton className="h-12" />
                   <Skeleton className="h-12" />
                 </div>
               ) : attempts.length === 0 ? (
-                <p className="px-6 pb-6 text-sm text-[#12213D]/50">{t("dashboard.noAttempts")}</p>
+                <p className="px-6 pb-6 text-sm text-ink/50">{t("dashboard.noAttempts")}</p>
               ) : (
                 attempts.slice(0, 4).map((a) => (
                   <Link
                     key={a.id}
                     to={a.sessionId ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`}
-                    className="group flex items-center gap-4 px-5 py-3.5 transition hover:bg-[#F6F7FB] sm:px-6"
+                    className="group flex items-center gap-4 px-5 py-3.5 transition hover:bg-canvas sm:px-6"
                   >
                     <IconTile icon={LuClock} tone="ink" size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#12213D]">
+                      <p className="truncate text-sm font-semibold text-ink">
                         {a.sessionTitle || getSatTestTitle(a.testId)}
                         {a.terminated && <span className="font-normal text-red-500"> · {t("dashboard.stopped")}</span>}
                       </p>
-                      <p className="text-xs text-[#12213D]/45">{formatDate(a.createdAt)}</p>
+                      <p className="text-xs text-ink/45">{formatDate(a.createdAt)}</p>
                     </div>
-                    <p className="font-display text-lg font-extrabold tabular-nums text-[#12213D]">{a.total}</p>
-                    <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+                    <p className="font-display text-lg font-extrabold tabular-nums text-ink">{a.total}</p>
+                    <LuArrowRight size={16} className="text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent" />
                   </Link>
                 ))
               )}
@@ -201,8 +201,8 @@ export default function Dashboard() {
             target={user?.onboarding?.targets?.sat ?? null}
           />
           <MistakesCard />
-          <div className="relative overflow-hidden rounded-2xl bg-[#12213D] p-6 text-white">
-            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#087fd1]/25 blur-2xl" />
+          <div className="relative overflow-hidden rounded-2xl bg-night p-6 text-white">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent/25 blur-2xl" />
             <div className="relative">
               <IconTile icon={LuKeyRound} tone="solid" />
               <h2 className="mt-4 font-display text-lg font-bold">{t("dashboard.codeTitle")}</h2>
@@ -214,7 +214,7 @@ export default function Dashboard() {
                   inputMode="numeric"
                   placeholder="000000"
                   aria-label={t("dashboard.codeLabel")}
-                  className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.07] px-4 text-center font-mono text-xl font-black tracking-[0.4em] text-white outline-none transition placeholder:text-white/25 focus:border-[#087fd1] focus:bg-white/10"
+                  className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.07] px-4 text-center font-mono text-xl font-black tracking-[0.4em] text-white outline-none transition placeholder:text-white/25 focus:border-accent focus:bg-white/10"
                 />
                 <Button type="submit" className="w-full" disabled={code.length !== 6}>
                   {t("dashboard.continue")} <LuArrowRight size={17} />
@@ -228,27 +228,27 @@ export default function Dashboard() {
               <Link
                 key={l.to}
                 to={l.to}
-                className="group flex items-center gap-3.5 rounded-xl p-3 transition hover:bg-[#F6F7FB]"
+                className="group flex items-center gap-3.5 rounded-xl p-3 transition hover:bg-canvas"
               >
                 <IconTile icon={l.icon} tone={l.tone} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#12213D]">{l.title}</p>
-                  <p className="text-xs text-[#12213D]/45">{l.text}</p>
+                  <p className="text-sm font-semibold text-ink">{l.title}</p>
+                  <p className="text-xs text-ink/45">{l.text}</p>
                 </div>
-                <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+                <LuArrowRight size={16} className="text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent" />
               </Link>
             ))}
             {isAdmin && (
               <Link
                 to="/admin"
-                className="group mt-1 flex items-center gap-3.5 rounded-xl border-t border-[#12213D]/[0.06] p-3 transition hover:bg-[#F6F7FB]"
+                className="group mt-1 flex items-center gap-3.5 rounded-xl border-t border-ink/[0.06] p-3 transition hover:bg-canvas"
               >
                 <IconTile icon={LuShieldCheck} tone="dark" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#12213D]">{t("dashboard.adminTitle")}</p>
-                  <p className="text-xs text-[#12213D]/45">{t("dashboard.adminText")}</p>
+                  <p className="text-sm font-semibold text-ink">{t("dashboard.adminTitle")}</p>
+                  <p className="text-xs text-ink/45">{t("dashboard.adminText")}</p>
                 </div>
-                <LuArrowRight size={16} className="text-[#12213D]/25 transition group-hover:translate-x-0.5 group-hover:text-[#087fd1]" />
+                <LuArrowRight size={16} className="text-ink/25 transition group-hover:translate-x-0.5 group-hover:text-accent" />
               </Link>
             )}
           </Card>

@@ -32,13 +32,13 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
   if (state.status === "done") {
     const d = state.data;
     return (
-      <div className={`rounded-2xl border border-[#7c3aed]/20 bg-[#7c3aed]/[0.04] p-4 text-[14px] leading-6 text-[#12213D] ${className}`}>
+      <div className={`rounded-2xl border border-[#7c3aed]/20 bg-[#7c3aed]/[0.04] p-4 text-[14px] leading-6 text-ink ${className}`}>
         <p className="flex items-center gap-2 font-bold text-[#7c3aed]">
           <LuSparkles size={15} /> {d.summary}
         </p>
         {d.steps?.length > 0 && (
           <>
-            <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#12213D]/45">{t("tutor.steps")}</p>
+            <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-ink/45">{t("tutor.steps")}</p>
             <ol className="mt-1 list-decimal space-y-1 pl-5">
               {d.steps.map((s, i) => (
                 <li key={i}>{s}</li>
@@ -63,7 +63,7 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
           </p>
         )}
         {d.quota?.remaining != null && (
-          <p className="mt-2 text-right text-[11px] text-[#12213D]/40">{t("tutor.left", { n: d.quota.remaining })}</p>
+          <p className="mt-2 text-right text-[11px] text-ink/40">{t("tutor.left", { n: d.quota.remaining })}</p>
         )}
       </div>
     );

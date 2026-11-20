@@ -5,7 +5,7 @@ export default function ExitTestModal({ onCancel, onConfirm, confirming }) {
   const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4">
-      <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-white p-6 text-center">
+      <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-surface p-6 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600">
           <LuTriangleAlert size={22} />
         </div>

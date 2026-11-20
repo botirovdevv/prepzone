@@ -66,7 +66,7 @@ export default function Login() {
       footer={
         <>
           {t("auth.login.noAccount")}{" "}
-          <Link to="/register" className="font-semibold text-[#087fd1] hover:underline">
+          <Link to="/register" className="font-semibold text-accent hover:underline">
             {t("auth.login.signUp")}
           </Link>
         </>
@@ -86,7 +86,7 @@ export default function Login() {
                 setError("");
               }}
               className={`flex h-10 items-center justify-center gap-2 rounded-full text-[14px] font-semibold transition ${
-                tab === id ? "bg-white text-[#1d1d1f] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
+                tab === id ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-ink-2 hover:text-ink"
               }`}
             >
               <Icon size={15} /> {t(`auth.login.${label}`)}
@@ -130,7 +130,7 @@ export default function Login() {
                 <Link
                   to="/forgot-password"
                   state={{ email }}
-                  className="text-[13px] font-medium text-[#087fd1] hover:underline"
+                  className="text-[13px] font-medium text-accent hover:underline"
                 >
                   {t("auth.login.forgot")}
                 </Link>

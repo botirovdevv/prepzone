@@ -6,17 +6,17 @@ import { LuRefreshCw, LuTriangleAlert } from "react-icons/lu";
 export function ImportProgress({ progress }) {
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   return (
-    <div className="rounded-xl bg-[#087fd1]/[0.05] p-3">
+    <div className="rounded-xl bg-accent/[0.05] p-3">
       <div className="flex items-baseline justify-between gap-3 text-xs">
-        <span className="font-semibold text-[#12213D]/70">
+        <span className="font-semibold text-ink/70">
           {progress.preparing
             ? `${progress.preparing} bo'laklarga ajratilmoqda...`
             : `AI o'qiyapti: ${progress.done}/${progress.total} bo'lak`}
         </span>
-        {!progress.preparing && <span className="tabular-nums text-[#12213D]/50">{progress.found} ta savol</span>}
+        {!progress.preparing && <span className="tabular-nums text-ink/50">{progress.found} ta savol</span>}
       </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#12213D]/[0.08]">
-        <div className="h-full rounded-full bg-[#087fd1] transition-[width] duration-500" style={{ width: `${pct}%` }} />
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/[0.08]">
+        <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

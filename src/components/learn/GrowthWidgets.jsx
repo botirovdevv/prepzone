@@ -27,10 +27,10 @@ export function StreakDaily() {
           <LuFlame size={28} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[26px] font-extrabold leading-none text-[#12213D] tabular-nums">
-            {s.current} <span className="text-[14px] font-semibold text-[#12213D]/50">{t("streak.days")}</span>
+          <p className="font-display text-[26px] font-extrabold leading-none text-ink tabular-nums">
+            {s.current} <span className="text-[14px] font-semibold text-ink/50">{t("streak.days")}</span>
           </p>
-          <p className="mt-1 text-[12px] text-[#12213D]/50">
+          <p className="mt-1 text-[12px] text-ink/50">
             {s.xp} {t("streak.xp")}
             {s.rank ? ` · ${t("streak.rank", { n: s.rank })}` : ""} · {t("streak.best", { n: s.best })}
           </p>
@@ -38,15 +38,15 @@ export function StreakDaily() {
       </div>
       <Link
         to="/daily"
-        className="flex items-center gap-3 border-t border-[#12213D]/[0.06] bg-amber-50/60 px-5 py-3.5 transition hover:bg-amber-50"
+        className="flex items-center gap-3 border-t border-ink/[0.06] bg-amber-50/60 px-5 py-3.5 transition hover:bg-amber-50"
       >
         <LuSun size={18} className="text-amber-500" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[#12213D]">{t("daily.widgetTitle")}</p>
-          <p className="text-xs text-[#12213D]/50">{s.dailyDone ? t("daily.widgetDone") : t("daily.widgetText")}</p>
+          <p className="text-sm font-semibold text-ink">{t("daily.widgetTitle")}</p>
+          <p className="text-xs text-ink/50">{s.dailyDone ? t("daily.widgetDone") : t("daily.widgetText")}</p>
         </div>
-        <span className="text-sm font-bold text-[#087fd1]">{s.dailyDone ? t("daily.ctaDone") : t("daily.cta")}</span>
-        <LuArrowRight size={15} className="text-[#087fd1]" />
+        <span className="text-sm font-bold text-accent">{s.dailyDone ? t("daily.ctaDone") : t("daily.cta")}</span>
+        <LuArrowRight size={15} className="text-accent" />
       </Link>
     </Card>
   );
@@ -88,25 +88,25 @@ export function Predictor({ attempts, target }) {
     <Card className="relative overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-display text-[17px] font-bold text-[#12213D]">{t("predictor.title")}</p>
-          <p className="text-sm text-[#12213D]/50">{t("predictor.subtitle")}</p>
+          <p className="font-display text-[17px] font-bold text-ink">{t("predictor.title")}</p>
+          <p className="text-sm text-ink/50">{t("predictor.subtitle")}</p>
         </div>
-        <LuTarget size={20} className="text-[#087fd1]" />
+        <LuTarget size={20} className="text-accent" />
       </div>
       {!p ? (
-        <p className="mt-5 text-sm text-[#12213D]/55">{t("predictor.noData")}</p>
+        <p className="mt-5 text-sm text-ink/55">{t("predictor.noData")}</p>
       ) : (
         <div>
-          <p className="mt-4 text-[12px] font-semibold uppercase tracking-wide text-[#12213D]/45">{t("predictor.range")}</p>
-          <p className="font-display text-[34px] font-extrabold leading-tight tabular-nums text-[#12213D]">
+          <p className="mt-4 text-[12px] font-semibold uppercase tracking-wide text-ink/45">{t("predictor.range")}</p>
+          <p className="font-display text-[34px] font-extrabold leading-tight tabular-nums text-ink">
             {p.low}–{p.high}
           </p>
-          <p className="flex items-center gap-1.5 text-[13px] text-[#12213D]/55">
+          <p className="flex items-center gap-1.5 text-[13px] text-ink/55">
             <TrendIcon size={15} className={p.trend === "up" ? "text-emerald-600" : p.trend === "down" ? "text-red-500" : ""} />
             {t(`predictor.trend${p.trend === "up" ? "Up" : p.trend === "down" ? "Down" : "Flat"}`)} · {t("predictor.confidence", { n: p.spread })}
           </p>
           {target != null && (
-            <div className="mt-4 rounded-xl bg-[#F6F7FB] p-3 text-[13px] text-[#12213D]/75">
+            <div className="mt-4 rounded-xl bg-canvas p-3 text-[13px] text-ink/75">
               <p className="font-semibold">{gap > 0 ? t("predictor.need", { gap }) : t("predictor.reached")}</p>
               <p className="mt-0.5">{t("predictor.plan", { n: perWeek })}</p>
             </div>
@@ -131,12 +131,12 @@ export function MistakesCard() {
     >
       <LuNotebookPen size={22} className="text-red-500" />
       <div className="flex-1">
-        <p className="font-bold text-[#12213D]">{t("mistakes.eyebrow")}</p>
-        <p className="text-sm text-[#12213D]/60">
+        <p className="font-bold text-ink">{t("mistakes.eyebrow")}</p>
+        <p className="text-sm text-ink/60">
           {t("mistakes.due")}: <b>{m.due}</b> · {t("mistakes.mastered")}: <b>{m.mastered}</b>
         </p>
       </div>
-      <LuArrowRight size={16} className="text-[#12213D]/30 transition group-hover:translate-x-0.5" />
+      <LuArrowRight size={16} className="text-ink/30 transition group-hover:translate-x-0.5" />
     </Link>
   );
 }

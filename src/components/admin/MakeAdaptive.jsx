@@ -70,8 +70,8 @@ export default function MakeAdaptive({ sections, onApply }) {
     <div className="space-y-2 rounded-2xl border border-amber-300/60 bg-amber-50 p-4">
       {ids.length > 0 && (
         <>
-          <p className="text-sm font-semibold text-[#12213D]">Bu test hozir adaptiv emas</p>
-          <p className="text-xs leading-relaxed text-[#12213D]/65">
+          <p className="text-sm font-semibold text-ink">Bu test hozir adaptiv emas</p>
+          <p className="text-xs leading-relaxed text-ink/65">
             {ids.map((id) => TITLES[id]).join(" va ")} bo'limida Module 2 bitta — hamma talaba bir xil savollarni
             oladi. Haqiqiy Digital SAT'dagi kabi adaptiv qilish uchun tugmani bosing: PDF'dagi Module 2 qiyinligiga
             qarab "Qiyin" yoki "Oson" variant bo'ladi, ikkinchi variant savol bankidan yig'iladi. PDF savollari
@@ -81,7 +81,7 @@ export default function MakeAdaptive({ sections, onApply }) {
             type="button"
             onClick={run}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-xl bg-[#087fd1] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#066fb8] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white hover:bg-accent-press disabled:opacity-50"
           >
             {busy ? <LuLoaderCircle size={15} className="animate-spin" /> : <LuGitBranch size={15} />}
             {busy ? "Yig'ilmoqda..." : "Testni adaptiv qilish"}
@@ -94,7 +94,7 @@ export default function MakeAdaptive({ sections, onApply }) {
           {notes.map((n) => (
             <p key={n}>✓ {n}</p>
           ))}
-          <p className="text-[#12213D]/55">Pastdagi modullarni ko'rib chiqing va testni saqlang.</p>
+          <p className="text-ink/55">Pastdagi modullarni ko'rib chiqing va testni saqlang.</p>
         </div>
       )}
     </div>

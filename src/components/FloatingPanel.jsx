@@ -48,7 +48,7 @@ export default function FloatingPanel({ title, icon: Icon, width = 560, initial,
     <div
       role="dialog"
       aria-label={title}
-      className="fixed z-50 flex flex-col overflow-hidden rounded-lg border border-gray-300 bg-white shadow-2xl"
+      className="fixed z-50 flex flex-col overflow-hidden rounded-lg border border-gray-300 bg-surface shadow-2xl"
       style={{ left: pos.x, top: pos.y, width: `min(${width}px, calc(100vw - 16px))` }}
     >
       <div

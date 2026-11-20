@@ -32,26 +32,26 @@ export default function DesmosDashboard() {
     <div className="p-6 lg:p-10 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#087fd1] mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-accent mb-1">
             Admin panel
           </p>
-          <h1 className="text-2xl font-extrabold text-[#12213D]">Desmos darsliklari</h1>
-          <p className="text-sm text-[#12213D]/50 mt-1">
+          <h1 className="text-2xl font-extrabold text-ink">Desmos darsliklari</h1>
+          <p className="text-sm text-ink/50 mt-1">
             Talabalarga Desmos grafik kalkulyatoridan foydalanishni o'rgatuvchi qisqa darsliklar.
           </p>
         </div>
         <button
           onClick={() => navigate("/admin/desmos/new")}
-          className="flex items-center gap-2 bg-[#087fd1] text-white font-semibold px-4 py-2.5 rounded-full hover:bg-[#066fb8] shrink-0"
+          className="flex items-center gap-2 bg-accent text-white font-semibold px-4 py-2.5 rounded-full hover:bg-accent-press shrink-0"
         >
           <LuPlus size={17} /> Yangi darslik
         </button>
       </div>
 
       {loading ? (
-        <p className="text-[#12213D]/40 text-sm">Yuklanmoqda...</p>
+        <p className="text-ink/40 text-sm">Yuklanmoqda...</p>
       ) : tutorials.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#12213D]/8 p-10 text-center text-[#12213D]/50">
+        <div className="bg-surface rounded-2xl border border-ink/8 p-10 text-center text-ink/50">
           Hali birorta darslik yaratilmagan.
         </div>
       ) : (
@@ -60,14 +60,14 @@ export default function DesmosDashboard() {
             <Link
               key={t.id}
               to={`/admin/desmos/${t.id}/edit`}
-              className="flex items-center gap-4 bg-white rounded-2xl border border-[#12213D]/8 p-5 hover:border-[#087fd1]/40 hover:shadow-md transition"
+              className="flex items-center gap-4 bg-surface rounded-2xl border border-ink/8 p-5 hover:border-accent/40 hover:shadow-md transition"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#087fd1]/10 text-[#087fd1] flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
                 {t.videoUrl ? <LuPlay size={19} /> : <LuCalculator size={19} />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-[#12213D] truncate">{t.title}</p>
-                <p className="text-sm text-[#12213D]/50 truncate">
+                <p className="font-bold text-ink truncate">{t.title}</p>
+                <p className="text-sm text-ink/50 truncate">
                   {t.description || (t.videoUrl ? "Video darslik" : "Matnli darslik")}
                 </p>
               </div>
@@ -77,7 +77,7 @@ export default function DesmosDashboard() {
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title="Talaba sifatida ko'rish"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[#12213D]/40 hover:bg-[#12213D]/5 hover:text-[#12213D] shrink-0"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-ink/40 hover:bg-ink/5 hover:text-ink shrink-0"
               >
                 <LuEye size={17} />
               </a>
@@ -88,7 +88,7 @@ export default function DesmosDashboard() {
               >
                 <LuTrash2 size={17} />
               </button>
-              <LuChevronRight size={18} className="text-[#12213D]/30 shrink-0" />
+              <LuChevronRight size={18} className="text-ink/30 shrink-0" />
             </Link>
           ))}
         </div>

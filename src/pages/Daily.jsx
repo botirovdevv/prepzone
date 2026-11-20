@@ -47,7 +47,7 @@ export default function Daily() {
 
       {done && (
         <Card className="mb-6 overflow-hidden">
-          <div className="flex items-center gap-4 bg-[#12213D] p-6 text-white">
+          <div className="flex items-center gap-4 bg-night p-6 text-white">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500">
               <LuFlame size={28} />
             </span>
@@ -61,7 +61,7 @@ export default function Daily() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 p-5 text-sm text-[#12213D]/60">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 text-sm text-ink/60">
             <span>{t("daily.comeBack")} {t("daily.mistakesNote")}</span>
             <Button variant="outline" size="sm" to="/mistakes">
               {t("daily.toMistakes")}
@@ -84,7 +84,7 @@ export default function Daily() {
             >
               {done && (
                 <div className="mt-4 space-y-3">
-                  {q.explanation && <p className="rounded-xl bg-[#F6F7FB] p-3 text-sm text-[#12213D]/75">{q.explanation}</p>}
+                  {q.explanation && <p className="rounded-xl bg-canvas p-3 text-sm text-ink/75">{q.explanation}</p>}
                   <AiExplain question={q} userAnswer={userAnswer} />
                 </div>
               )}

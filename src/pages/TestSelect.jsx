@@ -180,23 +180,23 @@ export default function TestSelect() {
                   )}
                 </div>
 
-                <h3 className="mt-5 font-display text-xl font-extrabold tracking-[-0.01em] text-[#12213D]">
+                <h3 className="mt-5 font-display text-xl font-extrabold tracking-[-0.01em] text-ink">
                   {p.title}
                 </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-[#12213D]/50">{p.description}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink/50">{p.description}</p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 text-xs font-semibold text-[#12213D]/60">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-canvas px-2.5 py-1.5 text-xs font-semibold text-ink/60">
                     <LuBookOpenText size={13} /> Reading &amp; Writing
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F6F7FB] px-2.5 py-1.5 text-xs font-semibold text-[#12213D]/60">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-canvas px-2.5 py-1.5 text-xs font-semibold text-ink/60">
                     <LuCalculator size={13} /> Math
                   </span>
                 </div>
 
                 <div className="mt-6 flex flex-1 items-end">
                   {locked ? (
-                    <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#12213D]/[0.04] px-3 text-center text-sm font-semibold text-[#12213D]/55">
+                    <div className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink/[0.04] px-3 text-center text-sm font-semibold text-ink/55">
                       <LuClock size={15} className="shrink-0" />
                       {t("tests.resumeIn", { time: formatRemaining(lockRemaining[p.lockKey]) })}
                     </div>

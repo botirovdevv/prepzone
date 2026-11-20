@@ -133,18 +133,18 @@ export default function PracticeSet() {
 
   if (showSummary) {
     return (
-      <div className="min-h-screen flex flex-col items-center px-6 py-12 bg-[#F7F9FC]">
+      <div className="min-h-screen flex flex-col items-center px-6 py-12 bg-canvas">
         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
           <LuCircleCheck size={30} />
         </div>
-        <h1 className="text-2xl font-extrabold text-[#12213D] mb-2 text-center">{set.title}</h1>
-        <p className="text-[#12213D]/60 mb-8 text-center">
+        <h1 className="text-2xl font-extrabold text-ink mb-2 text-center">{set.title}</h1>
+        <p className="text-ink/60 mb-8 text-center">
           {t("practiceSet.summary", { answered: answeredCount, total, correct: correctCount })}
         </p>
 
         {topicAnalysis.domainSummaries.length > 0 && (
-          <div className="w-full max-w-xl bg-white rounded-2xl border border-[#12213D]/8 p-5 mb-6 text-left">
-            <h2 className="font-bold text-[#12213D] mb-4">{t("practiceSet.byTopic")}</h2>
+          <div className="w-full max-w-xl bg-surface rounded-2xl border border-ink/8 p-5 mb-6 text-left">
+            <h2 className="font-bold text-ink mb-4">{t("practiceSet.byTopic")}</h2>
             <div className="space-y-3">
               {topicAnalysis.domainSummaries.map((d) => {
                 const pct = Math.round(d.accuracy * 100);
@@ -153,12 +153,12 @@ export default function PracticeSet() {
                 return (
                   <div key={d.domainId}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium text-[#12213D]/80">{d.label}</span>
-                      <span className="text-[#12213D]/50">
+                      <span className="font-medium text-ink/80">{d.label}</span>
+                      <span className="text-ink/50">
                         {d.correct}/{d.total} · {pct}%
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-[#12213D]/8 overflow-hidden">
+                    <div className="h-2 rounded-full bg-ink/8 overflow-hidden">
                       <div className={`h-full ${barColor} rounded-full`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function PracticeSet() {
                 ? "bg-amber-50 border-amber-200 text-amber-800"
                 : isStrong
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-[#087fd1]/5 border-[#087fd1]/15 text-[#12213D]/70";
+                : "bg-accent/5 border-accent/15 text-ink/70";
               return (
                 <div key={i} className={`flex items-start gap-2.5 border rounded-xl p-4 text-sm ${styles}`}>
                   <Icon size={17} className="shrink-0 mt-0.5" />
@@ -195,13 +195,13 @@ export default function PracticeSet() {
               setShowSummary(false);
               goTo(0);
             }}
-            className="border border-[#12213D]/15 text-[#12213D] font-semibold px-5 py-2.5 rounded-full hover:bg-[#12213D]/5"
+            className="border border-ink/15 text-ink font-semibold px-5 py-2.5 rounded-full hover:bg-ink/5"
           >
             {t("practiceSet.reviewAgain")}
           </button>
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-[#087fd1] text-white font-semibold px-5 py-2.5 rounded-full hover:bg-[#066fb8]"
+            className="bg-accent text-white font-semibold px-5 py-2.5 rounded-full hover:bg-accent-press"
           >
             {t("practiceSet.home")}
           </button>
@@ -212,7 +212,7 @@ export default function PracticeSet() {
 
   return (
     <HighlightsProvider>
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-surface">
       <TestHeader
         sectionLabel="Practice"
         title={`${set.title} — ${question._sectionTitle}`}

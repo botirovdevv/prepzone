@@ -30,7 +30,7 @@ export default function TestLockedScreen({ pausedAt, onUnlocked }) {
 
   return (
     <TestStatusScreen icon={LuLock} tone="amber" eyebrow={t("proctor.locked.eyebrow")} title={t("proctor.locked.title")}>
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">{t("proctor.locked.text")}</p>
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-2">{t("proctor.locked.text")}</p>
       <BigTimer caption={t("proctor.locked.left")}>{formatRemaining(remaining)}</BigTimer>
     </TestStatusScreen>
   );

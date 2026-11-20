@@ -103,7 +103,7 @@ export default function SessionResults() {
                 title={meta.title}
                 subtitle={r.incomplete ? t("results.incomplete") : undefined}
                 action={
-                  <span className="font-display text-3xl font-extrabold tabular-nums text-[#087fd1]">{r.scaledScore}</span>
+                  <span className="font-display text-3xl font-extrabold tabular-nums text-accent">{r.scaledScore}</span>
                 }
               />
               <div className="p-5 sm:p-6">

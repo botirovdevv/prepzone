@@ -20,7 +20,13 @@ function passwordScore(pw) {
   return Math.min(4, Math.floor(score));
 }
 
-const STRENGTH_COLORS = ["#e5484d", "#e5484d", "#f5a524", "#30a46c", "#30a46c"];
+const STRENGTH_COLORS = [
+  "rgb(var(--c-danger))",
+  "rgb(var(--c-danger))",
+  "rgb(var(--c-warning))",
+  "rgb(var(--c-success))",
+  "rgb(var(--c-success))",
+];
 
 function StrengthMeter({ password }) {
   const { tr } = useI18n();
@@ -34,7 +40,7 @@ function StrengthMeter({ password }) {
           <span
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-200"
-            style={{ background: i <= score ? color : "rgba(0,0,0,0.08)" }}
+            style={{ background: i <= score ? color : "rgb(var(--c-ink) / 0.1)" }}
           />
         ))}
       </div>
@@ -96,7 +102,7 @@ export default function Register() {
       footer={
         <>
           {t("auth.register.haveAccount")}{" "}
-          <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
+          <Link to="/login" className="font-semibold text-accent hover:underline">
             {t("auth.register.login")}
           </Link>
         </>
@@ -164,7 +170,7 @@ export default function Register() {
           {t("auth.register.submit")}
         </PrimaryButton>
 
-        <p className="text-center text-[13px] leading-[1.5] text-[#86868b]">
+        <p className="text-center text-[13px] leading-[1.5] text-ink-3">
           {t("auth.register.codeNote")}
         </p>
       </form>

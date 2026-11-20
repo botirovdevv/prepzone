@@ -110,7 +110,7 @@ function QuestionPanel({
             aria-valuenow={Math.round(left)}
             className="group relative hidden w-2 shrink-0 cursor-col-resize touch-none bg-gray-200 hover:bg-gray-300 md:block"
           >
-            <span className="absolute left-1/2 top-1/2 flex h-10 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 shadow-sm">
+            <span className="absolute left-1/2 top-1/2 flex h-10 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-gray-300 bg-surface text-gray-500 shadow-sm">
               <LuGripVertical size={14} />
             </span>
             <div className="absolute left-1/2 top-3 flex -translate-x-1/2 flex-col gap-1">
@@ -118,7 +118,7 @@ function QuestionPanel({
                 type="button"
                 onClick={() => setLeft((l) => (l >= 70 ? 50 : 75))}
                 title={left >= 70 ? "Restore" : "Expand passage"}
-                className="flex h-6 w-6 items-center justify-center rounded bg-white text-gray-600 shadow-sm hover:text-gray-900"
+                className="flex h-6 w-6 items-center justify-center rounded bg-surface text-gray-600 shadow-sm hover:text-gray-900"
               >
                 {left >= 70 ? <LuMinimize2 size={12} /> : <LuMaximize2 size={12} />}
               </button>
@@ -132,7 +132,7 @@ function QuestionPanel({
           splitView ? "md:flex-1 md:overflow-y-auto" : "mx-auto w-full max-w-3xl"
         } passage-scroll p-5 sm:p-8`}
       >
-        <div className="flex items-stretch overflow-hidden rounded-t-md border-b-2 border-dashed border-gray-400 bg-[#F3F4F6] text-sm">
+        <div className="flex items-stretch overflow-hidden rounded-t-md border-b-2 border-dashed border-gray-400 bg-fill text-sm">
           <div className="flex w-9 items-center justify-center bg-gray-900 font-bold text-white">{index + 1}</div>
           <button
             type="button"
@@ -151,7 +151,7 @@ function QuestionPanel({
               aria-pressed={eliminator}
               title="Cross out answer choices"
               className={`m-1 flex items-center rounded border px-2 text-xs font-bold ${
-                eliminator ? "border-[#375DFB] bg-[#375DFB] text-white" : "border-gray-500 text-gray-800 hover:bg-gray-200"
+                eliminator ? "border-accent bg-accent text-white" : "border-gray-500 text-gray-800 hover:bg-gray-200"
               }`}
             >
               <span className="line-through decoration-2">ABC</span>
@@ -201,7 +201,7 @@ function QuestionPanel({
                 const v = e.target.value.replace(/\s/g, "");
                 if (isValidSprInput(v)) onSelectAnswer(v || null);
               }}
-              className="w-44 rounded-md border-2 border-gray-400 px-3 py-2.5 text-lg font-semibold tracking-wide focus:border-[#375DFB] focus:outline-none"
+              className="w-44 rounded-md border-2 border-gray-400 px-3 py-2.5 text-lg font-semibold tracking-wide focus:border-accent focus:outline-none"
             />
             <div className="mt-4 text-sm text-gray-600">
               Answer Preview: <span className="text-base font-semibold text-gray-900">{selected || ""}</span>
@@ -232,7 +232,7 @@ function QuestionPanel({
                       showFeedback
                         ? feedbackClass || "border-gray-200 opacity-60"
                         : isSelected
-                        ? "border-[#375DFB] bg-blue-50"
+                        ? "border-accent bg-blue-50"
                         : "border-gray-300 hover:border-gray-500"
                     }
                     ${isCrossed ? "opacity-50" : ""}
@@ -246,7 +246,7 @@ function QuestionPanel({
                           : showFeedback && isSelected
                           ? "border-red-500 bg-red-500 text-white"
                           : isSelected
-                          ? "border-[#375DFB] bg-[#375DFB] text-white"
+                          ? "border-accent bg-accent text-white"
                           : "border-gray-700 text-gray-800"
                       }`}
                   >

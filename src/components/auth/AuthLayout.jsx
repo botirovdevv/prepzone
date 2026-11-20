@@ -10,34 +10,34 @@ import { LanguageSwitch, useI18n } from "../../i18n";
 // ------------------------------------------------------------------
 export default function AuthLayout({ eyebrow, title, subtitle, children, footer }) {
   return (
-    <div className="pz-auth-bg relative flex min-h-[100dvh] flex-col text-[#1d1d1f]">
+    <div className="pz-auth-bg relative flex min-h-[100dvh] flex-col text-ink">
       <AuthNavbar />
 
       <main className="mx-auto grid w-full max-w-[1120px] flex-1 items-center gap-10 px-4 pb-10 pt-6 sm:px-8 sm:pt-10 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:gap-14 lg:py-12">
         <div className="mx-auto w-full max-w-[440px]">
           <div className="pz-rise mb-7 px-1">
             {eyebrow && (
-              <p className="text-[13px] font-semibold tracking-[-0.005em] text-[#087fd1]">{eyebrow}</p>
+              <p className="text-[13px] font-semibold tracking-[-0.005em] text-accent">{eyebrow}</p>
             )}
             <h1 className="mt-1 font-display text-[34px] font-bold leading-[1.06] tracking-[-0.03em] sm:text-[40px]">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.01em] text-[#6e6e73]">{subtitle}</p>
+              <p className="mt-3 text-[17px] leading-[1.47] tracking-[-0.01em] text-ink-2">{subtitle}</p>
             )}
           </div>
 
           <div className="pz-rise-2 pz-auth-card rounded-[28px] p-5 sm:p-7">{children}</div>
 
           {footer && (
-            <div className="pz-rise-3 mt-6 text-center text-[15px] text-[#6e6e73]">{footer}</div>
+            <div className="pz-rise-3 mt-6 text-center text-[15px] text-ink-2">{footer}</div>
           )}
         </div>
 
         <Showcase />
       </main>
 
-      <footer className="flex flex-col items-center gap-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-[#86868b]">
+      <footer className="flex flex-col items-center gap-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-ink-3">
         <LanguageSwitch className="sm:hidden" />
         <span>&copy; {new Date().getFullYear()} Prepzone</span>
       </footer>
@@ -79,7 +79,7 @@ function Showcase() {
                 <span className="tabular-nums text-white">{value}</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-white" style={{ width: `${(value / max) * 100}%` }} />
+                <div className="h-full rounded-full bg-surface" style={{ width: `${(value / max) * 100}%` }} />
               </div>
             </div>
           ))}

@@ -16,7 +16,7 @@ function Segmented({ value, onChange, disabled }) {
           disabled={disabled}
           onClick={() => onChange(o.id)}
           className={`rounded-lg py-1.5 text-[13px] font-semibold transition disabled:opacity-50 ${
-            value === o.id ? "bg-white text-[#12213D]" : "text-white/70 hover:text-white"
+            value === o.id ? "bg-white text-ink" : "text-white/70 hover:text-white"
           }`}
         >
           {t(`studyRoom.qualityOptions.${o.id}`)}
@@ -49,7 +49,7 @@ export function QualityPanel({ incoming, outgoing, onIncoming, onOutgoing, apply
       ref={ref}
       role="dialog"
       aria-label={t("studyRoom.quality")}
-      className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-2xl bg-[#1b2c4d] p-4 text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/10"
+      className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-2xl bg-night p-4 text-white shadow-[0_20px_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/10"
     >
       <div className="mb-3 flex items-center justify-between">
         <p className="font-display text-[15px] font-bold">{t("studyRoom.quality")}</p>

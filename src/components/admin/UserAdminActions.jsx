@@ -52,11 +52,11 @@ export default function UserAdminActions({ user, onUpdated }) {
   return (
     <div className="mb-5 grid max-w-3xl gap-4 sm:grid-cols-2" onClick={(e) => e.stopPropagation()}>
       {canBlock && (
-        <div className="rounded-2xl border border-[#12213D]/[0.08] bg-white p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">Bloklash</p>
+        <div className="rounded-2xl border border-ink/[0.08] bg-surface p-4">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-ink/45">Bloklash</p>
           {user.blocked ? (
             <>
-              <p className="mb-3 text-[13px] text-[#12213D]/70">
+              <p className="mb-3 text-[13px] text-ink/70">
                 Bloklangan{user.blockedReason ? `: ${user.blockedReason}` : "."}
               </p>
               <Button variant="outline" size="sm" disabled={busy} onClick={() => setBlocked(false)}>
@@ -81,18 +81,18 @@ export default function UserAdminActions({ user, onUpdated }) {
       )}
 
       {isOwner && !user.blocked && (
-        <div className="rounded-2xl border border-[#12213D]/[0.08] bg-white p-4">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-[#12213D]/45">
+        <div className="rounded-2xl border border-ink/[0.08] bg-surface p-4">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-ink/45">
             Admin ruxsatlari
           </p>
           <div className="mb-3 space-y-1.5">
             {PERMS.map((p) => (
-              <label key={p} className="flex cursor-pointer items-center gap-2 text-[13px] text-[#12213D]">
+              <label key={p} className="flex cursor-pointer items-center gap-2 text-[13px] text-ink">
                 <input
                   type="checkbox"
                   checked={perms.includes(p)}
                   onChange={(e) => setPerms((prev) => (e.target.checked ? [...prev, p] : prev.filter((x) => x !== p)))}
-                  className="h-4 w-4 accent-[#087fd1]"
+                  className="h-4 w-4 accent-accent"
                 />
                 {ADMIN_PERM_LABELS[p]}
               </label>

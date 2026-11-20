@@ -33,7 +33,7 @@ export default function SessionWaitingScreen({ title, scheduledAt, onReady }) {
 
   return (
     <TestStatusScreen icon={LuClock} eyebrow={t("proctor.waiting.eyebrow")} title={title}>
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-2">
         {t("proctor.waiting.text", { time })}
       </p>
       <BigTimer caption={t("proctor.waiting.left")}>{formatRemaining(remaining)}</BigTimer>

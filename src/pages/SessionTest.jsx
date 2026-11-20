@@ -587,7 +587,7 @@ export default function SessionTest() {
     if (contentError) {
       return (
         <TestStatusScreen title={t("common.error")}>
-          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#566176]">
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink-2">
             {joinError ? `${joinError} ${t("proctor.joinErrorHint")}` : t("proctor.contentError")}
           </p>
         </TestStatusScreen>
@@ -621,7 +621,7 @@ export default function SessionTest() {
 
   return (
     <HighlightsProvider>
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-surface">
       <TestHeader
         sectionLabel={sectionLabel}
         title={section.title}

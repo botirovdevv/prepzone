@@ -63,7 +63,7 @@ export default function TelegramPromo() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="tg-promo-title"
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+        className="relative w-full max-w-sm rounded-2xl bg-surface p-6 text-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -77,7 +77,7 @@ export default function TelegramPromo() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#229ED9] text-white">
           <FaTelegramPlane size={28} />
         </div>
-        <h2 id="tg-promo-title" className="text-lg font-bold text-[#12213D]">
+        <h2 id="tg-promo-title" className="text-lg font-bold text-ink">
           {t("telegramPromo.title")}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-gray-600">{t("telegramPromo.text")}</p>

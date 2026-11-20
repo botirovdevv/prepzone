@@ -66,7 +66,7 @@ export default function DesmosCalculator({ onClose }) {
       <div className="relative h-[min(520px,calc(100vh-200px))] min-h-[320px]">
         <div ref={mountRef} className="absolute inset-0" />
         {status !== "ready" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface px-6 text-center">
             <LuCalculator size={28} className="text-gray-300" />
             {status === "loading" ? (
               <p className="text-sm text-gray-500">Loading calculator…</p>

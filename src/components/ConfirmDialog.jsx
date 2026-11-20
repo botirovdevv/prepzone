@@ -59,7 +59,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-[#12213D]/40 p-4 sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-ink/40 p-4 sm:items-center"
       onClick={() => !busy && onClose()}
     >
       <form
@@ -68,24 +68,24 @@ export default function ConfirmDialog({
         aria-labelledby="confirm-title"
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-white shadow-[0_24px_60px_-20px_rgba(18,33,61,0.45)]"
+        className="w-full max-w-md rounded-2xl bg-surface shadow-[0_24px_60px_-20px_rgba(18,33,61,0.45)]"
       >
         <div className="flex items-start gap-3 p-5 sm:p-6">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-600">
             <LuTriangleAlert size={18} />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 id="confirm-title" className="font-display text-[17px] font-bold text-[#12213D]">
+            <h2 id="confirm-title" className="font-display text-[17px] font-bold text-ink">
               {title}
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-[#12213D]/60">{description}</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink/60">{description}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={busy}
             aria-label={t("common.close")}
-            className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-lg text-[#12213D]/40 hover:bg-[#12213D]/5 hover:text-[#12213D]"
+            className="-mr-1 -mt-1 flex h-8 w-8 items-center justify-center rounded-lg text-ink/40 hover:bg-ink/5 hover:text-ink"
           >
             <LuX size={16} />
           </button>
@@ -119,7 +119,7 @@ export default function ConfirmDialog({
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-[#12213D]/[0.06] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <div className="flex flex-col-reverse gap-2 border-t border-ink/[0.06] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
             {t("common.cancel")}
           </Button>

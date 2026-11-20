@@ -5,11 +5,11 @@ import FloatingPanel from "./FloatingPanel";
 // shakllar va formulalar, chizmalari shu yerda SVG'da qayta chizilgan
 // (tashqi rasm fayli kerak emas, har qanday o'lchamda tiniq).
 
-const S = { fill: "none", stroke: "#111827", strokeWidth: 1.6, strokeLinejoin: "round" };
+const S = { fill: "none", stroke: "rgb(var(--c-ink))", strokeWidth: 1.6, strokeLinejoin: "round" };
 const DASH = { ...S, strokeDasharray: "4 3" };
-const VAR = { fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fill: "#111827" };
-const FORMULA = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 16, fill: "#111827", textAnchor: "middle" };
-const SMALL = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 12, fill: "#111827" };
+const VAR = { fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fill: "rgb(var(--c-ink))" };
+const FORMULA = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 16, fill: "rgb(var(--c-ink))", textAnchor: "middle" };
+const SMALL = { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 12, fill: "rgb(var(--c-ink))" };
 
 function RightAngle({ x, y, dx = 8, dy = -8 }) {
   return <path d={`M${x + dx} ${y} V${y + dy} H${x}`} {...S} strokeWidth={1.2} />;
@@ -34,7 +34,7 @@ function ReferenceFigure() {
       {/* ---------- 1-qator: tekis shakllar ---------- */}
       {/* Doira */}
       <circle cx="65" cy="82" r="44" {...S} />
-      <circle cx="65" cy="82" r="2.2" fill="#111827" />
+      <circle cx="65" cy="82" r="2.2" fill="rgb(var(--c-ink))" />
       <line x1="65" y1="82" x2="109" y2="82" {...S} />
       <text x="83" y="76" {...VAR}>r</text>
       <Formula x={65} y={162}>
@@ -116,7 +116,7 @@ function ReferenceFigure() {
       <path d="M188 326 A40 11 0 0 0 268 326" {...S} />
       <path d="M188 326 A40 11 0 0 1 268 326" {...DASH} />
       <line x1="228" y1="258" x2="268" y2="258" {...S} />
-      <circle cx="228" cy="258" r="2" fill="#111827" />
+      <circle cx="228" cy="258" r="2" fill="rgb(var(--c-ink))" />
       <text x="244" y="253" {...VAR}>r</text>
       <text x="275" y="296" {...VAR}>h</text>
       <Formula x={228} y={384}>
@@ -129,7 +129,7 @@ function ReferenceFigure() {
       <path d="M338 292 A42 11 0 0 0 422 292" {...S} />
       <path d="M338 292 A42 11 0 0 1 422 292" {...DASH} />
       <line x1="380" y1="292" x2="422" y2="292" {...S} />
-      <circle cx="380" cy="292" r="2" fill="#111827" />
+      <circle cx="380" cy="292" r="2" fill="rgb(var(--c-ink))" />
       <text x="398" y="286" {...VAR}>r</text>
       <Formula x={380} y={384}>
         V = ⁴⁄₃π<tspan fontStyle="italic">r</tspan>³
@@ -161,7 +161,7 @@ function ReferenceFigure() {
       </Formula>
 
       {/* ---------- Qoidalar ---------- */}
-      <g fontFamily="Georgia, 'Times New Roman', serif" fontSize="14.5" fill="#111827">
+      <g fontFamily="Georgia, 'Times New Roman', serif" fontSize="14.5" fill="rgb(var(--c-ink))">
         <text x="20" y="424">The number of degrees of arc in a circle is 360.</text>
         <text x="20" y="446">The number of radians of arc in a circle is 2π.</text>
         <text x="20" y="468">The sum of the measures in degrees of the angles of a triangle is 180.</text>

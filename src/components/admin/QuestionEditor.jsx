@@ -151,15 +151,15 @@ export default function QuestionEditor({
   const templates = form.domain ? promptTemplates?.[form.domain] : null;
 
   return (
-    <div className="border border-[#12213D]/10 rounded-2xl overflow-hidden bg-white">
+    <div className="border border-ink/10 rounded-2xl overflow-hidden bg-surface">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 bg-[#F6F7FB]"
+        className="w-full flex items-center justify-between px-4 py-3.5 bg-canvas"
       >
-        <span className="font-semibold text-sm text-[#12213D]">
+        <span className="font-semibold text-sm text-ink">
           {title}{" "}
-          <span className="text-[#12213D]/35 font-normal">({questions.length} ta savol)</span>
+          <span className="text-ink/35 font-normal">({questions.length} ta savol)</span>
         </span>
         {open ? <LuChevronUp size={16} /> : <LuChevronDown size={16} />}
       </button>
@@ -171,21 +171,21 @@ export default function QuestionEditor({
               {questions.map((q, i) => (
                 <div
                   key={q.id}
-                  className="flex items-start gap-2.5 bg-[#12213D]/[0.02] border border-[#12213D]/6 rounded-xl p-3 text-sm"
+                  className="flex items-start gap-2.5 bg-ink/[0.02] border border-ink/6 rounded-xl p-3 text-sm"
                 >
-                  <span className="font-bold text-[#12213D]/35 shrink-0">{i + 1}.</span>
+                  <span className="font-bold text-ink/35 shrink-0">{i + 1}.</span>
                   {q.image && (
                     <img
                       src={q.image}
                       alt=""
-                      className="w-10 h-10 rounded-md object-cover border border-[#12213D]/10 shrink-0"
+                      className="w-10 h-10 rounded-md object-cover border border-ink/10 shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[#12213D]/75 line-clamp-2">{q.prompt}</p>
+                    <p className="text-ink/75 line-clamp-2">{q.prompt}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {q.domain && domainOptions && (
-                        <span className="text-[10px] font-semibold text-[#087fd1] bg-[#087fd1]/8 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-semibold text-accent bg-accent/8 px-1.5 py-0.5 rounded">
                           {domainOptions.find((d) => d.id === q.domain)?.label || q.domain}
                         </span>
                       )}
@@ -216,7 +216,7 @@ export default function QuestionEditor({
                     </div>
                     {reviewId === q.id && (
                       <div
-                        className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-white p-2.5 outline-none"
+                        className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-surface p-2.5 outline-none"
                         // Panelni bosgach Ctrl+V shu yerga tushishi uchun fokuslanadi.
                         tabIndex={-1}
                         onPaste={(e) => {
@@ -242,7 +242,7 @@ export default function QuestionEditor({
                           }}
                         />
                         {q.image ? (
-                          <div className="flex items-center gap-2.5 rounded-lg border border-[#12213D]/10 bg-[#12213D]/[0.02] p-2">
+                          <div className="flex items-center gap-2.5 rounded-lg border border-ink/10 bg-ink/[0.02] p-2">
                             <img src={q.image} alt="Savol rasmi" className="h-20 max-w-[60%] rounded object-contain" />
                             <button
                               type="button"
@@ -258,21 +258,21 @@ export default function QuestionEditor({
                               type="button"
                               onClick={() => reviewImageRef.current?.click()}
                               disabled={reviewImageBusy}
-                              className="flex items-center gap-1.5 rounded-lg bg-[#087fd1]/8 px-2.5 py-1 text-xs font-semibold text-[#087fd1] hover:bg-[#087fd1]/12 disabled:opacity-60"
+                              className="flex items-center gap-1.5 rounded-lg bg-accent/8 px-2.5 py-1 text-xs font-semibold text-accent hover:bg-accent/12 disabled:opacity-60"
                             >
                               {reviewImageBusy ? <LuLoaderCircle size={13} className="animate-spin" /> : <LuImage size={13} />}
                               Rasm biriktirish
                             </button>
-                            <span className="text-[11px] text-[#12213D]/40">yoki skrinshotni shu yerga Ctrl+V</span>
+                            <span className="text-[11px] text-ink/40">yoki skrinshotni shu yerga Ctrl+V</span>
                           </div>
                         )}
                         {q.passage && (
                           <p
-                            className="text-xs leading-relaxed text-[#12213D]/70"
+                            className="text-xs leading-relaxed text-ink/70"
                             dangerouslySetInnerHTML={{ __html: sanitizeRichText(q.passage) }}
                           />
                         )}
-                        <p className="text-xs font-medium text-[#12213D]">{q.prompt}</p>
+                        <p className="text-xs font-medium text-ink">{q.prompt}</p>
                         <div className="grid gap-1">
                           {q.choices?.map((c) => (
                             <button
@@ -283,7 +283,7 @@ export default function QuestionEditor({
                               className={`flex gap-1.5 rounded px-2 py-1 text-left text-xs ${
                                 q.correctAnswer === c.label
                                   ? "bg-emerald-500/12 font-semibold text-emerald-800"
-                                  : "text-[#12213D]/70 hover:bg-[#12213D]/5"
+                                  : "text-ink/70 hover:bg-ink/5"
                               }`}
                             >
                               <span className="font-bold">{c.label})</span>
@@ -291,7 +291,7 @@ export default function QuestionEditor({
                             </button>
                           ))}
                         </div>
-                        {q.explanation && <p className="text-[11px] text-[#12213D]/50">{q.explanation}</p>}
+                        {q.explanation && <p className="text-[11px] text-ink/50">{q.explanation}</p>}
                         <button
                           type="button"
                           onClick={() => {
@@ -305,7 +305,7 @@ export default function QuestionEditor({
                       </div>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-bold text-[#0E9A6C] bg-[#12B981]/10 px-2 py-0.5 rounded">
+                  <span className="shrink-0 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded">
                     {q.correctAnswer}
                   </span>
                   <button
@@ -320,14 +320,14 @@ export default function QuestionEditor({
             </div>
           )}
 
-          <div className="border-t border-[#12213D]/8 pt-4 space-y-3">
+          <div className="border-t border-ink/8 pt-4 space-y-3">
             {/* Bittalab / Ko'plab (bulk) rejim almashtirgich */}
-            <div className="flex gap-1.5 bg-[#12213D]/[0.04] p-1 rounded-xl w-fit">
+            <div className="flex gap-1.5 bg-ink/[0.04] p-1 rounded-xl w-fit">
               <button
                 type="button"
                 onClick={() => setMode("single")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  mode === "single" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                  mode === "single" ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                 }`}
               >
                 Bittalab qo'shish
@@ -336,7 +336,7 @@ export default function QuestionEditor({
                 type="button"
                 onClick={() => setMode("bulk")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  mode === "bulk" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                  mode === "bulk" ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                 }`}
               >
                 <LuLayers size={13} /> Ko'plab qo'shish
@@ -346,7 +346,7 @@ export default function QuestionEditor({
                   type="button"
                   onClick={() => setMode("ai")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                    mode === "ai" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                    mode === "ai" ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                   }`}
                 >
                   <LuWandSparkles size={13} /> AI import (PDF/rasm)
@@ -357,7 +357,7 @@ export default function QuestionEditor({
                   type="button"
                   onClick={() => setMode("bank")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                    mode === "bank" ? "bg-white text-[#12213D] shadow-sm" : "text-[#12213D]/50"
+                    mode === "bank" ? "bg-surface text-ink shadow-sm" : "text-ink/50"
                   }`}
                 >
                   <LuDatabase size={13} /> Bankdan olish
@@ -369,13 +369,13 @@ export default function QuestionEditor({
                 rejimining o'z ichida alohida mavzu tanlovi bor */}
             {domainOptions && mode !== "bank" && mode !== "ai" && (
               <div>
-                <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">
+                <label className="block text-xs font-semibold text-ink/55 mb-1.5">
                   Mavzu bloki (domain)
                 </label>
                 <select
                   value={form.domain}
                   onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
-                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10 bg-white"
+                  className="w-full rounded-xl border border-ink/12 px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10 bg-surface"
                 >
                   <option value="">— tanlanmagan —</option>
                   {domainOptions.map((d) => (
@@ -385,7 +385,7 @@ export default function QuestionEditor({
                   ))}
                 </select>
                 {form.domain && domainOptions.find((d) => d.id === form.domain)?.hint && (
-                  <p className="text-[11px] text-[#12213D]/40 mt-1">
+                  <p className="text-[11px] text-ink/40 mt-1">
                     {domainOptions.find((d) => d.id === form.domain).hint}
                   </p>
                 )}
@@ -409,7 +409,7 @@ export default function QuestionEditor({
               <>
                 {showPassage && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#12213D]/55 mb-1.5">
+                    <label className="block text-xs font-semibold text-ink/55 mb-1.5">
                       Passage (matn) — ixtiyoriy
                     </label>
                     <RichTextEditor
@@ -423,8 +423,8 @@ export default function QuestionEditor({
 
                 {templates && templates.length > 0 && (
                   <div>
-                    <p className="flex items-center gap-1.5 text-xs font-semibold text-[#12213D]/55 mb-1.5">
-                      <LuSparkles size={13} className="text-[#087fd1]" />
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-ink/55 mb-1.5">
+                      <LuSparkles size={13} className="text-accent" />
                       Tez shablon — bosing, savol maydoni to'ldiriladi
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -433,7 +433,7 @@ export default function QuestionEditor({
                           key={t.label}
                           type="button"
                           onClick={() => setForm((f) => ({ ...f, prompt: t.text }))}
-                          className="text-xs font-medium text-[#087fd1] bg-[#087fd1]/8 hover:bg-[#087fd1]/15 px-2.5 py-1.5 rounded-lg transition"
+                          className="text-xs font-medium text-accent bg-accent/8 hover:bg-accent/15 px-2.5 py-1.5 rounded-lg transition"
                         >
                           {t.label}
                         </button>
@@ -447,7 +447,7 @@ export default function QuestionEditor({
                   onChange={(e) => setForm({ ...form, prompt: e.target.value })}
                   placeholder="Savol matni"
                   rows={2}
-                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                  className="w-full rounded-xl border border-ink/12 px-3 py-2 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
                 />
 
                 {allowImage && (
@@ -460,13 +460,13 @@ export default function QuestionEditor({
                       className="hidden"
                     />
                     {form.image ? (
-                      <div className="flex items-center gap-3 bg-[#12213D]/[0.02] border border-[#12213D]/10 rounded-xl p-2.5">
+                      <div className="flex items-center gap-3 bg-ink/[0.02] border border-ink/10 rounded-xl p-2.5">
                         <img
                           src={form.image}
                           alt="Yuklangan rasm"
-                          className="w-16 h-16 rounded-lg object-cover border border-[#12213D]/10"
+                          className="w-16 h-16 rounded-lg object-cover border border-ink/10"
                         />
-                        <div className="flex-1 text-xs text-[#12213D]/50">Rasm biriktirildi</div>
+                        <div className="flex-1 text-xs text-ink/50">Rasm biriktirildi</div>
                         <button
                           type="button"
                           onClick={() => setForm((f) => ({ ...f, image: null }))}
@@ -480,7 +480,7 @@ export default function QuestionEditor({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={imageBusy}
-                        className="flex items-center gap-2 text-sm font-semibold text-[#087fd1] bg-[#087fd1]/8 hover:bg-[#087fd1]/12 px-3.5 py-2 rounded-xl transition disabled:opacity-60"
+                        className="flex items-center gap-2 text-sm font-semibold text-accent bg-accent/8 hover:bg-accent/12 px-3.5 py-2 rounded-xl transition disabled:opacity-60"
                       >
                         {imageBusy ? (
                           <LuLoaderCircle size={15} className="animate-spin" />
@@ -497,7 +497,7 @@ export default function QuestionEditor({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {form.choices.map((c, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="w-5 text-xs font-bold text-[#12213D]/35">{"ABCD"[i]}</span>
+                      <span className="w-5 text-xs font-bold text-ink/35">{"ABCD"[i]}</span>
                       <input
                         value={c}
                         onChange={(e) => {
@@ -506,17 +506,17 @@ export default function QuestionEditor({
                           setForm({ ...form, choices: next });
                         }}
                         placeholder={`${"ABCD"[i]} varianti`}
-                        className="flex-1 rounded-xl border border-[#12213D]/12 px-3 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                        className="flex-1 rounded-xl border border-ink/12 px-3 py-1.5 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
                       />
                     </div>
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="text-xs font-semibold text-[#12213D]/55">To'g'ri javob:</label>
+                  <label className="text-xs font-semibold text-ink/55">To'g'ri javob:</label>
                   <select
                     value={form.correctAnswer}
                     onChange={(e) => setForm({ ...form, correctAnswer: e.target.value })}
-                    className="rounded-xl border border-[#12213D]/12 px-2 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                    className="rounded-xl border border-ink/12 px-2 py-1.5 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
                   >
                     {["A", "B", "C", "D"].map((l) => (
                       <option key={l} value={l}>
@@ -524,11 +524,11 @@ export default function QuestionEditor({
                       </option>
                     ))}
                   </select>
-                  <label className="text-xs font-semibold text-[#12213D]/55">Qiyinlik:</label>
+                  <label className="text-xs font-semibold text-ink/55">Qiyinlik:</label>
                   <select
                     value={form.difficulty}
                     onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                    className="rounded-xl border border-[#12213D]/12 px-2 py-1.5 text-sm outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                    className="rounded-xl border border-ink/12 px-2 py-1.5 text-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
                   >
                     {DIFFICULTIES.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -539,7 +539,7 @@ export default function QuestionEditor({
                   <button
                     type="button"
                     onClick={addQuestion}
-                    className="ml-auto flex items-center gap-1.5 bg-[#087fd1] text-white text-sm font-semibold px-3.5 py-1.5 rounded-xl hover:bg-[#066fb8]"
+                    className="ml-auto flex items-center gap-1.5 bg-accent text-white text-sm font-semibold px-3.5 py-1.5 rounded-xl hover:bg-accent-press"
                   >
                     <LuPlus size={15} /> Qo'shish
                   </button>
@@ -547,13 +547,13 @@ export default function QuestionEditor({
               </>
             ) : (
               <>
-                <p className="text-xs text-[#12213D]/45 leading-relaxed">
+                <p className="text-xs text-ink/45 leading-relaxed">
                   Bir nechta savolni pastdagi qutiga joylashtiring — har birini{" "}
-                  <code className="bg-[#12213D]/6 px-1 rounded">---</code> bilan ajrating. Har
-                  savolda <code className="bg-[#12213D]/6 px-1 rounded">A)</code>–
-                  <code className="bg-[#12213D]/6 px-1 rounded">D)</code> variantlar va{" "}
-                  <code className="bg-[#12213D]/6 px-1 rounded">Javob: B</code> qatori bo'lishi shart.
-                  Ixtiyoriy <code className="bg-[#12213D]/6 px-1 rounded">Qiyinlik: oson/o'rta/qiyin</code>{" "}
+                  <code className="bg-ink/6 px-1 rounded">---</code> bilan ajrating. Har
+                  savolda <code className="bg-ink/6 px-1 rounded">A)</code>–
+                  <code className="bg-ink/6 px-1 rounded">D)</code> variantlar va{" "}
+                  <code className="bg-ink/6 px-1 rounded">Javob: B</code> qatori bo'lishi shart.
+                  Ixtiyoriy <code className="bg-ink/6 px-1 rounded">Qiyinlik: oson/o'rta/qiyin</code>{" "}
                   qatori adaptiv yo'naltirish uchun ishlatiladi.
                 </p>
                 <textarea
@@ -561,7 +561,7 @@ export default function QuestionEditor({
                   onChange={(e) => setBulkText(e.target.value)}
                   placeholder={BULK_PLACEHOLDER}
                   rows={10}
-                  className="w-full rounded-xl border border-[#12213D]/12 px-3 py-2 text-sm font-mono outline-none transition focus:border-[#087fd1] focus:ring-4 focus:ring-[#087fd1]/10"
+                  className="w-full rounded-xl border border-ink/12 px-3 py-2 text-sm font-mono outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
                 />
 
                 {bulkErrors.length > 0 && (
@@ -584,7 +584,7 @@ export default function QuestionEditor({
                   type="button"
                   onClick={handleBulkAdd}
                   disabled={!bulkText.trim()}
-                  className="flex items-center gap-1.5 bg-[#087fd1] text-white text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-[#066fb8] disabled:opacity-40"
+                  className="flex items-center gap-1.5 bg-accent text-white text-sm font-semibold px-3.5 py-2 rounded-xl hover:bg-accent-press disabled:opacity-40"
                 >
                   <LuLayers size={15} /> Barchasini qo'shish
                 </button>

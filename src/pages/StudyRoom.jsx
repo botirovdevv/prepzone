@@ -104,18 +104,18 @@ function PreJoin({ code, onJoin, joining, error }) {
   }, [camOn, device]);
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4 py-8">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4 py-8">
       <div className="w-full max-w-xl">
         <Link
           to="/study-room"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#12213D]/55 hover:text-[#12213D]"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink/55 hover:text-ink"
         >
           <LuArrowLeft size={16} /> {t("studyRoom.back")}
         </Link>
-        <div className="overflow-hidden rounded-3xl bg-white shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
+        <div className="overflow-hidden rounded-3xl bg-surface shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
           {/* Telefonda oldindan ko'rish ham tik (9:16) — yuboriladigan kadrning o'zi. */}
           <div
-            className={`relative mx-auto bg-[#12213D] ${device.portrait ? "aspect-[9/16] h-[58dvh] max-w-full" : "aspect-video"}`}
+            className={`relative mx-auto bg-night ${device.portrait ? "aspect-[9/16] h-[58dvh] max-w-full" : "aspect-video"}`}
           >
             {camOn ? (
               <video ref={videoRef} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-contain" />
@@ -134,11 +134,11 @@ function PreJoin({ code, onJoin, joining, error }) {
             </div>
           </div>
           <div className="p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#087fd1]">Study Room</p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold text-[#12213D]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-accent">Study Room</p>
+            <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">
               {t("studyRoom.room")} <span className="font-mono tracking-[0.12em]">{code}</span>
             </h1>
-            <p className="mt-1 text-sm text-[#12213D]/55">{t("studyRoom.checkDevices")}</p>
+            <p className="mt-1 text-sm text-ink/55">{t("studyRoom.checkDevices")}</p>
             {(mediaError || error) && (
               <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error || mediaError}</p>
             )}
@@ -228,7 +228,7 @@ function ParticipantTile({ tile, className = "", compact = false, forceCover = f
   return (
     <div
       ref={boxRef}
-      className={`relative overflow-hidden rounded-2xl bg-[#1b2c4d] ring-2 transition ${
+      className={`relative overflow-hidden rounded-2xl bg-night ring-2 transition ${
         speaking && !isScreen ? "ring-emerald-400" : "ring-transparent"
       } ${className}`}
     >
@@ -246,7 +246,7 @@ function ParticipantTile({ tile, className = "", compact = false, forceCover = f
       {!showVideo && (
         <div className="flex h-full items-center justify-center">
           <span
-            className={`flex items-center justify-center rounded-full bg-[#087fd1] font-display font-bold text-white ${
+            className={`flex items-center justify-center rounded-full bg-accent font-display font-bold text-white ${
               compact ? "h-9 w-9 text-base" : "h-16 w-16 text-2xl"
             }`}
           >
@@ -333,7 +333,7 @@ function TimeLeft({ endsAt }) {
     <span
       title={translate("studyRoom.timeLeft")}
       className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums ${
-        warn ? "bg-amber-400 text-[#12213D]" : "bg-white/10 text-white"
+        warn ? "bg-amber-400 text-ink" : "bg-white/10 text-white"
       }`}
     >
       <LuTimer size={14} /> {formatMs(remaining)}
@@ -345,7 +345,7 @@ function TimeWarning({ endsAt, limitMinutes }) {
   const remaining = useRemaining(endsAt);
   if (remaining <= 0 || remaining > WARN_MS) return null;
   return (
-    <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+    <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-ink">
       {translate("studyRoom.timeWarning", { limit: limitMinutes, n: Math.ceil(remaining / 60_000) })}
     </div>
   );
@@ -426,7 +426,7 @@ function NetworkNotices({ stats, peerName, cameraOn, outgoing, onCameraOff, onLo
         </div>
       )}
       {remoteBad && !localBad && (
-        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-ink">
           {t("studyRoom.peerSlow", { name: peerName })}
         </div>
       )}
@@ -452,7 +452,7 @@ function RemoteAudio({ stream }) {
         <button
           type="button"
           onClick={() => ref.current?.play().then(() => setBlocked(false), () => {})}
-          className="fixed bottom-24 left-1/2 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-xl bg-[#087fd1] px-4 py-2 text-sm font-semibold text-white shadow-lg"
+          className="fixed bottom-24 left-1/2 z-50 inline-flex -translate-x-1/2 items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg"
         >
           <LuVolume2 size={16} /> {translate("studyRoom.enableSound")}
         </button>
@@ -552,7 +552,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
 
   const mainArea = (
     <>
-      <div className={`h-full overflow-hidden rounded-2xl bg-white ${view === "screen" && screenTile ? "hidden" : ""}`}>
+      <div className={`h-full overflow-hidden rounded-2xl bg-surface ${view === "screen" && screenTile ? "hidden" : ""}`}>
         <Whiteboard code={code} />
       </div>
       {view === "screen" && screenTile && <ParticipantTile tile={screenTile} className="h-full w-full" />}
@@ -569,7 +569,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
       onClick={() => setView(id)}
       title={label}
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-[13px] font-semibold transition ${
-        view === id ? "bg-white text-[#12213D]" : "text-white/70 hover:text-white"
+        view === id ? "bg-white text-ink" : "text-white/70 hover:text-white"
       }`}
     >
       {/* Telefonda joy tor — faol tabda matn, qolganlarida faqat ikonka. */}
@@ -626,7 +626,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
         onLowerQuality={() => updateQuality({ outgoing: "low" })}
       />
       {connection === "reconnecting" && (
-        <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-[#12213D]">
+        <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-semibold text-ink">
           {t("studyRoom.reconnecting")}
         </div>
       )}
@@ -709,13 +709,13 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
 function EndScreen({ title, message }) {
   const { t } = useI18n();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#F6F7FB] px-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-md rounded-3xl bg-surface p-8 text-center shadow-[0_20px_50px_-24px_rgba(18,33,61,0.35)]">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
           <LuAlarmClock size={26} />
         </span>
-        <h1 className="mt-4 font-display text-2xl font-extrabold text-[#12213D]">{title}</h1>
-        <p className="mt-2 text-sm text-[#12213D]/55">{message}</p>
+        <h1 className="mt-4 font-display text-2xl font-extrabold text-ink">{title}</h1>
+        <p className="mt-2 text-sm text-ink/55">{message}</p>
         <Button to="/study-room" className="mt-6 w-full">
           {t("studyRoom.backToLobby")}
         </Button>

@@ -6,12 +6,24 @@ export default {
       subtitle: "Profil, xavfsizlik va hisobingizga oid barcha sozlamalar shu yerda.",
       sections: {
         profil: "Profil",
+        korinish: "Ko'rinish",
         xavfsizlik: "Xavfsizlik",
         seanslar: "Faol seanslar",
         hisoblar: "Ulangan hisoblar",
         "xavfli-zona": "Xavfli zona",
       },
       since: "{date} dan beri",
+      appearance: {
+        title: "Ko'rinish",
+        subtitle: "Auto rejimida sayt qurilmangizning yorug'/qorong'i sozlamasiga ergashadi.",
+      },
+      theme: {
+        label: "Ko'rinish",
+        light: "Yorug'",
+        dark: "Qorong'i",
+        system: "Auto",
+        cycle: "Ko'rinish: {current}. {next} rejimiga o'tish",
+      },
       profile: {
         title: "Profil",
         subtitle: "Ismingiz va rasmingiz reyting va natijalarda ko'rinadi.",
@@ -115,12 +127,24 @@ export default {
       subtitle: "Your profile, security and all account settings in one place.",
       sections: {
         profil: "Profile",
+        korinish: "Appearance",
         xavfsizlik: "Security",
         seanslar: "Active sessions",
         hisoblar: "Linked accounts",
         "xavfli-zona": "Danger zone",
       },
       since: "Since {date}",
+      appearance: {
+        title: "Appearance",
+        subtitle: "In Auto mode the site follows your device's light/dark setting.",
+      },
+      theme: {
+        label: "Appearance",
+        light: "Light",
+        dark: "Dark",
+        system: "Auto",
+        cycle: "Appearance: {current}. Switch to {next}",
+      },
       profile: {
         title: "Profile",
         subtitle: "Your name and photo appear on the leaderboard and in results.",

@@ -17,8 +17,8 @@ export default function DesmosIndex() {
       />
       <Card className="flex flex-col items-center px-6 py-14 text-center">
         <IconTile icon={LuCalculator} tone="amber" size="lg" />
-        <p className="mt-4 font-display text-lg font-bold text-[#12213D]">{t("desmos.soonTitle")}</p>
-        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-[#12213D]/55">{t("desmos.soonText")}</p>
+        <p className="mt-4 font-display text-lg font-bold text-ink">{t("desmos.soonTitle")}</p>
+        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-ink/55">{t("desmos.soonText")}</p>
         <Button to="/dashboard" variant="outline" className="mt-6">
           {t("desmos.back")} <LuArrowRight size={16} />
         </Button>

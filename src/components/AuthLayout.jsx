@@ -7,15 +7,15 @@ const logo = "/Logo.png";
 export function AuthFooter() {
   const { t } = useI18n();
   return (
-    <footer className="relative z-10 flex flex-col items-center gap-2 py-6 text-center text-xs text-[#566176]">
+    <footer className="relative z-10 flex flex-col items-center gap-2 py-6 text-center text-xs text-ink-2">
       <nav className="flex gap-4">
-        <Link to="/terms" className="hover:text-[#111827]">
+        <Link to="/terms" className="hover:text-ink">
           {t("legal.footer.terms")}
         </Link>
-        <Link to="/privacy" className="hover:text-[#111827]">
+        <Link to="/privacy" className="hover:text-ink">
           {t("legal.footer.privacy")}
         </Link>
-        <Link to="/contact" className="hover:text-[#111827]">
+        <Link to="/contact" className="hover:text-ink">
           {t("legal.footer.contact")}
         </Link>
       </nav>
@@ -27,7 +27,7 @@ export function AuthFooter() {
 // Nuqtali fon, yuqori panel va footer bilan sahifa qobig'i (Login uslubida).
 export default function AuthLayout({ children, headerAction }) {
   return (
-    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-[#fcfcfa] text-[#111827]">
+    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-surface-2 text-ink">
       <div
         className="pointer-events-none absolute inset-0 z-0"
         style={{
@@ -38,10 +38,10 @@ export default function AuthLayout({ children, headerAction }) {
           backgroundSize: "100% 100%, 24px 24px",
         }}
       />
-      <header className="relative z-10 border-b border-[#111827]/[0.08] bg-[#fcfcfa]/80 backdrop-blur-xl">
+      <header className="relative z-10 border-b border-ink/[0.08] bg-surface-2/80 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 sm:px-8">
           <Link to="/" className="flex shrink-0 items-center">
-            <img src={logo} alt="Prepzone" width="144" height="29" className="h-auto w-36 object-contain" />
+            <img src={logo} alt="Prepzone" width="144" height="29" className="pz-logo h-auto w-36 object-contain" />
           </Link>
           {headerAction}
         </div>

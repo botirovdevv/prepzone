@@ -33,23 +33,23 @@ export default function LegalPage({ page }) {
           <LanguageSwitch />
           <Link
             to="/login"
-            className="rounded-full border border-[#111827]/10 bg-white/80 px-5 py-2 text-sm font-semibold transition hover:bg-white hover:shadow-sm"
+            className="rounded-full border border-ink/10 bg-surface/80 px-5 py-2 text-sm font-semibold transition hover:bg-surface hover:shadow-sm"
           >
             {t("legal.login")}
           </Link>
         </div>
       }
     >
-      <article className="w-full max-w-2xl rounded-3xl border border-[#111827]/[0.08] bg-white/90 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md sm:p-10">
+      <article className="w-full max-w-2xl rounded-3xl border border-ink/[0.08] bg-surface/90 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-md sm:p-10">
         <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
         {!isContact && (
-          <p className="mt-2 text-xs text-[#566176]">{t("legal.updated", { date: t("legal.updatedDate") })}</p>
+          <p className="mt-2 text-xs text-ink-2">{t("legal.updated", { date: t("legal.updatedDate") })}</p>
         )}
         <div className="mt-8 space-y-6">
           {sections.map(([heading, text]) => (
             <section key={heading}>
               <h2 className="text-base font-bold">{heading}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-[#374151]">{text.replace("{email}", CONTACT_EMAIL)}</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink">{text.replace("{email}", CONTACT_EMAIL)}</p>
             </section>
           ))}
         </div>
@@ -57,19 +57,19 @@ export default function LegalPage({ page }) {
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="rounded-2xl border border-[#111827]/10 p-5 transition hover:border-[#087fd1] hover:bg-[#087fd1]/[0.03]"
+              className="rounded-2xl border border-ink/10 p-5 transition hover:border-accent hover:bg-accent/[0.03]"
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#566176]">Email</p>
-              <p className="mt-1 break-all font-semibold text-[#087fd1]">{CONTACT_EMAIL}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">Email</p>
+              <p className="mt-1 break-all font-semibold text-accent">{CONTACT_EMAIL}</p>
             </a>
             <a
               href={TELEGRAM}
               target="_blank"
               rel="noreferrer"
-              className="rounded-2xl border border-[#111827]/10 p-5 transition hover:border-[#087fd1] hover:bg-[#087fd1]/[0.03]"
+              className="rounded-2xl border border-ink/10 p-5 transition hover:border-accent hover:bg-accent/[0.03]"
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#566176]">Telegram</p>
-              <p className="mt-1 font-semibold text-[#087fd1]">@prepzonesat</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-2">Telegram</p>
+              <p className="mt-1 font-semibold text-accent">@prepzonesat</p>
             </a>
           </div>
         )}

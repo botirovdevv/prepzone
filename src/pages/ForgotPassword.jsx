@@ -72,7 +72,7 @@ export default function ForgotPassword() {
   };
 
   const footer = (
-    <Link to="/login" className="font-semibold text-[#087fd1] hover:underline">
+    <Link to="/login" className="font-semibold text-accent hover:underline">
       {t("auth.forgot.back")}
     </Link>
   );
@@ -113,7 +113,7 @@ export default function ForgotPassword() {
       title={t("auth.forgot.resetTitle")}
       subtitle={
         <>
-          {t("auth.forgot.resetSubtitleBefore")} <span className="font-semibold text-[#111827]">{email}</span>{" "}
+          {t("auth.forgot.resetSubtitleBefore")} <span className="font-semibold text-ink">{email}</span>{" "}
           {t("auth.forgot.resetSubtitleAfter")}
         </>
       }
@@ -136,7 +136,7 @@ export default function ForgotPassword() {
               type="button"
               onClick={sendCode}
               disabled={cooldown > 0 || loading}
-              className="text-[13px] font-medium text-[#087fd1] hover:underline disabled:text-[#98a2b3] disabled:no-underline"
+              className="text-[13px] font-medium text-accent hover:underline disabled:text-ink-3 disabled:no-underline"
             >
               {cooldown > 0 ? t("auth.forgot.resendIn", { s: cooldown }) : t("auth.forgot.resend")}
             </button>
@@ -168,7 +168,7 @@ export default function ForgotPassword() {
             setStep("email");
             setError("");
           }}
-          className="pz-press w-full rounded-[14px] py-2 text-[14px] font-medium text-[#566176] hover:text-[#111827]"
+          className="pz-press w-full rounded-[14px] py-2 text-[14px] font-medium text-ink-2 hover:text-ink"
         >
           {t("auth.forgot.otherEmail")}
         </button>

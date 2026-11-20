@@ -13,10 +13,10 @@ export default function TestTerminatedScreen({ reason, message }) {
       title={t("proctor.terminated.title")}
       showLanguage={false}
     >
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#344054]">
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-ink">
         {message || reasons[reason] || t("proctor.terminated.defaultReason")}
       </p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-[#98a2b3]">{t("proctor.terminated.calculating")}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-ink-3">{t("proctor.terminated.calculating")}</p>
     </TestStatusScreen>
   );
 }
