@@ -5,7 +5,6 @@ import {
   LuNotebookPen,
   LuArrowRight,
   LuTimer,
-  LuGlobe,
   LuClock,
   LuLayers,
   LuBookOpenText,
@@ -122,7 +121,6 @@ export default function TestSelect() {
   const mocks = testsCatalog.map((t) => ({
     key: t.id,
     title: t.title,
-    description: t.description,
     questions: t.questions,
     minutes: t.minutes,
     parts: BUILTIN_PARTS,
@@ -135,6 +133,7 @@ export default function TestSelect() {
     return {
       key: `session:${s.id}`,
       title: s.title,
+      createdAt: s.createdAt,
       questions: meta.totalQuestions,
       minutes: meta.totalMinutes,
       parts: meta.parts,
@@ -142,67 +141,80 @@ export default function TestSelect() {
       kind: "open",
     };
   });
-  const total = mocks.length + open.length;
+  // Bitta ro'yxat: admin testlari qo'shilgan tartibda (1, 2, ...), keyin
+  // statik mocklar — foydalanuvchi uchun hammasi oddiy "Practice test N".
+  const papers = [
+    ...[...open].sort((x, y) => String(x.createdAt || "").localeCompare(String(y.createdAt || ""))),
+    ...mocks,
+  ];
+  const total = papers.length;
 
   const renderCard = (p, index) => {
     const lock = lockRemaining[p.key];
     return (
-      <Card key={p.key} className="flex flex-col p-5 sm:p-6">
-        <div className="flex items-start gap-4">
+      <Card key={p.key} className="flex flex-col p-5">
+        <div className="flex items-center justify-between gap-3">
           <span
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-display text-[18px] font-bold tabular-nums ${
-              lock ? "bg-ink/[0.06] text-ink-2" : "bg-accent/10 text-accent"
+            className={`flex h-11 w-11 items-center justify-center rounded-2xl font-display text-[20px] font-bold tabular-nums ${
+              lock ? "bg-ink/[0.06] text-ink-2" : "bg-accent text-white"
             }`}
             aria-hidden="true"
           >
-            {lock ? <LuTimer size={22} /> : p.kind === "open" ? <LuGlobe size={22} /> : String(index + 1).padStart(2, "0")}
+            {lock ? <LuTimer size={20} /> : index + 1}
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-display text-[20px] font-semibold leading-[25px] tracking-[-0.01em] text-ink">
-                {p.title}
-              </h3>
-              {lock ? (
-                <Badge tone="amber" icon={LuClock}>
-                  {t("tests.paused")}
-                </Badge>
-              ) : p.isNew ? (
-                <Badge tone="blue" icon={LuSparkles}>
-                  {t("tests.isNew")}
-                </Badge>
-              ) : p.kind === "open" ? (
-                <Badge tone="emerald">{t("tests.open")}</Badge>
-              ) : null}
-            </div>
-            <p className="mt-1 text-[15px] leading-[20px] text-ink-2">
-              {p.questions > 0 ? t("tests.questionsTime", { n: p.questions, time: timeLabel(p.minutes) }) : "Reading & Writing + Math"}
-              {p.description ? ` · ${p.description}` : ""}
-            </p>
-          </div>
+          {lock ? (
+            <Badge tone="amber" icon={LuClock}>
+              {t("tests.paused")}
+            </Badge>
+          ) : p.isNew ? (
+            <Badge tone="blue" icon={LuSparkles}>
+              {t("tests.isNew")}
+            </Badge>
+          ) : null}
         </div>
 
+        <h3 className="mt-4 font-display text-[20px] font-semibold leading-[25px] tracking-[-0.01em] text-ink">
+          {p.title}
+        </h3>
+
+        {/* Asosiy raqamlar: savollar va vaqt */}
+        <dl className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-fill px-3 py-2.5">
+            <dt className="text-[12px] font-medium text-ink-2">{t("tests.statQuestions")}</dt>
+            <dd className="font-display text-[20px] font-bold leading-tight text-ink tabular-nums">
+              {p.questions || "—"}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-fill px-3 py-2.5">
+            <dt className="text-[12px] font-medium text-ink-2">{t("tests.statTime")}</dt>
+            <dd className="font-display text-[17px] font-bold leading-tight text-ink tabular-nums">
+              {p.minutes ? timeLabel(p.minutes) : "—"}
+            </dd>
+          </div>
+        </dl>
+
         {p.parts.length > 0 && (
-          <div className="mt-5 divide-y divide-ink/[0.08] rounded-xl bg-fill/60 px-4">
+          <ul className="mt-4 space-y-2">
             {p.parts.map((part) => (
-              <div key={part.key} className="flex items-center gap-3 py-2.5">
+              <li key={part.key} className="flex items-center gap-2.5 text-[14px]">
                 {part.math ? (
-                  <LuCalculator size={16} className="shrink-0 text-ink-2" />
+                  <LuCalculator size={15} className="shrink-0 text-accent" />
                 ) : (
-                  <LuBookOpenText size={16} className="shrink-0 text-ink-2" />
+                  <LuBookOpenText size={15} className="shrink-0 text-accent" />
                 )}
-                <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{part.title}</span>
+                <span className="min-w-0 flex-1 truncate text-ink">{part.title}</span>
                 <span className="shrink-0 text-[13px] text-ink-2 tabular-nums">
-                  {part.questions > 0 && `${t("tests.modulesMeta", { n: part.questions })} · `}
+                  {part.questions > 0 && `${part.questions} · `}
                   {timeLabel(part.minutes)}
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         <div className="mt-5 flex flex-1 items-end">
           {lock ? (
-            <div className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-ink/[0.04] px-3 text-center text-sm font-semibold text-ink-2">
+            <div className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-ink/[0.04] px-3 text-center text-[13px] font-semibold text-ink-2">
               <LuClock size={15} className="shrink-0" />
               {t("tests.resumeIn", { time: formatRemaining(lock) })}
             </div>
@@ -237,8 +249,24 @@ export default function TestSelect() {
         }
       />
 
-      {/* Test tuzilishi — bir marta, kartalarda takrorlanmaydi. */}
-      <section aria-label={t("tests.howTitle")} className="mb-8">
+      {loadError && (
+        <ErrorState
+          className="mb-8"
+          onRetry={() => {
+            setOpenSessions(null);
+            setReloadKey((k) => k + 1);
+          }}
+        />
+      )}
+
+      {total === 0 && !loadError ? (
+        <EmptyState icon={LuLayers} title={t("tests.emptyTitle")} text={t("tests.emptyText")} />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{papers.map((p, i) => renderCard(p, i))}</div>
+      )}
+
+      {/* Test tuzilishi — kartalardan keyin, bir marta. */}
+      <section aria-label={t("tests.howTitle")} className="mt-10">
         <SectionTitle>{t("tests.howTitle")}</SectionTitle>
         <Card className="p-4 sm:p-5">
           <ol className="grid gap-3 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-ink/[0.08]">
@@ -258,35 +286,6 @@ export default function TestSelect() {
           </p>
         </Card>
       </section>
-
-      {loadError && (
-        <ErrorState
-          className="mb-8"
-          onRetry={() => {
-            setOpenSessions(null);
-            setReloadKey((k) => k + 1);
-          }}
-        />
-      )}
-
-      {total === 0 && !loadError ? (
-        <EmptyState icon={LuLayers} title={t("tests.emptyTitle")} text={t("tests.emptyText")} />
-      ) : (
-        <div className="space-y-8">
-          {mocks.length > 0 && (
-            <section>
-              <SectionTitle>{t("tests.sectionMocks")}</SectionTitle>
-              <div className="grid gap-5 md:grid-cols-2">{mocks.map((p, i) => renderCard(p, i))}</div>
-            </section>
-          )}
-          {open.length > 0 && (
-            <section>
-              <SectionTitle>{t("tests.sectionOpen")}</SectionTitle>
-              <div className="grid gap-5 md:grid-cols-2">{open.map((p, i) => renderCard(p, i))}</div>
-            </section>
-          )}
-        </div>
-      )}
     </Page>
   );
 }
