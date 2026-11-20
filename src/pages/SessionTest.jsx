@@ -270,6 +270,12 @@ export default function SessionTest() {
   // ------------------------------------------------------------
   const moveToRulesOrLocked = () => {
     const saved = loadLocalProgress(user.uid, progressKey);
+    // Refresh / brauzer yopilib qolgan — kutishsiz, o'sha taymer bilan davom etadi.
+    if (saved && saved.reason === "active") {
+      setResumeSnapshot(saved.snapshot);
+      setPhase("rules");
+      return;
+    }
     if (saved && saved.reason === "paused") {
       const remaining = getCooldownRemainingMs(saved.pausedAt);
       if (remaining > 0) {
@@ -332,7 +338,8 @@ export default function SessionTest() {
   };
 
   const proctoring = useProctoring({
-    active: phase === "active",
+    // Tanaffusda nazorat o'chiq (Bluebook'dagi kabi talaba dam oladi).
+    active: phase === "active" && !onBreak,
     onForceTerminate: handleForceTerminate,
     onViolationWarning: (type, count, message) => {
       logEvent(type, message);
@@ -413,6 +420,8 @@ export default function SessionTest() {
   };
 
   const advanceToNextGroup = () => {
+    // Tanaffusdan keyin yana fullscreen (qo'llamasa — jim davom etadi).
+    proctoring.requestFullscreen();
     const next = session.sections[groupIndex + 1];
     setOnBreak(false);
     setBreakEndAt(null);
@@ -513,12 +522,16 @@ export default function SessionTest() {
       setRoute(resumeSnapshot.route ?? null);
       setModuleState(resumeSnapshot.moduleState || emptyModuleState(totalQuestions));
       setEndAt(
-        resumeSnapshot.onBreak ? null : Date.now() + (resumeSnapshot.secondsLeft ?? (section.durationMin || 30) * 60) * 1000
+        resumeSnapshot.onBreak
+          ? null
+          : resumeSnapshot.endAt ?? Date.now() + (resumeSnapshot.secondsLeft ?? (section.durationMin || 30) * 60) * 1000
       );
       setAttempts(resumeSnapshot.attempts || {});
       setOnBreak(!!resumeSnapshot.onBreak);
       setBreakEndAt(
-        resumeSnapshot.onBreak ? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000 : null
+        resumeSnapshot.onBreak
+          ? resumeSnapshot.breakEndAt ?? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000
+          : null
       );
     } else {
       startModule(totalQuestions, section.durationMin);
@@ -527,6 +540,33 @@ export default function SessionTest() {
     updateParticipant({ status: "active" });
     return true;
   };
+
+  // Avtomatik saqlash: refresh yoki brauzer yopilib qolsa test boshidan
+  // boshlanmaydi. Tugash vaqtlari absolyut saqlanadi — refresh taymerni
+  // "qayta boshlash" uchun ishlatib bo'lmaydi. Modullar orasidagi qisqa
+  // oraliqda (endAt yo'q, tanaffus ham emas) oldingi snapshot qoladi.
+  useEffect(() => {
+    if (phase !== "active" || !user || exiting || terminatingRef.current) return;
+    if (!endAt && !onBreak) return;
+    saveLocalProgress(
+      user.uid,
+      progressKey,
+      {
+        groupIndex,
+        stage,
+        route,
+        moduleState,
+        attempts,
+        onBreak,
+        endAt,
+        breakEndAt,
+        secondsLeft: secondsUntil(endAt),
+        breakSecondsLeft: secondsUntil(breakEndAt),
+      },
+      "active"
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, user, exiting, groupIndex, stage, route, moduleState, attempts, onBreak, endAt, breakEndAt]);
 
   const handleExitConfirm = async () => {
     setExiting(true);
@@ -624,7 +664,7 @@ export default function SessionTest() {
 
   return (
     <HighlightsProvider>
-    <div className="h-screen flex flex-col bg-surface">
+    <div className="h-dvh flex flex-col bg-surface">
       <TestHeader
         sectionLabel={sectionLabel}
         title={section.title}

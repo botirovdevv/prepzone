@@ -193,6 +193,11 @@ export default function Dashboard() {
                   <ListRow
                     key={a.id}
                     to={a.sessionId ? `/session/${a.sessionId}/results` : `/sat/results/${a.id}`}
+                    state={
+                      a.sessionId && a.results
+                        ? { results: a.results, total: a.total, sessionTitle: a.sessionTitle, terminated: a.terminated }
+                        : undefined
+                    }
                     icon={LuClock}
                     iconTone="gray"
                     title={a.sessionTitle || getSatTestTitle(a.testId)}

@@ -55,16 +55,22 @@ export function useProctoring({
     []
   );
 
+  // Fullscreen'ni qo'llamaydigan brauzerlar (iPhone Safari, Telegram/Instagram
+  // ichidagi brauzerlar) — test fullscreen'siz boshlanadi; tab almashtirish
+  // va boshqa ogohlantirishlar baribir ishlaydi. Aks holda bunday
+  // qurilmalarda testni umuman boshlab bo'lmasdi.
   const requestFullscreen = useCallback(async () => {
     const el = document.documentElement;
+    const supported =
+      document.fullscreenEnabled !== false && Boolean(el.requestFullscreen || el.webkitRequestFullscreen);
+    if (!supported) return true;
     try {
       if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      else return false;
-      return true;
-    } catch (err) {
-      return false;
+      else await el.webkitRequestFullscreen();
+    } catch {
+      // Brauzer rad etdi (in-app brauzer, siyosat) — fullscreen'siz davom etamiz.
     }
+    return true;
   }, []);
 
   // Test o'zi "toza" tugatayotganda (natural finish, chiqish tugmasi,

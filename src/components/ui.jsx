@@ -187,6 +187,7 @@ export function ListRow({
   value,
   accessory,
   to,
+  state,
   onClick,
   chevron,
   destructive = false,
@@ -235,7 +236,7 @@ export function ListRow({
   );
   if (to && !disabled) {
     return (
-      <Link to={to} className={base}>
+      <Link to={to} state={state} className={base}>
         {content}
       </Link>
     );

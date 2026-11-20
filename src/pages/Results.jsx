@@ -129,7 +129,7 @@ export default function Results() {
   const { id } = useParams();
   const { t } = useI18n();
 
-  const terminated = location.state?.terminated;
+  const [terminated, setTerminated] = useState(Boolean(location.state?.terminated));
   const [results, setResults] = useState(location.state?.results || null);
   const [testId, setTestId] = useState(location.state?.testId || null);
   const [loading, setLoading] = useState(!location.state?.results && !!id);
@@ -153,6 +153,7 @@ export default function Results() {
       .then((r) => {
         setResults(r.results);
         setTestId(r.testId || null);
+        setTerminated(Boolean(r.terminated));
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -257,7 +258,11 @@ export default function Results() {
           if (r.module2Total != null) {
             moduleRows.push({
               label: "Module 2",
-              tag: <Badge tone={r.route === "hard" ? "red" : "emerald"}>{r.route === "hard" ? t("results.hard") : t("results.easy")}</Badge>,
+              tag: r.route ? (
+                <Badge tone={r.route === "hard" ? "red" : "emerald"}>
+                  {r.route === "hard" ? t("results.hard") : t("results.easy")}
+                </Badge>
+              ) : null,
               value: `${r.module2Correct}/${r.module2Total}`,
             });
           }
@@ -268,7 +273,7 @@ export default function Results() {
               <CardHeader
                 title={g.title}
                 subtitle={
-                  r.route === "hard" ? t("results.routedHard") : t("results.routedEasy")
+                  r.route === "hard" ? t("results.routedHard") : r.route === "easy" ? t("results.routedEasy") : null
                 }
                 action={
                   <span className="font-display text-3xl font-bold tabular-nums text-accent">{r.scaledScore}</span>

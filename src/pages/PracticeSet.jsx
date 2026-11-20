@@ -95,7 +95,7 @@ export default function PracticeSet() {
   };
 
   const answeredCount = Object.keys(answers).length;
-  const correctCount = questions.filter((q) => answers[q.id] === q.correctAnswer).length;
+  const correctCount = questions.filter((q) => isAnswerCorrect(q, answers[q.id])).length;
 
   const topicAnalysis = useMemo(() => analyzeTopics(questions, answers), [questions, answers]);
   // lang: maslahat matnlari tanlangan tilda qayta tuziladi.
@@ -238,7 +238,7 @@ export default function PracticeSet() {
         showPassage={question._showPassage}
         feedbackMode
       />
-      {answers[question.id] && answers[question.id] !== question.correctAnswer && (
+      {answers[question.id] && !isAnswerCorrect(question, answers[question.id]) && (
         <div className="mx-auto w-full max-w-3xl px-4 pb-4">
           <AiExplain key={question.id} question={question} userAnswer={answers[question.id]} />
         </div>

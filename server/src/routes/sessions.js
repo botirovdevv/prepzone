@@ -474,7 +474,7 @@ router.post("/:id/finish", async (req, res) => {
         return { duplicate: true };
       }
     }
-    await consumeDaily(client, req.user.id, "sessionFinish", 15, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
+    await consumeDaily(client, req.user.id, "sessionFinish", 30, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
     // Reytingga shu testning faqat BIRINCHI to'liq urinishi tushadi — ochiq
     // testni qayta-qayta topshirib kalitni "teshib" olish foyda bermaydi.
     const { rowCount: earlier } = await client.query(

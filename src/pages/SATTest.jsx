@@ -117,6 +117,12 @@ export default function SATTest() {
   useEffect(() => {
     if (!user) return;
     const saved = loadLocalProgress(user.uid, TEST_ID);
+    // Refresh / brauzer yopilib qolgan — kutishsiz, o'sha taymer bilan davom etadi.
+    if (saved && saved.reason === "active") {
+      setResumeSnapshot(saved.snapshot);
+      setPhase("rules");
+      return;
+    }
     if (saved && saved.reason === "paused") {
       const remaining = getCooldownRemainingMs(saved.pausedAt);
       if (remaining > 0) {
@@ -196,7 +202,8 @@ export default function SATTest() {
   };
 
   const proctoring = useProctoring({
-    active: phase === "active",
+    // Tanaffusda nazorat o'chiq (Bluebook'dagi kabi talaba dam oladi).
+    active: phase === "active" && !onBreak,
     onForceTerminate: handleForceTerminate,
     maxWarnings: MAX_WARNINGS,
   });
@@ -267,6 +274,8 @@ export default function SATTest() {
 
   // Keyingi bo'limga o'tish (tanaffusdan keyin yoki darhol)
   const advanceToNextGroup = () => {
+    // Tanaffusdan keyin yana fullscreen (qo'llamasa — jim davom etadi).
+    proctoring.requestFullscreen();
     const nextGroup = satTest.groups[groupIndex + 1];
     setOnBreak(false);
     setBreakEndAt(null);
@@ -348,12 +357,18 @@ export default function SATTest() {
       setStage(st);
       setRoute(r);
       setModuleState(resumeSnapshot.moduleState || emptyModuleState(count));
-      setEndAt(resumeSnapshot.onBreak ? null : Date.now() + (resumeSnapshot.secondsLeft ?? g.durationMin * 60) * 1000);
+      setEndAt(
+        resumeSnapshot.onBreak
+          ? null
+          : resumeSnapshot.endAt ?? Date.now() + (resumeSnapshot.secondsLeft ?? g.durationMin * 60) * 1000
+      );
       setCurrentIndex(resumeSnapshot.currentIndex ?? 0);
       setAttempts(snapshotAttempts(resumeSnapshot));
       setOnBreak(!!resumeSnapshot.onBreak);
       setBreakEndAt(
-        resumeSnapshot.onBreak ? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000 : null
+        resumeSnapshot.onBreak
+          ? resumeSnapshot.breakEndAt ?? Date.now() + (resumeSnapshot.breakSecondsLeft ?? BREAK_SECONDS) * 1000
+          : null
       );
     } else {
       startModule(satTest.groups[0].module1.questions.length, satTest.groups[0].durationMin);
@@ -366,6 +381,34 @@ export default function SATTest() {
   // "Chiqish" tugmasi — hozirgi holat saqlanadi, 30 daqiqalik
   // pauza boshlanadi.
   // ------------------------------------------------------------
+  // Avtomatik saqlash: refresh yoki brauzer yopilib qolsa test boshidan
+  // boshlanmaydi. Tugash vaqtlari absolyut saqlanadi — refresh taymerni
+  // "qayta boshlash" uchun ishlatib bo'lmaydi. Modullar orasidagi qisqa
+  // oraliqda (endAt yo'q, tanaffus ham emas) oldingi snapshot qoladi.
+  useEffect(() => {
+    if (phase !== "active" || !user || exiting || terminatingRef.current) return;
+    if (!endAt && !onBreak) return;
+    saveLocalProgress(
+      user.uid,
+      TEST_ID,
+      {
+        groupIndex,
+        stage,
+        route,
+        moduleState,
+        currentIndex,
+        attempts,
+        onBreak,
+        endAt,
+        breakEndAt,
+        secondsLeft: secondsUntil(endAt),
+        breakSecondsLeft: secondsUntil(breakEndAt),
+      },
+      "active"
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, user, exiting, groupIndex, stage, route, moduleState, currentIndex, attempts, onBreak, endAt, breakEndAt]);
+
   const handleExitConfirm = async () => {
     setExiting(true);
     saveLocalProgress(
@@ -406,7 +449,7 @@ export default function SATTest() {
   }
 
   if (phase === "rules") {
-    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} title={satTest.title} />;
+    return <RulesGate onStart={handleStart} isResume={!!resumeSnapshot} title={satTest.testTitle} />;
   }
 
   if (phase === "terminated") {
@@ -430,7 +473,7 @@ export default function SATTest() {
 
   return (
     <HighlightsProvider>
-    <div className="h-screen flex flex-col bg-surface">
+    <div className="h-dvh flex flex-col bg-surface">
       <TestHeader
         sectionLabel={sectionLabel}
         title={group.title}

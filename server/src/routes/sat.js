@@ -69,7 +69,7 @@ router.post("/finish", async (req, res) => {
   if (!Object.keys(results).length) throw new HttpError(400, "invalid-argument", "Javoblar yo'q.");
 
   const out = await tx(async (client) => {
-    await consumeDaily(client, req.user.id, "satFinish", 15, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
+    await consumeDaily(client, req.user.id, "satFinish", 30, "Bugun juda ko'p test topshirildi, ertaga davom eting.");
     // Avval to'liq topshirgan yoki javob kalitlarini ko'rgan bo'lsa — reytingga
     // tushmaydi (kalitlar progress tiklanganda ham "ko'rilgan" bo'lib qoladi).
     const previous = complete

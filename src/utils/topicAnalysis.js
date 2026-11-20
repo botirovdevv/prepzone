@@ -1,6 +1,7 @@
 import { RW_DOMAINS } from "../data/rwPromptTemplates";
 import { MATH_DOMAINS } from "../data/mathDomains";
 import { translate } from "../i18n";
+import { isAnswerCorrect } from "./irtScoring";
 
 const DOMAIN_META = Object.fromEntries(
   [...RW_DOMAINS, ...MATH_DOMAINS].map((d) => [d.id, d])
@@ -34,7 +35,7 @@ export function analyzeTopics(questions, answers, getSubject = defaultGetSubject
 
   for (const q of questions) {
     if (answers[q.id] == null) continue;
-    const isCorrect = answers[q.id] === q.correctAnswer;
+    const isCorrect = isAnswerCorrect(q, answers[q.id]);
     const subject = getSubject(q);
 
     if (subject && bySubject[subject]) {

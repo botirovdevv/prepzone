@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useOtpVerified } from "../hooks/useOtpVerified";
 import { LuMailCheck, LuRefreshCw, LuLogOut, LuPencil } from "react-icons/lu";
@@ -13,6 +13,10 @@ export default function VerifyEmail() {
   const { verified, checked } = useOtpVerified();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Tasdiqlangach — kirishdan oldin ochilgan sahifaga (faqat ichki yo'l).
+  const rawFrom = location.state?.from;
+  const next = typeof rawFrom === "string" && rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/dashboard";
 
   const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
@@ -35,9 +39,9 @@ export default function VerifyEmail() {
       return;
     }
     if (checked && verified) {
-      navigate("/dashboard", { replace: true });
+      navigate(next, { replace: true });
     }
-  }, [loading, user, checked, verified, navigate]);
+  }, [loading, user, checked, verified, navigate, next]);
 
   // Sahifa ochilganda (yoki email o'zgarganda) avtomatik birinchi kodni yuboramiz.
   useEffect(() => {
@@ -83,7 +87,7 @@ export default function VerifyEmail() {
     setError("");
     try {
       await verifyEmailCode(code.trim());
-      navigate("/dashboard", { replace: true });
+      navigate(next, { replace: true });
     } catch (err) {
       setError(err.message || t("auth.verify.wrongCode"));
     } finally {

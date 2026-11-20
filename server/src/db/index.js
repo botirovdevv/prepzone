@@ -26,15 +26,18 @@ export async function one(text, params) {
 // Bir nechta so'rovni bitta tranzaksiyada bajarish.
 export async function tx(fn) {
   const client = await pool.connect();
+  let result;
   try {
     await client.query("BEGIN");
-    const result = await fn(client);
+    result = await fn(client);
     await client.query("COMMIT");
-    return result;
   } catch (err) {
-    await client.query("ROLLBACK");
+    // ROLLBACK ham yiqilsa (ulanish uzilgan) — buzilgan ulanish pool'ga qaytmaydi.
+    let broken = null;
+    await client.query("ROLLBACK").catch((e) => (broken = e));
+    client.release(broken || undefined);
     throw err;
-  } finally {
-    client.release();
   }
+  client.release();
+  return result;
 }

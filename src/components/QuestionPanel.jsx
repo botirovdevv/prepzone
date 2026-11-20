@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { LuBookmark, LuCheck, LuX, LuGripVertical, LuMaximize2, LuMinimize2 } from "react-icons/lu";
 import HighlightableText from "./HighlightableText";
 import { sanitizeRichText } from "../utils/sanitizeHtml";
@@ -75,6 +75,16 @@ function QuestionPanel({
   // Answer eliminator (ABC) — yoqilgan holati savoldan savolga o'tganda saqlanadi.
   const [eliminator, setEliminator] = useState(false);
   const { left, setLeft, containerRef, handlers } = useSplit();
+  // Yangi savol tepadan ko'rinsin: mobilda butun panel, kompyuterda passage
+  // va savol ustunlari alohida aylantiriladi — hammasi boshiga qaytadi.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    el.querySelectorAll("*").forEach((n) => {
+      if (n.scrollTop) n.scrollTop = 0;
+    });
+  }, [question.id, containerRef]);
   const renderRich = (text) =>
     question.html ? <span dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }} /> : text;
   const canEliminate = !feedbackMode && !isSpr && (question.choices || []).length > 0;

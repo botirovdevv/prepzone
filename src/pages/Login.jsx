@@ -39,10 +39,11 @@ export default function Login() {
 
   // Allaqachon kirgan foydalanuvchi login sahifasida turmaydi.
   if (!authLoading && user) {
-    return <Navigate to={user.emailVerified ? from || "/dashboard" : "/verify-email"} replace />;
+    return <Navigate to={user.emailVerified ? from || "/dashboard" : "/verify-email"} replace state={{ from }} />;
   }
 
-  const goNext = (u) => navigate(u.emailVerified ? from || "/dashboard" : "/verify-email", { replace: true });
+  const goNext = (u) =>
+    navigate(u.emailVerified ? from || "/dashboard" : "/verify-email", { replace: true, state: { from } });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
