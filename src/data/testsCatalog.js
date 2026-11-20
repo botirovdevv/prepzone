@@ -2,10 +2,18 @@
 // Tayyor (statik) mock testlar ro'yxati. Bular admin panelidan
 // qo'shiladigan "Doimiy ochiq" testlar bilan birga TestSelect
 // sahifasida ko'rsatiladi. `id` — content/sat/index.js dagi SAT_TESTS kaliti.
-// Hozircha bo'sh: barcha testlar admin panelidan qo'shiladi.
 // ------------------------------------------------------------------
 
-export const testsCatalog = [];
+export const testsCatalog = [
+  {
+    id: "bluebook-3",
+    title: "SAT Practice Mock 3",
+    description: "March 2026 formatiga yaqin · adaptiv",
+    questions: 98,
+    minutes: 134,
+    isNew: true,
+  },
+];
 
 // Olib tashlangan statik testlar — eski natijalar nomi bilan ko'rinsin.
 const RETIRED_TITLES = {
