@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { getLang, useI18n } from "../i18n";
 import { compressImageToDataUrl } from "../utils/imageCompress";
 import { getRecentLogs } from "../utils/errorLog";
+import { onIdle } from "../utils/idle";
 import { Button } from "./ui";
 
 // ------------------------------------------------------------------
@@ -21,6 +22,111 @@ const MAX_DATA_URL = 1_150_000;
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const openFeedback = () => window.dispatchEvent(new Event(OPEN_EVENT));
+
+// Yangi funksiya haqidagi kartochka (FeedbackTip) — yopilgach yoki oyna bir
+// marta ochilgach qaytib chiqmaydi.
+export const FEEDBACK_TIP_KEY = "pz-feedback-tip-v1";
+const TIP_HIDE_EVENT = "pz:feedback-tip-hide";
+function markFeedbackTipSeen() {
+  try {
+    if (localStorage.getItem(FEEDBACK_TIP_KEY)) return;
+    localStorage.setItem(FEEDBACK_TIP_KEY, "1");
+  } catch {
+    /* private rejim */
+  }
+  window.dispatchEvent(new Event(TIP_HIDE_EVENT));
+}
+
+const isMac = () => /mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent);
+
+function Kbd({ children }) {
+  return (
+    <kbd className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-md border border-ink/[0.12] bg-fill px-1.5 font-sans text-[12px] font-semibold text-ink shadow-[0_1px_0_rgb(var(--c-ink)/0.12)]">
+      {children}
+    </kbd>
+  );
+}
+
+// "Bugun" sahifasidagi ixcham kartochka: hech narsani to'smaydi, bir marta yopiladi.
+export function FeedbackTip({ className = "" }) {
+  const { t } = useI18n();
+  const [visible, setVisible] = useState(() => {
+    try {
+      return !localStorage.getItem(FEEDBACK_TIP_KEY);
+    } catch {
+      return false;
+    }
+  });
+  const [desktop] = useState(() => window.matchMedia?.("(pointer: fine)").matches ?? true);
+
+  useEffect(() => {
+    const hide = () => setVisible(false);
+    window.addEventListener(TIP_HIDE_EVENT, hide);
+    return () => window.removeEventListener(TIP_HIDE_EVENT, hide);
+  }, []);
+
+  if (!visible) return null;
+  const keys = isMac() ? ["⌘", "⇧", "F"] : ["Ctrl", "Shift", "F"];
+
+  return (
+    <section
+      aria-label={t("feedback.tip.title")}
+      className={`pz-card flex items-start gap-3.5 p-4 sm:items-center sm:p-5 ${className}`}
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+        <LuMessageSquareWarning size={19} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] font-semibold leading-5 text-ink">
+          <span className="mr-1.5 rounded-full bg-accent/10 px-2 py-0.5 align-[1px] text-[11px] font-semibold text-accent">
+            {t("common.new")}
+          </span>
+          {t("feedback.tip.title")}
+        </p>
+        <p className="mt-1 text-[13px] leading-[20px] text-ink-2">
+          {desktop ? (
+            <>
+              {t("feedback.tip.desktopBefore")}{" "}
+              <span className="inline-flex translate-y-[-1px] items-center gap-1 align-middle">
+                {keys.map((k) => (
+                  <Kbd key={k}>{k}</Kbd>
+                ))}
+              </span>{" "}
+              {t("feedback.tip.desktopAfter")}
+            </>
+          ) : (
+            t("feedback.tip.mobile")
+          )}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={openFeedback}
+          className="hidden rounded-full px-3 py-1.5 text-[13px] font-medium text-accent transition hover:bg-accent/10 sm:inline-flex"
+        >
+          {t("feedback.tip.try")}
+        </button>
+        <button
+          type="button"
+          onClick={markFeedbackTipSeen}
+          aria-label={t("common.close")}
+          className="rounded-full p-2 text-ink-3 transition hover:bg-ink/[0.06] hover:text-ink"
+        >
+          <LuX size={16} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// Kutubxona sahifa ochilgach bo'sh paytda oldindan yuklanadi — birinchi
+// Ctrl+Shift+F bosilganda yuklab olishni kutmaslik uchun.
+let libPromise = null;
+const loadScreenshotLib = () => (libPromise ||= import("modern-screenshot").catch((err) => {
+  libPromise = null;
+  throw err;
+}));
 
 // <noscript> klonda matn bo'lib chiqib qoladi; skript/stil ko'rinmaydi.
 const SKIP_TAGS = new Set(["NOSCRIPT", "SCRIPT", "TEMPLATE"]);
@@ -41,7 +147,7 @@ function isBlank(canvas) {
 const isHotkey = (e) => (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.code === "KeyF";
 
 async function captureViewport() {
-  const { domToCanvas } = await import("modern-screenshot");
+  const { domToCanvas } = await loadScreenshotLib();
   const body = document.body;
   const rect = body.getBoundingClientRect();
   const vw = window.innerWidth;
@@ -50,11 +156,18 @@ async function captureViewport() {
   const scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2, 1600 / vw));
   const options = {
     scale,
-    timeout: 8000,
+    // Biror resurs javob bermasa ham uzoq kutib qolmasin.
+    timeout: 3000,
     maximumCanvasSize: 16384,
     backgroundColor: getComputedStyle(document.documentElement).backgroundColor || "#fff",
-    filter: (node) =>
-      !(node instanceof Element && (node.hasAttribute("data-feedback-ignore") || SKIP_TAGS.has(node.tagName))),
+    filter: (node) => {
+      if (!(node instanceof Element)) return true;
+      if (node.hasAttribute("data-feedback-ignore") || SKIP_TAGS.has(node.tagName)) return false;
+      // Yuklanmagan rasm (masalan, yashirin menyudagi loading="lazy" avatar) hech
+      // qachon yuklanmaydi — kutubxona uni timeout tugaguncha kutib qolardi.
+      if (node instanceof HTMLImageElement && (!node.complete || node.naturalWidth === 0)) return false;
+      return true;
+    },
   };
   // Birinchi chaqiruvda brauzer SVG ichidagi rasm/shriftlarni hali tayyorlamagan
   // bo'lishi mumkin — natija bir xil rangli bo'sh rasm. Shunda qayta chiziladi.
@@ -67,6 +180,12 @@ async function captureViewport() {
     } catch {
       /* ignore */
     }
+  }
+  // Kutubxona sahifadagi BARCHA <img> yuklanishini kutadi (filtrdan oldin).
+  // Yashirin joydagi loading="lazy" rasm (masalan, telefon menyusidagi avatar)
+  // hech qachon yuklanmaydi va timeout tugaguncha kutib qolinardi — darhol yuklaymiz.
+  for (const img of document.images) {
+    if (!img.complete && img.loading === "lazy") img.loading = "eager";
   }
   let full = await domToCanvas(body, options);
   for (let i = 0; i < 2 && isBlank(full); i += 1) full = await domToCanvas(body, options);
@@ -106,6 +225,7 @@ export default function FeedbackReporter() {
   const show = useCallback(async (withShot) => {
     if (busyRef.current) return;
     busyRef.current = true;
+    markFeedbackTipSeen();
     pageRef.current = window.location.href;
     setMessage("");
     setError("");
@@ -122,6 +242,12 @@ export default function FeedbackReporter() {
     }
     setOpen(true);
     busyRef.current = false;
+  }, []);
+
+  // Faqat klaviatura/sichqonchali qurilmada — telefonda hotkey yo'q, trafik behuda ketmasin.
+  useEffect(() => {
+    if (!window.matchMedia?.("(pointer: fine)").matches) return;
+    return onIdle(() => loadScreenshotLib().catch(() => {}), 8000);
   }, []);
 
   useEffect(() => {

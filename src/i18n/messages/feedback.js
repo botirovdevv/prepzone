@@ -16,6 +16,13 @@ export default {
       send: "Yuborish",
       thanksTitle: "Rahmat!",
       thanksText: "Xabaringiz jamoaga yetib bordi. Tez orada ko'rib chiqamiz.",
+      tip: {
+        title: "Muammo ko'rdingizmi? Bizga ayting",
+        desktopBefore: "Istalgan sahifada",
+        desktopAfter: "bosing — ekran rasmi o'zi olinadi, bir-ikki so'z yozib yuborasiz. Har bir xabarni o'qiymiz.",
+        mobile: "«Yana» bo'limidagi «Muammo haqida xabar berish» orqali yozing — rasm ham biriktirsa bo'ladi. Har bir xabarni o'qiymiz.",
+        try: "Sinab ko'rish",
+      },
     },
   },
   en: {
@@ -34,6 +41,13 @@ export default {
       send: "Send",
       thanksTitle: "Thank you!",
       thanksText: "Your message reached the team. We'll look into it soon.",
+      tip: {
+        title: "Spotted a problem? Tell us",
+        desktopBefore: "Press",
+        desktopAfter: "on any page — a screenshot is taken for you, just add a few words. We read every message.",
+        mobile: "Use “Report a problem” in the More tab — you can attach a picture too. We read every message.",
+        try: "Try it",
+      },
     },
   },
 };

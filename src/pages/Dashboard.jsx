@@ -18,6 +18,7 @@ import {
   LuClock,
 } from "react-icons/lu";
 import TestCountdown from "../components/TestCountdown";
+import { FeedbackTip } from "../components/FeedbackReporter";
 import {
   Page,
   PageHeader,
@@ -126,6 +127,8 @@ export default function Dashboard() {
       />
 
       <TestCountdown />
+
+      <FeedbackTip className="mb-6" />
 
       {loadError && (
         <ErrorState
