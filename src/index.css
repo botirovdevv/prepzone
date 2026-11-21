@@ -365,6 +365,59 @@ h6 {
 }
 .pz-fade { animation: pz-fade 200ms var(--ease-out) both; }
 
+/* Ilovaning o'z range slider'i (brauzer standart ko'rinishi o'rniga).
+   --pz-range — to'ldirilgan qism foizi (JSX'dan beriladi). */
+.pz-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+.pz-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, rgb(var(--c-accent)) var(--pz-range, 50%), rgb(var(--c-ink) / 0.1) var(--pz-range, 50%));
+}
+.pz-range::-moz-range-track { height: 6px; border-radius: 999px; background: rgb(var(--c-ink) / 0.1); }
+.pz-range::-moz-range-progress { height: 6px; border-radius: 999px; background: rgb(var(--c-accent)); }
+.pz-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -9px;
+  height: 24px;
+  width: 24px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.2);
+  transition: transform 150ms var(--ease-out);
+}
+.pz-range::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 2px 6px rgb(0 0 0 / 0.2);
+}
+.pz-range:active::-webkit-slider-thumb { transform: scale(1.1); }
+.pz-range:focus-visible { outline: none; }
+.pz-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgb(var(--c-accent) / 0.25), 0 2px 6px rgb(0 0 0 / 0.2); }
+
+/* Study Plan eslatmasi (StudyPlanNudge) — o'ngdan sirpanib kiradi. */
+@keyframes pz-nudge-in {
+  from { opacity: 0; transform: translateX(24px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pz-nudge-out {
+  to { opacity: 0; transform: translateX(24px) scale(0.98); }
+}
+.pz-nudge { animation: pz-nudge-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+.pz-nudge-out { animation: pz-nudge-out 220ms ease-in both; }
+@media (prefers-reduced-motion: reduce) {
+  .pz-nudge { animation: pz-fade-in 150ms linear both; }
+  .pz-nudge-out { animation: pz-fade-out 150ms linear both; }
+}
+
 @keyframes pz-rise {
   from { opacity: 0; translate: 0 12px; }
 }

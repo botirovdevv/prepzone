@@ -16,5 +16,6 @@ import studyRoom from "./studyRoom";
 import growth from "./growth";
 import duel from "./duel";
 import feedback from "./feedback";
+import nudges from "./nudges";
 
-export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, growth, duel, feedback];
+export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, growth, duel, feedback, nudges];

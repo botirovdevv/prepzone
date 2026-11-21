@@ -8,7 +8,7 @@ import { onIdle } from "../utils/idle";
 import { Button } from "./ui";
 
 // ------------------------------------------------------------------
-// Shikoyat/taklif oynasi. Istalgan sahifada Ctrl+Shift+F (Mac: Cmd+Shift+F)
+// Shikoyat/taklif oynasi. Istalgan sahifada Ctrl+Shift+F (Mac: ⌘⇧F)
 // → ko'rinib turgan ekran avtomatik screenshot qilinadi → oyna ochiladi.
 // Boshqa joydan ochish (telefon: "Yana", Sozlamalar): openFeedback() —
 // u holda screenshot olinmaydi (o'sha menyu sahifasining o'zi tushardi),
@@ -38,6 +38,16 @@ function markFeedbackTipSeen() {
 }
 
 const isMac = () => /mac|iphone|ipad/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent);
+// Klaviatura/sichqoncha bor qurilma (telefonda tugma kombinatsiyasi ko'rsatilmaydi).
+const hasKeyboard = () => window.matchMedia?.("(pointer: fine)").matches ?? true;
+// Tugma yorlig'i foydalanuvchi tizimiga qarab: Mac — ⌘⇧F, Windows/Linux — Ctrl+Shift+F.
+const shortcutKeys = () => (isMac() ? ["⌘", "⇧", "F"] : ["Ctrl", "Shift", "F"]);
+const shortcutLabel = () => (isMac() ? "⌘⇧F" : "Ctrl+Shift+F");
+
+// "Yana" va Sozlamalardagi qator osti matni.
+// eslint-disable-next-line react-refresh/only-export-components
+export const feedbackMenuSubtitle = (t) =>
+  hasKeyboard() ? t("feedback.menuSubtitleKeys", { keys: shortcutLabel() }) : t("feedback.menuSubtitle");
 
 function Kbd({ children }) {
   return (
@@ -57,7 +67,7 @@ export function FeedbackTip({ className = "" }) {
       return false;
     }
   });
-  const [desktop] = useState(() => window.matchMedia?.("(pointer: fine)").matches ?? true);
+  const [desktop] = useState(hasKeyboard);
 
   useEffect(() => {
     const hide = () => setVisible(false);
@@ -66,7 +76,7 @@ export function FeedbackTip({ className = "" }) {
   }, []);
 
   if (!visible) return null;
-  const keys = isMac() ? ["⌘", "⇧", "F"] : ["Ctrl", "Shift", "F"];
+  const keys = shortcutKeys();
 
   return (
     <section
@@ -424,9 +434,13 @@ export default function FeedbackReporter() {
                     />
                   </label>
                   <div className="flex items-center justify-between text-[12px] text-ink-3">
-                    <span className="inline-flex items-center gap-1.5">
-                      <LuCamera size={13} /> {t("feedback.hint")}
-                    </span>
+                    {hasKeyboard() ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <LuCamera size={13} /> {t("feedback.hint", { keys: shortcutLabel() })}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
                     <span className="tabular-nums">
                       {message.length}/{MAX_LEN}
                     </span>

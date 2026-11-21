@@ -23,7 +23,7 @@ import {
   LuLogOut,
   LuMessageSquareWarning,
 } from "react-icons/lu";
-import { openFeedback } from "../components/FeedbackReporter";
+import { feedbackMenuSubtitle, openFeedback } from "../components/FeedbackReporter";
 import { useAuth } from "../context/AuthContext";
 import { formatDate, translate, useI18n } from "../i18n";
 import { useTheme } from "../context/ThemeContext";
@@ -136,7 +136,7 @@ function SignOutSection() {
           icon={LuMessageSquareWarning}
           iconTone="orange"
           title={t("feedback.menuTitle")}
-          subtitle={t("feedback.menuSubtitle")}
+          subtitle={feedbackMenuSubtitle(t)}
           onClick={openFeedback}
         />
       </ListGroup>

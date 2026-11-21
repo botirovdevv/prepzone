@@ -2,7 +2,7 @@
 // iOS Settings uslubidagi guruhlangan ro'yxat.
 import { Link, Navigate } from "react-router-dom";
 import { LuChevronRight, LuMessageSquareWarning } from "react-icons/lu";
-import { openFeedback } from "../components/FeedbackReporter";
+import { feedbackMenuSubtitle, openFeedback } from "../components/FeedbackReporter";
 import Avatar from "../components/Avatar";
 import { MORE_GROUPS, ADMIN_ITEMS } from "../components/navConfig";
 import { ListGroup, ListRow, Page, PageHeader, SectionTitle } from "../components/ui";
@@ -64,7 +64,7 @@ export default function More() {
               icon={LuMessageSquareWarning}
               iconTone="orange"
               title={t("feedback.menuTitle")}
-              subtitle={t("feedback.menuSubtitle")}
+              subtitle={feedbackMenuSubtitle(t)}
               onClick={openFeedback}
             />
           </ListGroup>

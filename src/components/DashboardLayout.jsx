@@ -4,6 +4,7 @@ import Sidebar, { SIDEBAR_W } from "./Sidebar";
 import TabBar from "./TabBar";
 import Avatar from "./Avatar";
 import TelegramPromo from "./TelegramPromo";
+import StudyPlanNudge from "./StudyPlanNudge";
 import { PageLoader } from "./ui";
 import { useAuth } from "../context/AuthContext";
 import { useI18n } from "../i18n";
@@ -48,6 +49,7 @@ export default function DashboardLayout({ children }) {
       </div>
       <TabBar />
       <TelegramPromo />
+      <StudyPlanNudge />
     </div>
   );
 }
