@@ -195,6 +195,27 @@ docker compose up -d --build
 
 Baza migratsiyalari (`server/src/db/migrations/*.sql`) API ishga tushganda avtomatik bajariladi.
 
+## 13. Shikoyatlar (Ctrl+Shift+F) va JS xatolar logi
+
+Foydalanuvchi istalgan sahifada Ctrl+Shift+F (Mac: Cmd+Shift+F) bossa yoki "Yana" / Sozlamalarda
+"Muammo haqida xabar berish"ni tanlasa, xabar screenshot bilan bazaga yoziladi va Telegram botga keladi.
+`server/.env` ga quyidagilar kerak (bo'sh bo'lsa faqat bazaga yoziladi):
+
+```
+TELEGRAM_BOT_TOKEN=<BotFather tokeni>
+TELEGRAM_FEEDBACK_CHAT_ID=<xabar boradigan yagona chat id>
+```
+
+Bot sizga yoza olishi uchun avval botga `/start` bosing. Logni o'qish:
+
+```bash
+docker exec prepzone-api-1 node scripts/feedback-log.js              # yangi shikoyatlar + JS xatolar
+docker exec prepzone-api-1 node scripts/feedback-log.js --since 3d --shots /tmp/pz-shots
+docker cp prepzone-api-1:/tmp/pz-shots ./pz-shots                    # screenshot'lar
+docker exec prepzone-api-1 node scripts/feedback-log.js --resolve 12 15
+docker exec prepzone-api-1 node scripts/feedback-log.js --resolve-error <fingerprint>
+```
+
 ## Muammolar
 
 | Belgi | Sabab / yechim |

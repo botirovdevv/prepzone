@@ -100,7 +100,7 @@ export default function StudyRoomLobby() {
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         {tr("studyRoom.features").map((f, i) => (
-          <div key={f.title} className="flex items-start gap-3 rounded-2xl bg-white/60 p-4">
+          <div key={f.title} className="flex items-start gap-3 rounded-2xl bg-surface/60 p-4">
             <IconTile icon={FEATURE_ICONS[i]} tone="blue" size="sm" />
             <div>
               <p className="text-sm font-semibold text-ink">{f.title}</p>

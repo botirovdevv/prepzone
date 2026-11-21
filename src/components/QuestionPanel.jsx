@@ -143,7 +143,7 @@ function QuestionPanel({
         } passage-scroll p-5 sm:p-8`}
       >
         <div className="flex items-stretch overflow-hidden rounded-t-md border-b-2 border-dashed border-gray-400 bg-fill text-sm">
-          <div className="flex w-9 items-center justify-center bg-gray-900 font-bold text-white">{index + 1}</div>
+          <div className="flex w-9 items-center justify-center bg-ink font-bold tabular-nums text-on-ink">{index + 1}</div>
           <button
             type="button"
             onClick={onToggleMark}
@@ -190,7 +190,7 @@ function QuestionPanel({
         />
 
         {question.image && (
-          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-3">
+          <div className="pz-figure mb-6 rounded-lg border border-gray-200 p-3">
             <img
               src={question.image}
               alt={`Figure for question ${index + 1}`}
@@ -211,7 +211,7 @@ function QuestionPanel({
                 const v = e.target.value.replace(/\s/g, "");
                 if (isValidSprInput(v)) onSelectAnswer(v || null);
               }}
-              className="w-44 rounded-md border-2 border-gray-400 px-3 py-2.5 text-lg font-semibold tracking-wide focus:border-accent focus:outline-none"
+              className="w-44 rounded-md border-2 border-gray-400 bg-surface px-3 text-ink py-2.5 text-lg font-semibold tracking-wide focus:border-accent focus:outline-none"
             />
             <div className="mt-4 text-sm text-gray-600">
               Answer Preview: <span className="text-base font-semibold text-gray-900">{selected || ""}</span>

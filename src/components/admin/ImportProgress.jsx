@@ -40,7 +40,7 @@ export function FailedChunks({ failed, busy, progress, onRetry }) {
         type="button"
         onClick={onRetry}
         disabled={busy}
-        className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+        className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-warning px-3 py-1.5 font-semibold text-white hover:bg-warning/90 disabled:opacity-50"
       >
         <LuRefreshCw size={13} className={busy ? "animate-spin" : ""} />
         {busy && progress ? `Qayta yuborilmoqda ${progress.done}/${progress.total}` : "Qayta urinish"}

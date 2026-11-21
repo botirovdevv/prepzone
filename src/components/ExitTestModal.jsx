@@ -26,7 +26,7 @@ export default function ExitTestModal({ onCancel, onConfirm, confirming }) {
           <button
             onClick={onConfirm}
             disabled={confirming}
-            className="flex-1 rounded-lg bg-red-600 py-2.5 font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-danger py-2.5 font-semibold text-white hover:bg-danger/90 disabled:opacity-60"
           >
             {confirming ? t("proctor.exit.exiting") : t("proctor.exit.confirm")}
           </button>

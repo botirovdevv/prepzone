@@ -1,7 +1,8 @@
 // "Yana" — telefondagi 5-tab: tab bar'ga sig'magan barcha bo'limlar, hisob va admin.
 // iOS Settings uslubidagi guruhlangan ro'yxat.
 import { Link, Navigate } from "react-router-dom";
-import { LuChevronRight } from "react-icons/lu";
+import { LuChevronRight, LuMessageSquareWarning } from "react-icons/lu";
+import { openFeedback } from "../components/FeedbackReporter";
 import Avatar from "../components/Avatar";
 import { MORE_GROUPS, ADMIN_ITEMS } from "../components/navConfig";
 import { ListGroup, ListRow, Page, PageHeader, SectionTitle } from "../components/ui";
@@ -56,6 +57,18 @@ export default function More() {
             </ListGroup>
           </section>
         ))}
+
+        <section>
+          <ListGroup>
+            <ListRow
+              icon={LuMessageSquareWarning}
+              iconTone="orange"
+              title={t("feedback.menuTitle")}
+              subtitle={t("feedback.menuSubtitle")}
+              onClick={openFeedback}
+            />
+          </ListGroup>
+        </section>
 
         {isAdmin && adminItems.length > 0 && (
           <section>

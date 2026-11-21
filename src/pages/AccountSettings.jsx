@@ -21,7 +21,9 @@ import {
   LuMoon,
   LuLanguages,
   LuLogOut,
+  LuMessageSquareWarning,
 } from "react-icons/lu";
+import { openFeedback } from "../components/FeedbackReporter";
 import { useAuth } from "../context/AuthContext";
 import { formatDate, translate, useI18n } from "../i18n";
 import { useTheme } from "../context/ThemeContext";
@@ -128,7 +130,16 @@ function SignOutSection() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   return (
-    <section>
+    <section className="space-y-10">
+      <ListGroup>
+        <ListRow
+          icon={LuMessageSquareWarning}
+          iconTone="orange"
+          title={t("feedback.menuTitle")}
+          subtitle={t("feedback.menuSubtitle")}
+          onClick={openFeedback}
+        />
+      </ListGroup>
       <ListGroup>
         <ListRow
           icon={LuLogOut}

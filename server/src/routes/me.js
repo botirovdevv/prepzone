@@ -6,6 +6,7 @@ import { HttpError, badRequest, parseBody } from "../lib/errors.js";
 import { publicUser } from "../lib/serialize.js";
 import { DOMAINS } from "../lib/gemini.js";
 import { generateStudyPlan } from "../lib/studyPlanAi.js";
+import { decodeDataImage } from "../lib/images.js";
 
 // ------------------------------------------------------------------
 // Foydalanuvchining o'z profili: onboarding so'rovnomasi va Study Plan.
@@ -166,20 +167,7 @@ router.post("/study-plan/ai", aiPlanLimit, async (req, res) => {
 
 const AVATAR_MAX_BYTES = 300 * 1024;
 
-function decodeAvatar(dataUrl) {
-  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
-  if (!m) throw badRequest("invalid-argument", "Rasm formati noto'g'ri.");
-  const buf = Buffer.from(m[2], "base64");
-  if (buf.length === 0 || buf.length > AVATAR_MAX_BYTES) {
-    throw badRequest("invalid-argument", "Rasm hajmi juda katta.");
-  }
-  const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
-  const isPng = buf.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
-  const isWebp = buf.subarray(0, 4).toString() === "RIFF" && buf.subarray(8, 12).toString() === "WEBP";
-  const ok = { "image/jpeg": isJpeg, "image/png": isPng, "image/webp": isWebp }[m[1]];
-  if (!ok) throw badRequest("invalid-argument", "Fayl rasm emas.");
-  return { mime: m[1], data: buf };
-}
+const decodeAvatar = (dataUrl) => decodeDataImage(dataUrl, AVATAR_MAX_BYTES);
 
 router.put("/avatar", async (req, res) => {
   const { dataUrl } = parseBody(z.object({ dataUrl: z.string().max(500_000) }), req.body);

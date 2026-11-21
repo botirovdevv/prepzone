@@ -16,7 +16,11 @@ import { HttpError } from "../lib/errors.js";
 const ADMIN_LARGE = [/^\/api\/admin\//, /^\/api\/question-sets/, /^\/api\/desmos/, /^\/api\/sessions/];
 const USER_MEDIUM = [/^\/api\/me\/avatar/, /^\/api\/learn\/mistakes\/sync/];
 
+// Shikoyat oynasi: screenshot (≤900 KB) base64'da ~1.2 MB — mehmon ham yuboradi.
+const FEEDBACK = /^\/api\/feedback\/?$/;
+
 const largeJson = express.json({ limit: "25mb" });
+const feedbackJson = express.json({ limit: "1500kb" });
 const mediumJson = express.json({ limit: "5mb" });
 const smallJson = express.json({ limit: "1mb" });
 
@@ -26,6 +30,7 @@ export function jsonBody(req, res, next) {
   let parser = smallJson;
   if (isAdmin && ADMIN_LARGE.some((re) => re.test(req.path))) parser = largeJson;
   else if (u?.email_verified && USER_MEDIUM.some((re) => re.test(req.path))) parser = mediumJson;
+  else if (FEEDBACK.test(req.path)) parser = feedbackJson;
   return parser(req, res, next);
 }
 

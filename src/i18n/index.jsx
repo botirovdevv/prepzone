@@ -123,7 +123,7 @@ export function LanguageSwitch({ className = "", tone = "light" }) {
   const base = tone === "dark" ? "border-white/15 bg-white/5 text-white/60" : "border-transparent bg-fill text-ink-2";
   const active =
     tone === "dark"
-      ? "bg-white text-ink"
+      ? "bg-white text-night"
       : "bg-surface text-ink shadow-[0_1px_3px_rgb(0_0_0/0.12)] dark:bg-ink/25";
   return (
     <div

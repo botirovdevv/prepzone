@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LanguageProvider } from "./i18n";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PresencePing from "./components/PresencePing";
+import FeedbackReporter from "./components/FeedbackReporter";
 import { PageLoader } from "./components/ui";
 import Home from "./pages/Home";
 import { onIdle, prefetchAll } from "./utils/idle";
@@ -69,6 +70,7 @@ export default function App() {
             </Routes>
           </Suspense>
           <PresencePing />
+          <FeedbackReporter />
         </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>

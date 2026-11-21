@@ -20,7 +20,7 @@ export default function QuizCard({ question: q, selected, onSelect, reveal = fal
         {q.skill && <span className="truncate">{q.skill}</span>}
       </div>
       {q.passage && <Rich html={q.passage} className="sat-rich mb-4 whitespace-pre-line text-[15px] leading-7 text-ink/85" />}
-      {q.image && <img src={q.image} alt="" className="mb-4 max-h-64" />}
+      {q.image && <img src={q.image} alt="" className="pz-figure mb-4 max-h-64 rounded-lg p-2" />}
       <Rich html={q.prompt} className="sat-rich mb-4 text-[15px] font-semibold leading-7 text-ink" />
       {q.type === "spr" && (
         <div>

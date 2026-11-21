@@ -43,7 +43,7 @@ function Breathing() {
         <span className="pz-breathe absolute inset-0 rounded-full bg-accent/15" aria-hidden="true" />
         <span className="pz-breathe absolute inset-5 rounded-full bg-accent/25" aria-hidden="true" />
         <div className="relative text-center" aria-live="polite">
-          <p className="text-[15px] font-bold text-[#0b4f80]">{label}</p>
+          <p className="text-[15px] font-bold text-ink">{label}</p>
           <p className="font-display text-2xl font-semibold tabular-nums text-accent">{left}</p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function BreakScreen({ endAt, onContinue }) {
     <div className="min-h-screen bg-canvas text-ink">
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
         <div className="mb-6 flex items-center justify-between">
-          <img src="/Logo.png" alt="Prepzone" className="h-7 w-auto" />
+          <img src="/Logo.png" alt="Prepzone" className="pz-logo h-7 w-auto" />
           <LanguageSwitch />
         </div>
 
@@ -121,7 +121,7 @@ export default function BreakScreen({ endAt, onContinue }) {
             </p>
             <button
               onClick={onContinue}
-              className="mt-8 rounded-full bg-[#ffd400] px-7 py-3 text-[15px] font-bold text-ink transition hover:bg-[#ffe14d]"
+              className="mt-8 rounded-full bg-[#ffd400] px-7 py-3 text-[15px] font-bold text-night transition hover:bg-[#ffe14d]"
             >
               Resume Testing
             </button>

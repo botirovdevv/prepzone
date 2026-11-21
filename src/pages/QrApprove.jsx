@@ -94,7 +94,7 @@ function Approve({ qrId, scanCode }) {
     >
       {state === "ask" && info && (
         <>
-          <div className="flex items-center gap-4 rounded-[18px] bg-black/[0.04] p-4">
+          <div className="flex items-center gap-4 rounded-[18px] bg-fill p-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface text-accent shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
               <DeviceIcon size={22} />
             </span>
@@ -108,7 +108,7 @@ function Approve({ qrId, scanCode }) {
             </div>
           </div>
 
-          <p className="mt-4 flex items-start gap-2 rounded-[14px] bg-[#fff8e6] px-4 py-3 text-[13px] leading-[1.45] text-[#8a5a00]">
+          <p className="mt-4 flex items-start gap-2 rounded-[14px] bg-warning/10 px-4 py-3 text-[13px] leading-[1.45] text-warning">
             <LuTriangleAlert size={16} className="mt-px shrink-0" />
             {t("qrApprove.warning")}
           </p>

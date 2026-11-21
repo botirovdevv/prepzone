@@ -136,6 +136,14 @@ h6 {
   text-decoration: underline;
 }
 
+/* Savol rasmlari/grafiklari odatda shaffof fonli qora chiziqlar — qorong'i
+   rejimda ham ko'rinishi uchun ular doim oq "qog'oz" ustida turadi. */
+.pz-figure { background: #fff; }
+:root[data-theme="dark"] .sat-rich img { background: #fff; border-radius: 6px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sat-rich img { background: #fff; border-radius: 6px; }
+}
+
 /* Bluebook savollaridagi jadval, ro'yxat va formulalar */
 .sat-rich table {
   border-collapse: collapse;

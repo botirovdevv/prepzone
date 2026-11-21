@@ -79,7 +79,7 @@ function Showcase() {
                 <span className="tabular-nums text-white">{value}</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-surface" style={{ width: `${(value / max) * 100}%` }} />
+                <div className="h-full rounded-full bg-white" style={{ width: `${(value / max) * 100}%` }} />
               </div>
             </div>
           ))}

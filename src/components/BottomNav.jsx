@@ -26,7 +26,7 @@ function BottomNav({
           type="button"
           onClick={onOpenNav}
           aria-expanded={!!navOpen}
-          className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-gray-800 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
+          className="flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-semibold tabular-nums text-on-ink shadow hover:bg-ink/85 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
         >
           Question {currentIndex + 1} of {total}
           {navOpen ? <LuChevronDown size={16} /> : <LuChevronUp size={16} />}

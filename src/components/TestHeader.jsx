@@ -72,7 +72,7 @@ function TimerBlock({ endAt }) {
       {alert && (
         <div
           role="alert"
-          className="absolute top-[calc(100%+10px)] z-40 whitespace-nowrap rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-lg"
+          className="absolute top-[calc(100%+10px)] z-40 whitespace-nowrap rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-on-ink shadow-lg"
         >
           5 Minutes Remaining
         </div>
@@ -144,7 +144,7 @@ function HelpDialog({ onClose }) {
           ))}
         </dl>
         <div className="mt-6 flex justify-end">
-          <button onClick={onClose} className="rounded-full bg-[#ffd400] px-6 py-2 text-sm font-bold text-gray-900 hover:bg-[#ffe14d]">
+          <button onClick={onClose} className="rounded-full bg-[#ffd400] px-6 py-2 text-sm font-bold text-night hover:bg-[#ffe14d]">
             Close
           </button>
         </div>
@@ -304,7 +304,7 @@ function TestHeader({
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDirections(false)}
-                className="rounded-full bg-[#ffd400] px-6 py-2 text-sm font-bold text-gray-900 hover:bg-[#ffe14d]"
+                className="rounded-full bg-[#ffd400] px-6 py-2 text-sm font-bold text-night hover:bg-[#ffe14d]"
               >
                 Close
               </button>

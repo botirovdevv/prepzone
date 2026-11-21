@@ -15,6 +15,6 @@ import legal from "./legal";
 import studyRoom from "./studyRoom";
 import growth from "./growth";
 import duel from "./duel";
-import resources from "./resources";
+import feedback from "./feedback";
 
-export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, growth, duel, resources];
+export default [nav, home, auth, dashboard, tests, results, progress, learn, misc, vocab, studyPlan, account, legal, studyRoom, growth, duel, feedback];

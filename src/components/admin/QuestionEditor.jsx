@@ -207,7 +207,7 @@ export default function QuestionEditor({
                           type="button"
                           onClick={() => setReviewId(reviewId === q.id ? null : q.id)}
                           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                            q.aiReviewed ? "text-violet-700 bg-violet-500/10" : "text-white bg-violet-600 hover:bg-violet-700"
+                            q.aiReviewed ? "text-violet-700 bg-violet-500/10" : "text-white bg-purple hover:bg-purple/90"
                           }`}
                         >
                           {q.aiReviewed ? "AI · tasdiqlangan" : "AI · tekshirish kerak"}
@@ -298,7 +298,7 @@ export default function QuestionEditor({
                             patchQuestion(q.id, { aiReviewed: true, aiNote: undefined });
                             setReviewId(null);
                           }}
-                          className="flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-violet-700"
+                          className="flex items-center gap-1 rounded-lg bg-purple px-2.5 py-1 text-xs font-semibold text-white hover:bg-purple/90"
                         >
                           <LuCircleCheck size={13} /> To'g'ri — tasdiqlash
                         </button>

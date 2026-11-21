@@ -1,6 +1,7 @@
 import { Component } from "react";
 import { LuTriangleAlert, LuRotateCw } from "react-icons/lu";
 import { translate as t } from "../i18n";
+import { reportError } from "../utils/errorLog";
 
 const RELOAD_KEY = "pz_chunk_reload";
 
@@ -21,6 +22,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error("Kutilmagan xatolik:", error, info?.componentStack);
+    if (!isChunkError(error)) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (info?.componentStack) err.stack = `${err.stack || ""}\nReact:${info.componentStack.slice(0, 1500)}`;
+      reportError(err);
+    }
     if (isChunkError(error)) {
       try {
         const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);

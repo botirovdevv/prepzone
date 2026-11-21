@@ -123,7 +123,7 @@ export default function ConfirmDialog({
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
             {t("common.cancel")}
           </Button>
-          <Button type="submit" disabled={!ready || busy} className="!bg-red-600 !text-white hover:!bg-red-700 !shadow-none">
+          <Button type="submit" disabled={!ready || busy} className="!bg-danger !text-white hover:!bg-danger/90 !shadow-none">
             {busy ? t("confirm.working") : confirmLabel || t("confirm.confirm")}
           </Button>
         </div>

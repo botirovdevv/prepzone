@@ -578,7 +578,7 @@ function RoomView({ code, iceServers, camOn, micOn, onLeave, onEnded }) {
   );
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#0f1b33] text-white">
+    <div className="pz-light-tokens flex h-[100dvh] flex-col bg-[#0f1b33] text-white">
       {/* Yuqori panel */}
       <header className="flex items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
         <div className="min-w-0">

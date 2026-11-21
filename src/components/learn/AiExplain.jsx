@@ -36,8 +36,8 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
   if (state.status === "done") {
     const d = state.data;
     return (
-      <div className={`rounded-2xl border border-[#7c3aed]/20 bg-[#7c3aed]/[0.04] p-4 text-[14px] leading-6 text-ink ${className}`}>
-        <p className="flex items-center gap-2 font-bold text-[#7c3aed]">
+      <div className={`rounded-2xl border border-purple/25 bg-purple/[0.06] p-4 text-[14px] leading-6 text-ink ${className}`}>
+        <p className="flex items-center gap-2 font-bold text-purple">
           <LuSparkles size={15} /> {d.summary}
         </p>
         {d.steps?.length > 0 && (
@@ -79,7 +79,7 @@ export default function AiExplain({ question, userAnswer, className = "" }) {
         type="button"
         onClick={ask}
         disabled={state.status === "loading"}
-        className="inline-flex items-center gap-2 rounded-full bg-[#7c3aed] px-4 py-2 text-[13px] font-bold text-white transition hover:bg-[#6d28d9] disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-purple px-4 py-2 text-[13px] font-bold text-white transition hover:bg-purple/90 disabled:opacity-60"
       >
         {state.status === "loading" ? <LuLoader size={14} className="animate-spin" /> : <LuSparkles size={14} />}
         {state.status === "loading" ? t("tutor.loading") : t("tutor.ask")}

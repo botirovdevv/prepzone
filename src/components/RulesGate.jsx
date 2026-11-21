@@ -69,7 +69,7 @@ export default function RulesGate({ onStart, isResume, title }) {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 pt-6 sm:px-8">
-        <img src="/Logo.png" alt="Prepzone" className="h-7 w-auto" />
+        <img src="/Logo.png" alt="Prepzone" className="pz-logo h-7 w-auto" />
         <LanguageSwitch />
       </header>
 

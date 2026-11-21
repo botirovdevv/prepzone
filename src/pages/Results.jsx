@@ -76,7 +76,7 @@ function ReviewQuestion({ item, showPassage }) {
         {showPassage && q.passage && <Rich html={q.passage} className="sat-rich whitespace-pre-line mb-3" />}
         {!showPassage && q.passage && <Rich html={q.passage} className="sat-rich mb-3" />}
         <Rich html={q.prompt} className="sat-rich font-medium mb-3" />
-        {q.image && <img src={q.image} alt={t("results.figure")} className="max-h-60 mb-3" />}
+        {q.image && <img src={q.image} alt={t("results.figure")} className="pz-figure max-h-60 mb-3 rounded-lg p-2" />}
         {q.choices && (
           <ul className="space-y-1.5 mb-3">
             {q.choices.map((c) => (

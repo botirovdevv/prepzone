@@ -77,7 +77,7 @@ export default function DesmosCalculator({ onClose }) {
                 <button
                   type="button"
                   onClick={() => setAttempt((a) => a + 1)}
-                  className="rounded-md bg-black px-4 py-1.5 text-xs font-semibold text-white hover:bg-gray-800"
+                  className="rounded-md bg-black px-4 py-1.5 text-xs font-semibold text-white hover:bg-black/80"
                 >
                   Retry
                 </button>

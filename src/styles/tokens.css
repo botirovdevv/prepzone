@@ -5,7 +5,12 @@
    modifikatorlari ishlashi uchun. Qorong'i rejim teskari emas:
    fonlar xiraroq, matn yorqinroq, ko'tarilgan yuzalar ochroq.
 ------------------------------------------------------------------ */
-:root {
+/* .pz-light-tokens — doim to'q rangli panellar (Study Room xonasi va h.k.)
+   ichida tokenlar qorong'i rejimda ham yorug' qiymatda qoladi: panel
+   ichidagi bg-white/text-ink, amber-400, emerald-300 kabi ranglar
+   ikkala mavzuda bir xil ko'rinadi. */
+:root,
+.pz-light-tokens {
   color-scheme: light;
   --c-canvas: 245 245 247;
   --c-surface: 255 255 255;
@@ -229,6 +234,8 @@
   --p-rose-900: 136 19 55;
   --p-rose-950: 76 5 25;
 }
+
+.pz-light-tokens { color-scheme: dark; }
 
 /* Qorong'i rejim tokenlari: [data-theme="dark"] yoki tizim sozlamasi (Auto). */
 :root[data-theme="dark"] {

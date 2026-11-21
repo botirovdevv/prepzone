@@ -77,7 +77,7 @@ export default function Login() {
     >
       {/* QR faqat kompyuterda ma'noli; telefondan QR tasdiqlashga kelgan bo'lsa ko'rsatilmaydi. */}
       {!from && (
-        <div role="tablist" className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-black/[0.05] p-1">
+        <div role="tablist" className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-fill p-1">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -99,7 +99,7 @@ export default function Login() {
       )}
 
       {tab === "qr" && !from ? (
-        <Suspense fallback={<div className="mx-auto aspect-square w-full max-w-[240px] animate-pulse rounded-[22px] bg-black/[0.05]" />}>
+        <Suspense fallback={<div className="mx-auto aspect-square w-full max-w-[240px] animate-pulse rounded-[22px] bg-fill" />}>
           <QrLogin onSuccess={goNext} />
         </Suspense>
       ) : (

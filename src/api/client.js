@@ -10,6 +10,7 @@
 // Bo'sh bo'lsa — API shu domenda (/api). Frontend alohida domenda
 // joylashsa VITE_API_URL=https://api.example.com qilib beriladi.
 import { getLang, translate } from "../i18n";
+import { addLog } from "../utils/errorLog";
 
 export const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -35,6 +36,7 @@ async function request(method, path, body) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
+    addLog("api", `${method} ${path} → tarmoq xatosi`);
     throw new ApiError(0, "network-error", translate("common.networkError"));
   }
 
@@ -45,6 +47,7 @@ async function request(method, path, body) {
     window.dispatchEvent(new Event("auth:expired"));
   }
   if (!res.ok) {
+    addLog("api", `${method} ${path} → ${res.status} ${data?.code || ""} ${data?.message || ""}`.trim());
     throw new ApiError(
       res.status,
       data?.code || "internal",

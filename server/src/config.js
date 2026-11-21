@@ -47,6 +47,10 @@ export const config = {
     .split(",")
     .map((u) => u.trim())
     .filter(Boolean),
+  // Shikoyat/taklif oynasi (Ctrl+Shift+F): xabarlar shu bot orqali faqat
+  // shu chat'ga keladi. Bo'sh bo'lsa faqat bazaga yoziladi.
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
+  telegramFeedbackChatId: process.env.TELEGRAM_FEEDBACK_CHAT_ID || "",
   // CSRF tekshiruvi uchun saytning asosiy manzili (middleware/security.js).
   publicUrl: process.env.PUBLIC_URL || "https://prep-zone.uz",
 };
